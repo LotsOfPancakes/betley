@@ -15,10 +15,6 @@ A pari-mutuel style betting platform built on HyperEVM testnet using HYPE tokens
 - Web3: Wagmi, Viem, ConnectKit
 - Blockchain: HyperEVM Testnet
 
-## Contract Addresses
-- Betley Contract: 
-- HYPE Token: 0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C
-
 ## Development Setup
 1. Clone the repository
 2. Install dependencies: `pnpm install`
@@ -26,3 +22,7 @@ A pari-mutuel style betting platform built on HyperEVM testnet using HYPE tokens
 4. Deploy contracts: `cd contracts && forge script script/Deploy.s.sol --rpc-url https://rpc.hyperliquid-testnet.xyz/evm --broadcast`
 5. Update contract address in `frontend/lib/contractABI.ts`
 6. Run frontend: `cd frontend && pnpm dev`
+
+## Contract Addresses
+- Betley Contract: [To be updated]
+- HYPE Token: 0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C
