@@ -1,15 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseUnits } from 'viem'
 import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
 
+interface OptimisticUpdate {
+  type: 'approval' | 'bet' | 'resolution' | null
+  data?: any
+}
+
 export function useBetActions(betId: string, betDetails: any, onRefresh?: () => void) {
   const [betAmount, setBetAmount] = useState('')
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
-  const [optimisticUpdate, setOptimisticUpdate] = useState<{
-    type: 'approval' | 'bet' | 'resolution' | null
-    data?: any
-  }>({ type: null })
+  const [optimisticUpdate, setOptimisticUpdate] = useState<OptimisticUpdate>({ type: null })
 
   // Write contracts
   const { 
@@ -24,27 +26,34 @@ export function useBetActions(betId: string, betDetails: any, onRefresh?: () => 
     writeContract: writeApprove 
   } = useWriteContract()
 
-  // Wait for transactions - but don&apos;t block UI
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({
+  // Wait for transactions
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
-    onSuccess: () => {
+  })
+
+  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
+    hash: approveHash,
+  })
+
+  // Handle transaction success
+  useEffect(() => {
+    if (isSuccess) {
       // Clear optimistic state and refresh data after confirmation
       setOptimisticUpdate({ type: null })
       if (onRefresh) {
         setTimeout(onRefresh, 1000) // Small delay to ensure blockchain state is updated
       }
     }
-  })
+  }, [isSuccess, onRefresh])
 
-  const { isLoading: isApproveConfirming } = useWaitForTransactionReceipt({
-    hash: approveHash,
-    onSuccess: () => {
+  useEffect(() => {
+    if (isApproveSuccess) {
       setOptimisticUpdate({ type: null })
       if (onRefresh) {
         setTimeout(onRefresh, 1000)
       }
     }
-  })
+  }, [isApproveSuccess, onRefresh])
 
   // Handle HYPE token approval with optimistic update
   const handleApprove = async () => {
@@ -82,7 +91,7 @@ export function useBetActions(betId: string, betDetails: any, onRefresh?: () => 
         data: { 
           option: selectedOption, 
           amount: betAmountBig,
-          user: 'current' // Flag to identify this is user&apos;s bet
+          user: 'current' // Flag to identify this is user's bet
         } 
       })
 
@@ -94,7 +103,7 @@ export function useBetActions(betId: string, betDetails: any, onRefresh?: () => 
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'placeBet',
-        args: [BigInt(betId), BigInt(selectedOption), betAmountBig],
+        args: [BigInt(betId), selectedOption, betAmountBig],
       })
     } catch (error) {
       console.error('Betting error:', error)
@@ -113,7 +122,7 @@ export function useBetActions(betId: string, betDetails: any, onRefresh?: () => 
         args: [BigInt(betId)],
       })
       
-      // Trigger refresh after a short delay (don&apos;t wait for full confirmation)
+      // Trigger refresh after a short delay (don't wait for full confirmation)
       setTimeout(() => {
         if (onRefresh) onRefresh()
       }, 3000) // 3 seconds should be enough for 2s block time
@@ -137,7 +146,7 @@ export function useBetActions(betId: string, betDetails: any, onRefresh?: () => 
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'resolveBet',
-        args: [BigInt(betId), BigInt(winningOptionIndex)],
+        args: [BigInt(betId), winningOptionIndex],
       })
 
       // Refresh after short delay

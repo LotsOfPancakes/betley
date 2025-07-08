@@ -1,3 +1,4 @@
+// hooks/useBetData.ts
 import { useReadContract, useAccount } from 'wagmi'
 import { useState, useEffect, useCallback } from 'react'
 import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
@@ -8,6 +9,10 @@ export function useBetData(betId: string) {
   const [resolutionTimeLeft, setResolutionTimeLeft] = useState(0)
   const [resolutionDeadlinePassed, setResolutionDeadlinePassed] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // Validate bet ID - must be a valid number (since we're now passing numeric IDs)
+  const isValidBetId = betId && !isNaN(parseInt(betId)) && parseInt(betId) >= 0
+  const numericBetId = isValidBetId ? parseInt(betId) : null
 
   // Manual refresh function
   const triggerRefresh = useCallback(() => {
@@ -24,14 +29,15 @@ export function useBetData(betId: string) {
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'getBetDetails',
-    args: betId ? [BigInt(betId)] : undefined,
+    args: numericBetId !== null ? [BigInt(numericBetId)] : undefined,
     query: {
       // Refresh every 4 seconds for active bets, 10s for others
-      refetchInterval: 4000
+      refetchInterval: 4000,
+      enabled: numericBetId !== null // Only run if bet ID is valid
     }
   })
 
-  // Read user&apos;s bets with refresh trigger
+  // Read user's bets with refresh trigger
   const { 
     data: userBets,
     refetch: refetchUserBets 
@@ -39,13 +45,14 @@ export function useBetData(betId: string) {
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'getUserBets',
-    args: address && betId ? [BigInt(betId), address] : undefined,
+    args: address && numericBetId !== null ? [BigInt(numericBetId), address] : undefined,
     query: {
-      refetchInterval: 5000 // Check user bets every 5 seconds
+      refetchInterval: 5000, // Check user bets every 5 seconds
+      enabled: numericBetId !== null && !!address
     }
   })
 
-  // Read user&apos;s HYPE balance
+  // Read user's HYPE balance
   const { 
     data: hypeBalance,
     refetch: refetchBalance 
@@ -55,7 +62,8 @@ export function useBetData(betId: string) {
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
-      refetchInterval: 8000 // Check balance every 8 seconds
+      refetchInterval: 8000, // Check balance every 8 seconds
+      enabled: !!address
     }
   })
 
@@ -74,9 +82,10 @@ export function useBetData(betId: string) {
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'hasUserClaimed',
-    args: address && betId ? [BigInt(betId), address] : undefined,
+    args: address && numericBetId !== null ? [BigInt(numericBetId), address] : undefined,
     query: {
-      refetchInterval: 6000
+      refetchInterval: 6000,
+      enabled: numericBetId !== null && !!address
     }
   })
 
@@ -85,10 +94,13 @@ export function useBetData(betId: string) {
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'getResolutionDeadline',
-    args: betId ? [BigInt(betId)] : undefined,
+    args: numericBetId !== null ? [BigInt(numericBetId)] : undefined,
+    query: {
+      enabled: numericBetId !== null
+    }
   })
 
-  // Read user&apos;s allowance for HYPE token
+  // Read user's allowance for HYPE token
   const { 
     data: allowance,
     refetch: refetchAllowance 
@@ -98,18 +110,21 @@ export function useBetData(betId: string) {
     functionName: 'allowance',
     args: address ? [address, BETLEY_ADDRESS] : undefined,
     query: {
-      refetchInterval: 7000
+      refetchInterval: 7000,
+      enabled: !!address
     }
   })
 
   // Manual refresh all data
   const refreshAllData = useCallback(() => {
-    refetchBetDetails()
-    refetchUserBets()
-    refetchBalance()
-    refetchHasClaimed()
-    refetchAllowance()
-  }, [refetchBetDetails, refetchUserBets, refetchBalance, refetchHasClaimed, refetchAllowance])
+    if (numericBetId !== null) {
+      refetchBetDetails()
+      refetchUserBets()
+      refetchBalance()
+      refetchHasClaimed()
+      refetchAllowance()
+    }
+  }, [numericBetId, refetchBetDetails, refetchUserBets, refetchBalance, refetchHasClaimed, refetchAllowance])
 
   // Update time-based states
   useEffect(() => {
@@ -141,6 +156,9 @@ export function useBetData(betId: string) {
     }
   }, [refreshTrigger, refreshAllData])
 
+  // Custom error for invalid bet ID
+  const validationError = !isValidBetId ? new Error(`Invalid bet ID: "${betId}". Bet IDs must be numbers.`) : null
+
   return {
     betDetails,
     userBets,
@@ -149,12 +167,14 @@ export function useBetData(betId: string) {
     hasClaimed,
     resolutionDeadline,
     allowance,
-    isBetLoading,
-    betError,
+    isBetLoading: numericBetId === null ? false : isBetLoading,
+    betError: validationError || betError,
     timeLeft,
     resolutionTimeLeft,
     resolutionDeadlinePassed,
     refreshAllData, // Expose manual refresh function
-    triggerRefresh
+    triggerRefresh,
+    isValidBetId,
+    numericBetId
   }
 }

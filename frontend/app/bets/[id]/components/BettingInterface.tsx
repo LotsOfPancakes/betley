@@ -157,23 +157,20 @@ export function BettingInterface({
                     onChange={() => setSelectedOption(index)}
                     className="text-blue-600 disabled:opacity-50"
                   />
-                  <span className="text-white font-medium">{option}</span>
+                  <div>
+                    <span className="text-white font-medium">{option}</span>
+                    {estimates && isSelected && (
+                      <div className="text-sm text-green-400 mt-1">
+                        Potential Profit: +{estimates.profit} HYPE
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="text-right">
                   <div className="text-sm text-gray-400">
                     Pool: {decimals && totalAmounts ? formatUnits(totalAmounts[index], decimals) : '0'} HYPE
                   </div>
-                  {estimates && (
-                    <div className="text-sm space-y-1 mt-1">
-                      <div className="text-green-400">
-                        Est. profit: +{estimates.profit} HYPE
-                      </div>
-                      <div className="text-green-300 font-medium">
-                        Est. total: {estimates.total} HYPE
-                      </div>
-                    </div>
-                  )}
                 </div>
               </label>
             )
@@ -181,7 +178,7 @@ export function BettingInterface({
         </div>
       </div>
 
-      {/* Bet amount input with live estimate */}
+      {/* Bet amount input */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-300 mb-2">
           Bet Amount (HYPE)
@@ -195,32 +192,6 @@ export function BettingInterface({
           placeholder="Enter amount to bet"
           className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
         />
-        
-        {/* Live estimation summary */}
-        {betAmount && selectedOption !== null && (
-          <div className="mt-3 p-3 bg-blue-900/20 border border-blue-600 rounded-lg">
-            <h4 className="text-sm font-medium text-blue-300 mb-2">Estimated Winnings</h4>
-            {(() => {
-              const estimates = calculateEstimatedWinnings(selectedOption, betAmount)
-              return (
-                <div className="text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Your bet:</span>
-                    <span className="text-white">{betAmount} HYPE</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Estimated profit:</span>
-                    <span className="text-green-400">+{estimates.profit} HYPE</span>
-                  </div>
-                  <div className="flex justify-between font-medium">
-                    <span className="text-gray-300">Total if you win:</span>
-                    <span className="text-green-300">{estimates.total} HYPE</span>
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
-        )}
       </div>
 
       {/* Betting buttons */}
