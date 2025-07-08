@@ -20,7 +20,7 @@ export function Navigation() {
                 href="/bets" 
                 className={`text-gray-300 hover:text-white transition-colors ${pathname === '/bets' ? 'text-white' : ''}`}
               >
-                All Bets
+                My Bets
               </Link>
               <Link 
                 href="/setup" 
