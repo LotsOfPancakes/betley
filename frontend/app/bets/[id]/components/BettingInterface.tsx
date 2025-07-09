@@ -95,22 +95,23 @@ export function BettingInterface({
     ? allowance < parseUnits(betAmount, decimals) 
     : true
 
-  if (!isActive || !address) {
-    return (
-      <div className="text-center mb-8">
-        {!address ? (
-          <>
-            <p className="text-gray-300 mb-4">Connect your wallet to place a bet</p>
-            <ConnectKitButton />
-          </>
-        ) : timeLeft <= 0 && !resolved ? (
-          <p className="text-gray-300">Betting has ended. Waiting for resolution...</p>
-        ) : (
-          <p className="text-gray-300">Betting hasn&apos;t started yet</p>
-        )}
-      </div>
-    )
-  }
+  // if (!isActive || !address) {
+  //   return (
+  //     <div className="text-center mb-8">
+  //       {!address ? (
+  //         <>
+  //           <p className="text-gray-300 mb-4">Connect your wallet to place a bet</p>
+  //           <ConnectKitButton />
+  //         </>
+  //       )
+  //        : timeLeft <= 0 && !resolved ? (
+  //         <p className="text-gray-300">Betting has ended. Waiting for resolution...</p>
+  //       ) : (
+  //         <p className="text-gray-300">Betting hasn&apos;t started yet</p>
+  //       )}
+  //     </div>
+  //   )
+  // }
 
   return (
     <div className="mb-8">
