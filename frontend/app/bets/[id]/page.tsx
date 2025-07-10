@@ -1,3 +1,4 @@
+// frontend/app/bets/[id]/page.tsx
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
@@ -11,6 +12,7 @@ import { BetInfo } from './components/BetInfo'
 import { CreatorActions } from './components/CreatorActions'
 import { UserActions } from './components/UserActions'
 import { BettingInterface } from './components/BettingInterface'
+import { BetCreationPending } from './components/BetCreationPending'
 
 // Import hooks
 import { useBetData } from './hooks/useBetData'
@@ -53,6 +55,7 @@ export default function BetPage() {
   const { address } = useAccount()
   const [showResolveModal, setShowResolveModal] = useState(false)
   const [isLoadingMappings, setIsLoadingMappings] = useState(true)
+  const [retryCount, setRetryCount] = useState(0)
   const { getNumericId, mappings } = useBetIdMapping()
 
   // Convert random ID to numeric ID
@@ -83,7 +86,7 @@ export default function BetPage() {
     resolutionTimeLeft,
     resolutionDeadlinePassed,
     refreshAllData
-  } = useBetData(isValidBetId ? numericBetId.toString() : '999999') // Use impossible ID for invalid cases
+  } = useBetData(isValidBetId ? numericBetId.toString() : '999999')
 
   const {
     betAmount,
@@ -98,6 +101,19 @@ export default function BetPage() {
     handleResolveBet,
     optimisticUpdate
   } = useBetActions(isValidBetId ? numericBetId.toString() : '999999', betDetails, refreshAllData)
+
+  // Auto-retry logic for newly created bets
+  useEffect(() => {
+    if (isValidBetId && betError && retryCount < 10) {
+      const timer = setTimeout(() => {
+        console.log(`Retrying to load bet data... attempt ${retryCount + 1}`)
+        setRetryCount(prev => prev + 1)
+        refreshAllData()
+      }, 2000) // Retry every 2 seconds
+      
+      return () => clearTimeout(timer)
+    }
+  }, [betError, retryCount, isValidBetId, refreshAllData])
 
   // Show loading while mappings are being loaded
   if (isLoadingMappings) {
@@ -116,7 +132,15 @@ export default function BetPage() {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
-  // Loading state
+  // Check if this might be a newly created bet that hasn't been mined yet
+  const isPossiblyPendingCreation = isValidBetId && (betError || !betDetails) && retryCount < 10
+
+  // Show pending creation state for new bets
+  if (isPossiblyPendingCreation) {
+    return <BetCreationPending randomId={randomBetId as string} />
+  }
+
+  // Loading state for established bets
   if (isBetLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -127,7 +151,7 @@ export default function BetPage() {
     )
   }
 
-  // Error state
+  // Error state for bets that definitely don't exist
   if (betError || !betDetails) {
     return <InvalidBetError randomId={randomBetId as string} />
   }
@@ -197,114 +221,44 @@ export default function BetPage() {
             setSelectedOption={setSelectedOption}
             betAmount={betAmount}
             setBetAmount={setBetAmount}
-            allowance={allowance}
+            needsApproval={allowance !== undefined && betAmount ? allowance < BigInt(betAmount) : false}
             isApproving={isApproving}
             isPending={isPending}
             handleApprove={handleApprove}
             handlePlaceBet={handlePlaceBet}
-            decimals={decimals}
             totalAmounts={totalAmounts}
-            timeLeft={timeLeft}
-            resolved={resolved}
+            decimals={decimals}
           />
 
-          {/* Creator actions for resolution */}
+          {/* Creator actions */}
           <CreatorActions
             address={address}
             creator={creator}
-            timeLeft={timeLeft}
+            isActive={isActive}
             resolved={resolved}
-            resolutionDeadlinePassed={resolutionDeadlinePassed}
             resolutionTimeLeft={resolutionTimeLeft}
-            onShowResolveModal={() => setShowResolveModal(true)}
+            resolutionDeadlinePassed={resolutionDeadlinePassed}
+            options={options}
+            showResolveModal={showResolveModal}
+            setShowResolveModal={setShowResolveModal}
+            handleResolveBet={handleResolveBet}
+            isPending={isPending}
           />
 
-          {/* User actions for claiming winnings/refunds */}
+          {/* User actions */}
           <UserActions
             address={address}
+            creator={creator}
             resolved={resolved}
-            winningOption={winningOption}
-            userBets={userBets}
-            totalAmounts={totalAmounts}
             resolutionDeadlinePassed={resolutionDeadlinePassed}
+            userBets={userBets}
+            winningOption={winningOption}
             hasClaimed={hasClaimed}
-            decimals={decimals}
-            isPending={isPending}
             handleClaimWinnings={handleClaimWinnings}
+            isPending={isPending}
+            decimals={decimals}
           />
-
-          {/* Share section */}
-          <div className="mt-6 p-4 bg-blue-900/20 border border-blue-600 rounded-lg">
-            <h3 className="text-blue-300 font-semibold mb-2">📤 Share This Private Bet</h3>
-            <p className="text-blue-200 text-sm mb-3">
-              Share this link to let others participate:
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={typeof window !== 'undefined' ? window.location.href : ''}
-                readOnly
-                className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded focus:outline-none font-mono"
-              />
-              <button
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    navigator.clipboard.writeText(window.location.href)
-                    alert('Link copied!')
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-              >
-                Copy
-              </button>
-            </div>
-          </div>
         </div>
-
-        {/* Simple Resolution Modal */}
-        {showResolveModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 max-w-md w-full mx-4">
-              <h3 className="text-xl font-bold text-white mb-4">Resolve Bet</h3>
-              <p className="text-gray-300 mb-4">Select the winning option:</p>
-              
-              <div className="space-y-2 mb-6">
-                {options?.map((option, index) => (
-                  <label key={index} className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600">
-                    <input
-                      type="radio"
-                      name="winner"
-                      onChange={() => setSelectedOption(index)}
-                      className="w-4 h-4 text-blue-600 bg-gray-600 border-gray-500 focus:ring-blue-500"
-                    />
-                    <span className="text-white">{option}</span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    if (selectedOption !== null) {
-                      handleResolveBet()
-                      setShowResolveModal(false)
-                    }
-                  }}
-                  disabled={isPending || selectedOption === null}
-                  className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-600"
-                >
-                  {isPending ? 'Resolving...' : 'Resolve'}
-                </button>
-                <button
-                  onClick={() => setShowResolveModal(false)}
-                  className="flex-1 bg-gray-600 text-white py-2 rounded-lg font-semibold hover:bg-gray-500"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
