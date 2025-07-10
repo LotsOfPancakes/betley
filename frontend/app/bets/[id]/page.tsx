@@ -86,7 +86,7 @@ export default function BetPage() {
     resolutionTimeLeft,
     resolutionDeadlinePassed,
     refreshAllData
-  } = useBetData(isValidBetId ? numericBetId.toString() : '999999')
+} = useBetData(isValidBetId ? numericBetId.toString() : '999999', { useReactQuery: true })
 
   const {
     betAmount,

@@ -1,16 +1,29 @@
-// hooks/useBetData.ts
-import { useReadContract, useAccount } from 'wagmi'
+// frontend/app/bets/[id]/hooks/useBetData.ts (ENHANCED VERSION)
 import { useState, useEffect, useCallback } from 'react'
+import { useAccount, useReadContract } from 'wagmi'
 import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
+// Optional: Use React Query hooks if available
+import { 
+  useBetDetailsQuery, 
+  useUserBetsQuery, 
+  useUserBalanceQuery, 
+  useUserAllowanceQuery,
+  useUserClaimedQuery 
+} from '@/lib/queries/betQueries'
 
-export function useBetData(betId: string) {
+interface UseBetDataOptions {
+  useReactQuery?: boolean // Flag to enable/disable React Query features
+}
+
+export function useBetData(betId: string, options: UseBetDataOptions = {}) {
+  const { useReactQuery = true } = options // Default to using React Query
   const { address } = useAccount()
   const [timeLeft, setTimeLeft] = useState(0)
   const [resolutionTimeLeft, setResolutionTimeLeft] = useState(0)
   const [resolutionDeadlinePassed, setResolutionDeadlinePassed] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  // Validate bet ID - must be a valid number (since we're now passing numeric IDs)
+  // Validate bet ID
   const isValidBetId = betId && !isNaN(parseInt(betId)) && parseInt(betId) >= 0
   const numericBetId = isValidBetId ? parseInt(betId) : null
 
@@ -19,77 +32,94 @@ export function useBetData(betId: string) {
     setRefreshTrigger(prev => prev + 1)
   }, [])
 
-  // Read bet details with refresh trigger
-  const { 
-    data: betDetails, 
-    isLoading: isBetLoading, 
-    error: betError,
-    refetch: refetchBetDetails
-  } = useReadContract({
+  // === REACT QUERY HOOKS (Enhanced) ===
+  const reactQueryBetDetails = useBetDetailsQuery(numericBetId || -1)
+  const reactQueryUserBets = useUserBetsQuery(numericBetId || -1, address)
+  const reactQueryBalance = useUserBalanceQuery(address)
+  const reactQueryAllowance = useUserAllowanceQuery(address)
+  const reactQueryClaimed = useUserClaimedQuery(numericBetId || -1, address)
+
+  // === FALLBACK HOOKS (Your existing logic) ===
+  const fallbackBetDetails = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'getBetDetails',
     args: numericBetId !== null ? [BigInt(numericBetId)] : undefined,
     query: {
-      // Refresh every 4 seconds for active bets, 10s for others
       refetchInterval: 4000,
-      enabled: numericBetId !== null // Only run if bet ID is valid
+      enabled: numericBetId !== null && !useReactQuery // Only use if React Query disabled
     }
   })
 
-  // Read user's bets with refresh trigger
-  const { 
-    data: userBets,
-    refetch: refetchUserBets 
-  } = useReadContract({
+  const fallbackUserBets = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'getUserBets',
     args: address && numericBetId !== null ? [BigInt(numericBetId), address] : undefined,
     query: {
-      refetchInterval: 5000, // Check user bets every 5 seconds
-      enabled: numericBetId !== null && !!address
+      refetchInterval: 5000,
+      enabled: numericBetId !== null && !!address && !useReactQuery
     }
   })
 
-  // Read user's HYPE balance
-  const { 
-    data: hypeBalance,
-    refetch: refetchBalance 
-  } = useReadContract({
+  const fallbackBalance = useReadContract({
     address: HYPE_TOKEN_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
-      refetchInterval: 8000, // Check balance every 8 seconds
-      enabled: !!address
+      refetchInterval: 8000,
+      enabled: !!address && !useReactQuery
     }
   })
 
-  // Read token decimals (static, no need to refresh)
-  const { data: decimals } = useReadContract({
+  const fallbackAllowance = useReadContract({
     address: HYPE_TOKEN_ADDRESS,
     abi: ERC20_ABI,
-    functionName: 'decimals',
+    functionName: 'allowance',
+    args: address ? [address, BETLEY_ADDRESS] : undefined,
+    query: {
+      refetchInterval: 7000,
+      enabled: !!address && !useReactQuery
+    }
   })
 
-  // Check if user has claimed winnings/refund
-  const { 
-    data: hasClaimed,
-    refetch: refetchHasClaimed 
-  } = useReadContract({
+  const fallbackClaimed = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'hasUserClaimed',
     args: address && numericBetId !== null ? [BigInt(numericBetId), address] : undefined,
     query: {
       refetchInterval: 6000,
-      enabled: numericBetId !== null && !!address
+      enabled: numericBetId !== null && !!address && !useReactQuery
     }
   })
 
-  // Get resolution deadline
+  // === CHOOSE DATA SOURCE ===
+  const betDetails = useReactQuery ? reactQueryBetDetails.data : fallbackBetDetails.data
+  const userBets = useReactQuery ? reactQueryUserBets.data : fallbackUserBets.data  
+  const hypeBalance = useReactQuery ? reactQueryBalance.data : fallbackBalance.data
+  const allowance = useReactQuery ? reactQueryAllowance.data : fallbackAllowance.data
+  const hasClaimed = useReactQuery ? reactQueryClaimed.data : fallbackClaimed.data
+
+  const isBetLoading = useReactQuery ? 
+    reactQueryBetDetails.isLoading : 
+    fallbackBetDetails.isLoading
+
+  const betError = useReactQuery ? 
+    reactQueryBetDetails.error : 
+    fallbackBetDetails.error
+
+  // === STATIC DATA (Same for both approaches) ===
+  const { data: decimals } = useReadContract({
+    address: HYPE_TOKEN_ADDRESS,
+    abi: ERC20_ABI,
+    functionName: 'decimals',
+    query: {
+      staleTime: Infinity, // Decimals never change
+    }
+  })
+
   const { data: resolutionDeadline } = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
@@ -100,33 +130,33 @@ export function useBetData(betId: string) {
     }
   })
 
-  // Read user's allowance for HYPE token
-  const { 
-    data: allowance,
-    refetch: refetchAllowance 
-  } = useReadContract({
-    address: HYPE_TOKEN_ADDRESS,
-    abi: ERC20_ABI,
-    functionName: 'allowance',
-    args: address ? [address, BETLEY_ADDRESS] : undefined,
-    query: {
-      refetchInterval: 7000,
-      enabled: !!address
-    }
-  })
-
-  // Manual refresh all data
+  // === MANUAL REFRESH (Works with both approaches) ===
   const refreshAllData = useCallback(() => {
     if (numericBetId !== null) {
-      refetchBetDetails()
-      refetchUserBets()
-      refetchBalance()
-      refetchHasClaimed()
-      refetchAllowance()
+      if (useReactQuery) {
+        // React Query refetch
+        reactQueryBetDetails.refetch()
+        reactQueryUserBets.refetch()
+        reactQueryBalance.refetch()
+        reactQueryAllowance.refetch()
+        reactQueryClaimed.refetch()
+      } else {
+        // Fallback refetch
+        fallbackBetDetails.refetch()
+        fallbackUserBets.refetch()
+        fallbackBalance.refetch()
+        fallbackAllowance.refetch()
+        fallbackClaimed.refetch()
+      }
     }
-  }, [numericBetId, refetchBetDetails, refetchUserBets, refetchBalance, refetchHasClaimed, refetchAllowance])
+  }, [
+    numericBetId, 
+    useReactQuery,
+    reactQueryBetDetails, reactQueryUserBets, reactQueryBalance, reactQueryAllowance, reactQueryClaimed,
+    fallbackBetDetails, fallbackUserBets, fallbackBalance, fallbackAllowance, fallbackClaimed
+  ])
 
-  // Update time-based states
+  // === TIME-BASED STATE (Same for both) ===
   useEffect(() => {
     const updateTimes = () => {
       const now = Math.floor(Date.now() / 1000)
@@ -157,9 +187,11 @@ export function useBetData(betId: string) {
   }, [refreshTrigger, refreshAllData])
 
   // Custom error for invalid bet ID
-  const validationError = !isValidBetId ? new Error(`Invalid bet ID: "${betId}". Bet IDs must be numbers.`) : null
+  const validationError = !isValidBetId ? 
+    new Error(`Invalid bet ID: "${betId}". Bet IDs must be numbers.`) : null
 
   return {
+    // Data
     betDetails,
     userBets,
     hypeBalance,
@@ -167,14 +199,27 @@ export function useBetData(betId: string) {
     hasClaimed,
     resolutionDeadline,
     allowance,
+    
+    // Loading states
     isBetLoading: numericBetId === null ? false : isBetLoading,
+    
+    // Errors
     betError: validationError || betError,
+    
+    // Time-based computed state
     timeLeft,
     resolutionTimeLeft,
     resolutionDeadlinePassed,
-    refreshAllData, // Expose manual refresh function
+    
+    // Manual refresh functions
+    refreshAllData,
     triggerRefresh,
+    
+    // Validation
     isValidBetId,
-    numericBetId
+    numericBetId,
+    
+    // Debug info
+    usingReactQuery: useReactQuery,
   }
 }

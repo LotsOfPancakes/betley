@@ -1,20 +1,24 @@
-import './globals.css'
+import type { Metadata } from "next";
+import "./globals.css";
 import { Providers } from './providers'
-import { Navigation } from '@/components/Navigation'
+
+export const metadata: Metadata = {
+  title: "Betley - Decentralized Betting",
+  description: "Pari-mutuel betting platform on HyperEVM",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
-      <body>
+      <body className="antialiased">
         <Providers>
-          <Navigation />
           {children}
         </Providers>
       </body>
     </html>
-  )
+  );
 }

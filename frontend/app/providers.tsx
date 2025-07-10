@@ -1,9 +1,12 @@
+// app/providers.tsx
 'use client'
 
 import { WagmiProvider, createConfig, http } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import { hyperevm } from '@/lib/chains'
+import { useState } from 'react'
 
 // Use a placeholder project ID if you don't have one yet
 const walletConnectProjectId = 'a7b53d050fbc92b0e503d20e293d6ff5'
@@ -21,9 +24,30 @@ const config = createConfig(
   })
 )
 
-const queryClient = new QueryClient()
-
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Create optimized QueryClient with useState to ensure stability
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Data stays fresh for 30 seconds before automatic refetch
+        staleTime: 30 * 1000,
+        // Data stays in cache for 5 minutes after component unmounts
+        gcTime: 5 * 60 * 1000,
+        // Retry failed requests 3 times with exponential backoff
+        retry: 3,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        // Don't refetch on window focus by default (can override per query)
+        refetchOnWindowFocus: false,
+        // Refetch on reconnect
+        refetchOnReconnect: true,
+      },
+      mutations: {
+        // Retry mutations once
+        retry: 1,
+      },
+    },
+  }))
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
@@ -56,6 +80,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         >
           {children}
         </ConnectKitProvider>
+        {/* React Query DevTools - only shows in development */}
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </WagmiProvider>
   )
