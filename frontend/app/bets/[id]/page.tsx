@@ -156,8 +156,15 @@ export default function BetPage() {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
-  // Extract bet details (matching the contract's getBetDetails return structure)
-  const [name, options, creator, startTime, endTime, resolved, winningOption, totalAmounts] = betDetails
+  // Debug logging
+console.log('Raw betDetails from contract:', betDetails)
+console.log('betDetails length:', betDetails?.length)
+
+// Contract returns: [name, options, creator, endTime, resolved, winningOption, totalAmounts]
+const [name, options, creator, endTime, resolved, winningOption, totalAmounts] = betDetails || []
+
+console.log('Extracted totalAmounts:', totalAmounts)
+console.log('All extracted values:', { name, options: options?.length, creator, endTime, resolved, winningOption, totalAmounts: totalAmounts?.length })
 
   // Calculate derived state
   const isActive = timeLeft > 0 && !resolved
@@ -221,13 +228,15 @@ export default function BetPage() {
             setSelectedOption={setSelectedOption}
             betAmount={betAmount}
             setBetAmount={setBetAmount}
-            needsApproval={allowance !== undefined && betAmount ? allowance < BigInt(betAmount) : false}
+            needsApproval={allowance !== undefined && betAmount && decimals ? 
+              allowance < BigInt(Math.floor(parseFloat(betAmount || '0') * Math.pow(10, decimals))) : false}
             isApproving={isApproving}
             isPending={isPending}
             handleApprove={handleApprove}
             handlePlaceBet={handlePlaceBet}
             totalAmounts={totalAmounts}
             decimals={decimals}
+            hypeBalance={hypeBalance}
           />
 
           {/* Creator actions */}

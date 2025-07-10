@@ -1,4 +1,4 @@
-// lib/betIdMapping.ts
+// frontend/lib/betIdMapping.ts
 export interface BetMapping {
   randomId: string
   numericId: number
@@ -19,7 +19,6 @@ export class BetIdMapper {
     return result
   }
 
-  
   static getAllMappings(): BetMapping[] {
     if (typeof window === 'undefined') return []
     
@@ -72,30 +71,15 @@ export class BetIdMapper {
     return mapping ? mapping.numericId : null
   }
 
+  // FIXED: Use consistent storage and data structure
   static getRandomId(numericId: number): string | undefined {
-  const mappings = this.getMappings()
-  
-  // Find the mapping where the numeric ID matches
-  for (const [randomId, data] of Object.entries(mappings)) {
-    if (data.numericId === numericId) {
-      return randomId
-    }
+    const mappings = this.getAllMappings() // Use same method as others
+    
+    // Find the mapping where the numeric ID matches
+    const mapping = mappings.find(m => m.numericId === numericId)
+    return mapping ? mapping.randomId : undefined
   }
-  
-  return undefined // Not found
-}
 
-static getMappings(): Record<string, { numericId: number; name: string; creator: string }> {
-  if (typeof window === 'undefined') return {}
-  
-  try {
-    const stored = localStorage.getItem('betIdMappings')
-    return stored ? JSON.parse(stored) : {}
-  } catch (error) {
-    console.error('Error reading bet ID mappings:', error)
-    return {}
-  }
-}
   static getMapping(randomId: string): BetMapping | null {
     const mappings = this.getAllMappings()
     return mappings.find(m => m.randomId === randomId) || null

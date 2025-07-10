@@ -1,4 +1,6 @@
-// components/bet/BetInfo.tsx
+// frontend/app/bets/[id]/components/BetInfo.tsx
+'use client'
+
 import { formatUnits } from 'viem'
 
 interface BetInfoProps {
@@ -48,15 +50,18 @@ export function BetInfo({
       return {
         text: 'Resolved',
         color: 'bg-green-600',
-        description: options && winningOption !== undefined ? `"${options[winningOption]}" won` : 'Completed'
+        description: options && winningOption !== undefined ? 
+          `Winner: ${options[winningOption]}` : 'Bet has been resolved',
+        timeInfo: null
       }
     }
     
     if (resolutionDeadlinePassed) {
       return {
-        text: 'Deadline Passed',
-        color: 'bg-red-600',
-        description: 'Resolution deadline expired'
+        text: 'Refund Available',
+        color: 'bg-orange-600', 
+        description: 'Creator failed to resolve - claim your refund',
+        timeInfo: null
       }
     }
     
@@ -64,145 +69,104 @@ export function BetInfo({
       return {
         text: 'Pending Resolution',
         color: 'bg-yellow-600',
-        description: `Creator has ${formatTimeRemaining(resolutionTimeLeft)} to resolve`
+        description: resolutionTimeLeft > 0 ? 
+          `Creator has ${formatTimeRemaining(resolutionTimeLeft)} to resolve` :
+          'Waiting for creator to resolve',
+        timeInfo: null
       }
     }
     
     return {
       text: 'Active',
       color: 'bg-blue-600',
-      description: `${formatTimeRemaining(timeLeft)} remaining`
+      description: 'Betting is currently open',
+      timeInfo: formatTimeRemaining(timeLeft)
     }
   }
 
   const status = getStatusDisplay()
+  
+  // Calculate total pool
+  const totalPool = totalAmounts && decimals !== undefined ? 
+    totalAmounts.reduce((a, b) => a + b, BigInt(0)) : BigInt(0)
 
   return (
-    <div className="mb-8">
-      {/* Main bet title and status */}
-      <div className="flex justify-between items-start mb-6">
+    <div className="space-y-6">
+      {/* Bet Title and Status */}
+      <div className="flex justify-between items-start">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-white mb-3">{name}</h1>
-          <div className="flex items-center gap-3 mb-2">
-            <p className="text-gray-400">
-              Created by {creator?.slice(0, 6)}...{creator?.slice(-4)}
-            </p>
-          </div>
-        </div>
-        
-        <div className="text-right">
-          <span className={`inline-block ${status.color} text-white px-4 py-2 rounded-full text-sm font-medium`}>
-            {status.text}
-          </span>
-          <p className="text-gray-400 text-sm mt-2">
-            {status.description}
+          <h1 className="text-3xl font-bold text-white mb-2">{name}</h1>
+          <p className="text-gray-400">
+            Created by {creator.slice(0, 6)}...{creator.slice(-4)}
           </p>
+        </div>
+        <div className="flex flex-col items-end space-y-3">
+          {/* Status badge with time info */}
+          <div className="flex flex-col items-end">
+            <div className={`${status.color} text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center space-x-2`}>
+              <span>{status.text}</span>
+              {status.timeInfo && (
+                <>
+                  <span className="text-blue-100">•</span>
+                  <span className="text-blue-100 font-medium">{status.timeInfo}</span>
+                </>
+              )}
+            </div>
+            {status.timeInfo && (
+              <p className="text-xs text-gray-400 mt-1">remaining to bet</p>
+            )}
+          </div>
+          
+          {/* Total pool */}
+          {totalAmounts && decimals !== undefined && totalPool > BigInt(0) && (
+            <div className="text-right">
+              <p className="text-sm text-gray-400">Total Pool</p>
+              <p className="text-xl font-bold text-white">{formatUnits(totalPool, decimals)} HYPE</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Betting Options Display - Card Style */}
-      <div className="bg-gray-700/50 rounded-xl p-6 border border-gray-600">
-        <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-sm">
-            📊
-          </span>
-          Betting Options
-        </h3>
-        
-        <div className="grid gap-4">
-          {options?.map((option, index) => {
-            const poolAmount = totalAmounts && decimals ? formatUnits(totalAmounts[index], decimals) : '0'
-            const isWinner = resolved && winningOption === index
-            
-            return (
-              <div 
-                key={index} 
-                className={`p-4 rounded-lg border transition-all ${
-                  isWinner 
-                    ? 'bg-green-900/30 border-green-500' 
-                    : 'bg-gray-800 border-gray-600'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      isWinner 
-                        ? 'bg-green-600 text-white' 
-                        : 'bg-gray-600 text-gray-300'
-                    }`}>
-                      {index + 1}
-                    </div>
-                    <div>
-                      <p className="text-white font-medium text-lg">{option}</p>
-                      <p className="text-gray-400 text-sm">
-                        Pool: {poolAmount} HYPE
+      {/* Status Description - Only show if no timeInfo or for non-active states */}
+      {(!status.timeInfo || !isActive) && (
+        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+          <p className="text-gray-300">{status.description}</p>
+        </div>
+      )}
+
+      {/* Pool Breakdown - Only show if there are bets and we have the data */}
+      {totalAmounts && decimals !== undefined && options && totalPool > BigInt(0) && (
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-3">📊 Current Pools</h3>
+          <div className="grid gap-3">
+            {options.map((option, index) => {
+              const amount = totalAmounts[index] || BigInt(0)
+              const percentage = totalPool > BigInt(0) ? 
+                Number((amount * BigInt(100)) / totalPool) : 0
+              
+              return (
+                <div key={index} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white font-medium">{option}</span>
+                    <div className="text-right">
+                      <p className="text-white font-semibold">
+                        {formatUnits(amount, decimals)} HYPE
                       </p>
+                      <p className="text-sm text-gray-400">{percentage.toFixed(1)}%</p>
                     </div>
                   </div>
                   
-                  {isWinner && (
-                    <div className="flex items-center gap-2">
-                      <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                        👑 WINNER
-                      </span>
-                    </div>
-                  )}
+                  {/* Progress bar */}
+                  <div className="mt-2 bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-blue-500 h-2 rounded-full transition-all"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Total Pool Summary */}
-        {totalAmounts && decimals && (
-          <div className="mt-4 pt-4 border-t border-gray-600">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400 font-medium">Total Pool:</span>
-              <span className="text-white font-bold text-lg">
-                {formatUnits(
-                  totalAmounts.reduce((sum, amount) => sum + amount, BigInt(0)), 
-                  decimals
-                )} HYPE
-              </span>
-            </div>
+              )
+            })}
           </div>
-        )}
-      </div>
-
-      {/* Status alerts */}
-      {resolved && winningOption !== undefined && options && (
-        <div className="mt-4 p-4 bg-green-900/20 border border-green-600 rounded-lg">
-          <div className="flex items-center gap-2">
-            <span className="text-green-400 text-lg">🎉</span>
-            <span className="text-green-300 font-semibold">
-              Bet resolved! &quot;{options[winningOption]}&quot; was the winning outcome.
-            </span>
-          </div>
-        </div>
-      )}
-
-      {resolutionDeadlinePassed && !resolved && (
-        <div className="mt-4 p-4 bg-orange-900/20 border border-orange-600 rounded-lg">
-          <div className="flex items-center gap-2">
-            <span className="text-orange-400 text-lg">⏰</span>
-            <span className="text-orange-300 font-semibold">
-              Resolution deadline has passed. Participants can claim refunds.
-            </span>
-          </div>
-        </div>
-      )}
-
-      {!resolved && !resolutionDeadlinePassed && !isActive && (
-        <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
-          <div className="flex items-center gap-2">
-            <span className="text-yellow-400 text-lg">⏳</span>
-            <span className="text-yellow-300 font-semibold">
-              Betting has ended. Waiting for the creator to resolve the outcome.
-            </span>
-          </div>
-          <p className="text-yellow-200 text-sm mt-1">
-            Time remaining for resolution: {formatTimeRemaining(resolutionTimeLeft)}
-          </p>
         </div>
       )}
     </div>

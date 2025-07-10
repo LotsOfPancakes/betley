@@ -22,7 +22,7 @@ export default function SubmitSection({
     if (!isConnected) return 'Connect Wallet First'
     if (state.isCreating) return 'Confirming...'
     if (state.isConfirming) return 'Creating Private Bet...'
-    if (state.isSuccess) return 'Success! Redirecting...'
+    if (state.isSuccess) return '✅ Bet Created Successfully! Redirecting...'
     return 'Create Private Bet'
   }
 
@@ -47,7 +47,7 @@ export default function SubmitSection({
         </div>
       )}
 
-      {/* Status Messages */}
+      {/* Status Messages - Remove success message since it's now in button */}
       {state.isCreating && (
         <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
           <p className="text-yellow-300 text-sm">⏳ Waiting for wallet confirmation...</p>
@@ -57,14 +57,6 @@ export default function SubmitSection({
       {state.isConfirming && (
         <div className="p-4 bg-blue-900/20 border border-blue-600 rounded-lg">
           <p className="text-blue-300 text-sm">⏳ Creating bet... Please wait.</p>
-        </div>
-      )}
-
-      {state.isSuccess && (
-        <div className="p-4 bg-green-900/20 border border-green-600 rounded-lg">
-          <p className="text-green-300 text-sm">
-            ✅ Bet created successfully! Creating random ID and redirecting...
-          </p>
         </div>
       )}
 
