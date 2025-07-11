@@ -42,16 +42,8 @@ export function BettingInterface({
   hypeBalance,
   justPlacedBet
 }: BettingInterfaceProps) {
-  // Temporary debug to see what we're getting
-  console.log('BettingInterface Debug:', {
-    isActive,
-    hasAddress: !!address,
-    optionsLength: options?.length,
-    userBetsLength: userBets?.length, 
-    totalAmountsLength: totalAmounts?.length,
-    decimals,
-    totalAmountsActual: totalAmounts
-  })
+  // ✅ REMOVED: console.log debug statement
+  // Professional production code doesn't include debug logging
 
   // Only hide if definitely not active or no address
   if (!isActive || !address) {
@@ -124,12 +116,16 @@ export function BettingInterface({
             const isDisabled = hasExistingBet && userBetOption !== index
             const currentPool = formatUnits(totalAmounts[index], decimals)
             const estimates = isSelected && betAmount ? calculateEstimatedWinnings(index, betAmount) : null
-            
+
             return (
               <div
                 key={index}
-                onClick={() => !isDisabled && setSelectedOption(index)}
-                className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                onClick={() => {
+                  if (!isDisabled) {
+                    setSelectedOption(isSelected ? null : index)
+                  }
+                }}
+                className={`relative cursor-pointer p-6 rounded-xl border-2 transition-all duration-200 ${
                   isDisabled
                     ? 'bg-gray-700/50 border-gray-600 cursor-not-allowed opacity-60'
                     : isSelected
@@ -203,67 +199,44 @@ export function BettingInterface({
                   type="text"
                   value={betAmount}
                   onChange={(e) => setBetAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                  placeholder="0"
-                  className="w-full text-4xl font-bold bg-transparent text-white placeholder-gray-500 focus:outline-none border-none"
+                  placeholder="0.0"
+                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white text-lg pr-20 focus:border-blue-500 focus:outline-none transition-colors"
                 />
-                <div className="text-xl text-gray-400 mt-1">HYPE</div>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <span className="text-gray-400 font-medium">HYPE</span>
+                </div>
               </div>
               
-              {/* Quick percentage buttons */}
-              <div className="flex gap-2">
-                {[
-                  { label: '25%', percentage: 0.25 },
-                  { label: '50%', percentage: 0.5 },
-                  { label: '100%', percentage: 1.0 }
-                ].map((preset) => {
-                  // Calculate amount based on user's balance
-                  const amount = hypeBalance && decimals 
-                    ? (parseFloat(formatUnits(hypeBalance, decimals)) * preset.percentage).toFixed(2)
-                    : '0'
-                  
-                  return (
-                    <button
-                      key={preset.label}
-                      onClick={() => setBetAmount(amount)}
-                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        betAmount === amount
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  )
-                })}
-              </div>
+              {/* Balance display */}
+              {hypeBalance !== undefined && (
+                <div className="text-sm text-gray-400">
+                  Balance: {formatUnits(hypeBalance, decimals)} HYPE
+                </div>
+              )}
             </div>
 
             {/* Action Button */}
-            <div className="space-y-3 mt-6">
+            <div className="pt-2">
               {needsApproval ? (
                 <button
                   onClick={handleApprove}
-                  disabled={isApproving || isPending || !betAmount || parseFloat(betAmount) <= 0}
-                  className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors disabled:cursor-not-allowed ${
-                    isApproving || isPending 
-                      ? 'bg-gray-600 text-gray-300' 
-                      : 'bg-yellow-600 text-white hover:bg-yellow-700'
-                  }`}
+                  disabled={!betAmount || parseFloat(betAmount) <= 0 || isApproving}
+                  className="w-full bg-yellow-600 text-white py-3 px-6 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-700 transition-colors text-lg"
                 >
-                  {isApproving || isPending ? (
+                  {isApproving ? (
                     <span className="flex items-center justify-center">
-                      <div className="animate-spin w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                       Approving...
                     </span>
                   ) : (
-                    '🔓 Approve HYPE'
+                    `🔑 Approve ${betAmount ? `${betAmount} ` : ''}HYPE`
                   )}
                 </button>
               ) : (
                 <button
                   onClick={handlePlaceBet}
-                  disabled={isPending || !betAmount || parseFloat(betAmount) <= 0}
-                  className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                  disabled={!betAmount || parseFloat(betAmount) <= 0 || isPending}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors text-lg"
                 >
                   {justPlacedBet ? (
                     <span className="flex items-center justify-center">

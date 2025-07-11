@@ -107,7 +107,8 @@ export default function BetPage() {
   useEffect(() => {
     if (isValidBetId && betError && retryCount < 10) {
       const timer = setTimeout(() => {
-        console.log(`Retrying to load bet data... attempt ${retryCount + 1}`)
+        // ✅ REMOVED: console.log retry debug statement
+        // Silent retry for better UX - no need to log this in production
         setRetryCount(prev => prev + 1)
         refreshAllData()
       }, 2000) // Retry every 2 seconds
@@ -146,6 +147,7 @@ export default function BetPage() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-xl mb-4 text-white">Loading bet...</p>
         </div>
       </div>
@@ -157,15 +159,11 @@ export default function BetPage() {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
-  // Debug logging
-console.log('Raw betDetails from contract:', betDetails)
-console.log('betDetails length:', betDetails?.length)
+  // ✅ REMOVED: All debug console.log statements
+  // Production code doesn't need to log contract data to console
 
-// Contract returns: [name, options, creator, endTime, resolved, winningOption, totalAmounts]
-const [name, options, creator, endTime, resolved, winningOption, totalAmounts] = betDetails || []
-
-console.log('Extracted totalAmounts:', totalAmounts)
-console.log('All extracted values:', { name, options: options?.length, creator, endTime, resolved, winningOption, totalAmounts: totalAmounts?.length })
+  // Contract returns: [name, options, creator, endTime, resolved, winningOption, totalAmounts]
+  const [name, options, creator, endTime, resolved, winningOption, totalAmounts] = betDetails || []
 
   // Calculate derived state
   const isActive = timeLeft > 0 && !resolved
@@ -229,17 +227,20 @@ console.log('All extracted values:', { name, options: options?.length, creator, 
             setSelectedOption={setSelectedOption}
             betAmount={betAmount}
             setBetAmount={setBetAmount}
-            justPlacedBet={justPlacedBet} // Add this line
+            justPlacedBet={justPlacedBet}
             needsApproval={(() => {
             // If we're currently approving, always show approval state
             if (isApproving) return true
             
-            // If we don't have the required data, default to false
-            if (!allowance || !betAmount || !decimals) return false
+            // If we don't have the required data, default to requiring approval
+            if (!betAmount || !allowance || !decimals) return true
             
-            // Calculate if approval is needed based on current allowance
-            const requiredAmount = BigInt(Math.floor(parseFloat(betAmount || '0') * Math.pow(10, decimals)))
-            return allowance < requiredAmount
+            try {
+              const requiredAmount = parseUnits(betAmount, decimals)
+              return allowance < requiredAmount
+            } catch {
+              return true // Invalid bet amount format
+            }
           })()}
             isApproving={isApproving}
             isPending={isPending}
@@ -250,34 +251,35 @@ console.log('All extracted values:', { name, options: options?.length, creator, 
             hypeBalance={hypeBalance}
           />
 
-          {/* Creator actions */}
-          <CreatorActions
-            address={address}
-            creator={creator}
-            isActive={isActive}
-            resolved={resolved}
-            resolutionTimeLeft={resolutionTimeLeft}
-            resolutionDeadlinePassed={resolutionDeadlinePassed}
-            options={options}
-            showResolveModal={showResolveModal}
-            setShowResolveModal={setShowResolveModal}
-            handleResolveBet={handleResolveBet}
-            isPending={isPending}
-          />
+          {/* Creator Actions */}
+          {address && creator && address.toLowerCase() === creator.toLowerCase() && (
+            <CreatorActions
+              resolved={resolved}
+              resolutionDeadlinePassed={resolutionDeadlinePassed}
+              resolutionTimeLeft={resolutionTimeLeft}
+              options={options}
+              onResolve={(optionIndex: number) => {
+                handleResolveBet(optionIndex)
+                setShowResolveModal(false)
+              }}
+              showResolveModal={showResolveModal}
+              setShowResolveModal={setShowResolveModal}
+            />
+          )}
 
-          {/* User actions */}
-          <UserActions
-            address={address}
-            creator={creator}
-            resolved={resolved}
-            resolutionDeadlinePassed={resolutionDeadlinePassed}
-            userBets={userBets}
-            winningOption={winningOption}
-            hasClaimed={hasClaimed}
-            handleClaimWinnings={handleClaimWinnings}
-            isPending={isPending}
-            decimals={decimals}
-          />
+          {/* User Actions (for non-creators) */}
+          {address && creator && address.toLowerCase() !== creator.toLowerCase() && (
+            <UserActions
+              resolved={resolved}
+              winningOption={winningOption}
+              userBets={userBets}
+              hasClaimed={hasClaimed}
+              resolutionDeadlinePassed={resolutionDeadlinePassed}
+              decimals={decimals}
+              onClaimWinnings={handleClaimWinnings}
+              options={options}
+            />
+          )}
         </div>
       </div>
     </div>

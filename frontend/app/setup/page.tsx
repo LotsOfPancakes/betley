@@ -3,6 +3,7 @@
 
 import { useAccount } from 'wagmi'
 import { ConnectKitButton } from 'connectkit'
+import { useNotification } from '@/lib/hooks/useNotification'
 
 // Import our extracted components and hooks
 import BetNameInput from './components/BetNameInput'
@@ -16,6 +17,7 @@ import { useBetCreation } from './hooks/useBetCreation'
 
 export default function SetupPage() {
   const { address } = useAccount()
+  const { showWarning } = useNotification()
   
   // Use our custom hooks
   const {
@@ -40,7 +42,7 @@ export default function SetupPage() {
 
   const handleSubmit = () => {
     if (!isValid) {
-      console.log('Form is not valid')
+      showWarning('Please fix the form errors before submitting', 'Form Validation')
       return
     }
 
@@ -68,43 +70,40 @@ export default function SetupPage() {
 
         <div className="bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
           {!address ? (
-            <div className="text-center py-8">
-              <p className="text-gray-300 mb-4">Connect your wallet to create a bet</p>
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🔗</div>
+              <h2 className="text-2xl font-bold text-white mb-4">Connect Your Wallet</h2>
+              <p className="text-gray-300 mb-6">
+                Please connect your wallet to create a new bet
+              </p>
               <ConnectKitButton />
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-8">
+
               {/* Bet Name Input */}
               <div>
                 <BetNameInput 
                   value={formData.name} 
-                  onChange={updateName} 
+                  onChange={updateName}
+                  isValid={!getFieldError('name') && formData.name.length >= 5}
                 />
-                {getFieldError('name') && (
-                  <p className="text-red-400 text-sm mt-1">{getFieldError('name')}</p>
-                )}
               </div>
 
               {/* Options Manager */}
               <div>
                 <OptionsManager 
                   options={formData.options} 
-                  onChange={updateOptions} 
+                  onChange={updateOptions}
                 />
-                {getFieldError('options') && (
-                  <p className="text-red-400 text-sm mt-1">{getFieldError('options')}</p>
-                )}
               </div>
 
               {/* Duration Selector */}
               <div>
                 <DurationSelector 
                   duration={formData.duration} 
-                  onChange={updateDuration} 
+                  onChange={updateDuration}
                 />
-                {getFieldError('duration') && (
-                  <p className="text-red-400 text-sm mt-1">{getFieldError('duration')}</p>
-                )}
               </div>
 
               {/* Submit Section */}

@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
 import { BetIdMapper } from '@/lib/betIdMapping'
 import { BetCreationState } from '../types/setup.types'
+import { useNotification } from '@/lib/hooks/useNotification'
 
 export function useBetCreation() {
   const router = useRouter()
   const { address } = useAccount()
+  const { showSuccess, showError } = useNotification()
   const [lastBetName, setLastBetName] = useState<string | null>(null)
   const [state, setState] = useState<BetCreationState>({
     isCreating: false,
@@ -45,20 +47,24 @@ export function useBetCreation() {
       // Transaction is now ACTUALLY mined
       const newNumericBetId = Number(betCounter)
       
-      console.log(`Bet created and mined! Numeric ID: ${newNumericBetId}`)
+      // ✅ REMOVED: console.log debug statements
+      // Production code doesn't need to log bet creation details
       
       // Create random ID mapping
       const randomId = BetIdMapper.addMapping(newNumericBetId, lastBetName || 'Untitled Bet', address)
       
-      console.log(`Random ID generated: ${randomId}`)
-      console.log(`Mapping saved: ${randomId} -> ${newNumericBetId}`)
+      // ✅ REMOVED: console.log debug statements about mapping
+      // Silent success is better UX - user gets notification instead
+      
+      // Show success notification
+      showSuccess(`Your bet "${lastBetName}" has been created successfully!`)
       
       // Now it's safe to redirect
       setTimeout(() => {
         router.push(`/bets/${randomId}`)
       }, 1000) // Small delay to ensure everything is processed
     }
-  }, [isSuccess, receipt, betCounter, address, router, lastBetName])
+  }, [isSuccess, receipt, betCounter, address, router, lastBetName, showSuccess])
 
   const createBet = async (
     name: string, 
@@ -83,7 +89,8 @@ export function useBetCreation() {
       // Refresh bet counter to get accurate next ID
       await refetchBetCounter()
       
-      console.log(`Creating bet: "${name}" with duration: ${durationInSeconds} seconds`)
+      // ✅ REMOVED: console.log debug statement about bet creation
+      // Professional deployment doesn't need debug logging
       
       await writeContract({
         address: BETLEY_ADDRESS,
@@ -94,10 +101,15 @@ export function useBetCreation() {
 
       // NOTE: Redirect now happens in useEffect when transaction is actually mined
     } catch (err) {
-      console.error('Error creating bet:', err)
+      // ✅ REPLACED: console.error with professional notification
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create bet'
+      showError(
+        'Please check your wallet connection and try again. Make sure you have sufficient funds for gas fees.',
+        'Failed to Create Bet'
+      )
       setState(prev => ({ 
         ...prev, 
-        error: err instanceof Error ? err.message : 'Failed to create bet' 
+        error: errorMessage
       }))
     }
   }
