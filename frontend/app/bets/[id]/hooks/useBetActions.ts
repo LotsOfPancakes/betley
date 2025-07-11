@@ -1,5 +1,5 @@
-// frontend/app/bets/[id]/hooks/useBetActions.ts (UPDATED)
-import { useState } from 'react'
+// frontend/app/bets/[id]/hooks/useBetActions.ts
+import { useState, useEffect } from 'react'
 import { 
   usePlaceBetMutation,
   useApproveMutation,
@@ -7,8 +7,10 @@ import {
 } from '@/lib/queries/betQueries'
 
 export function useBetActions(betId: string, onRefresh?: () => void) {
+  const [justPlacedBet, setJustPlacedBet] = useState(false)
   const [betAmount, setBetAmount] = useState('')
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
+  const [isApprovalPending, setIsApprovalPending] = useState(false) // Track approval state locally
   const numericBetId = parseInt(betId)
 
   // === REACT QUERY MUTATIONS ===
@@ -21,33 +23,36 @@ export function useBetActions(betId: string, onRefresh?: () => void) {
     if (!betAmount) return
     
     try {
+      setIsApprovalPending(true) // Start local pending state
       await approveMutation.mutateAsync({ amount: betAmount })
-      // React Query automatically invalidates allowance queries
+      // Keep isApprovalPending true until allowance updates
     } catch (error) {
       console.error('Approval error:', error)
       alert('Failed to approve tokens')
+      setIsApprovalPending(false) // Reset on error
     }
   }
 
   const handlePlaceBet = async () => {
-    if (!betAmount || selectedOption === null) return
+  if (!betAmount || selectedOption === null) return
 
-    try {
-      await placeBetMutation.mutateAsync({ 
-        option: selectedOption, 
-        amount: betAmount 
-      })
-      
-      // Clear form on success
-      setBetAmount('')
-      setSelectedOption(null)
-      
-      // React Query automatically refetches related data
-    } catch (error) {
-      console.error('Betting error:', error)
-      alert('Failed to place bet')
-    }
+  try {
+    await placeBetMutation.mutateAsync({ 
+      option: selectedOption, 
+      amount: betAmount 
+    })
+    
+    // Clear only the bet amount, keep the selected option
+    setBetAmount('')
+    
+    // DON'T set success state here - it will be handled by useEffect
+    
+    // React Query automatically refetches related data
+  } catch (error) {
+    console.error('Betting error:', error)
+    alert('Failed to place bet')
   }
+}
 
   const handleClaimWinnings = async () => {
     try {
@@ -71,16 +76,42 @@ export function useBetActions(betId: string, onRefresh?: () => void) {
     }
   }
 
+  // Reset approval pending when mutation succeeds AND wait for allowance to update
+  useEffect(() => {
+    if (approveMutation.isSuccess && !approveMutation.isPending) {
+      // Give allowance query time to update (8 seconds should be enough for blockchain + refetch)
+      const timer = setTimeout(() => {
+        setIsApprovalPending(false)
+      }, 8000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [approveMutation.isSuccess, approveMutation.isPending])
+
+  // Show success message when bet is successfully confirmed
+useEffect(() => {
+  if (placeBetMutation.isSuccess && !placeBetMutation.isPending) {
+    setJustPlacedBet(true)
+    const timer = setTimeout(() => {
+      setJustPlacedBet(false)
+    }, 3000)
+    
+    return () => clearTimeout(timer)
+  }
+}, [placeBetMutation.isSuccess, placeBetMutation.isPending])
   return {
+
     // Form state
     betAmount,
     setBetAmount,
     selectedOption,
     setSelectedOption,
     
-    // Loading states (automatically managed by React Query)
+    // Loading states (combine React Query + local state for proper approval flow)
     isPending: placeBetMutation.isPending,
-    isApproving: approveMutation.isPending,
+    isApproving: approveMutation.isPending || isApprovalPending, // Combine both states
+    justPlacedBet, 
+
     
     // Action handlers
     handleApprove,

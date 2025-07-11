@@ -95,6 +95,7 @@ export default function BetPage() {
     setSelectedOption,
     isPending,
     isApproving,
+    justPlacedBet,
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
@@ -228,8 +229,18 @@ console.log('All extracted values:', { name, options: options?.length, creator, 
             setSelectedOption={setSelectedOption}
             betAmount={betAmount}
             setBetAmount={setBetAmount}
-            needsApproval={allowance !== undefined && betAmount && decimals ? 
-              allowance < BigInt(Math.floor(parseFloat(betAmount || '0') * Math.pow(10, decimals))) : false}
+            justPlacedBet={justPlacedBet} // Add this line
+            needsApproval={(() => {
+            // If we're currently approving, always show approval state
+            if (isApproving) return true
+            
+            // If we don't have the required data, default to false
+            if (!allowance || !betAmount || !decimals) return false
+            
+            // Calculate if approval is needed based on current allowance
+            const requiredAmount = BigInt(Math.floor(parseFloat(betAmount || '0') * Math.pow(10, decimals)))
+            return allowance < requiredAmount
+          })()}
             isApproving={isApproving}
             isPending={isPending}
             handleApprove={handleApprove}

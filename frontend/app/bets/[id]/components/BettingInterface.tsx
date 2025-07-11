@@ -20,6 +20,7 @@ interface BettingInterfaceProps {
   totalAmounts?: readonly bigint[]
   decimals?: number
   hypeBalance?: bigint
+  justPlacedBet?: boolean 
 }
 
 export function BettingInterface({
@@ -38,7 +39,8 @@ export function BettingInterface({
   handlePlaceBet,
   totalAmounts,
   decimals,
-  hypeBalance
+  hypeBalance,
+  justPlacedBet
 }: BettingInterfaceProps) {
   // Temporary debug to see what we're getting
   console.log('BettingInterface Debug:', {
@@ -242,11 +244,15 @@ export function BettingInterface({
                 <button
                   onClick={handleApprove}
                   disabled={isApproving || isPending || !betAmount || parseFloat(betAmount) <= 0}
-                  className="w-full bg-yellow-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                  className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors disabled:cursor-not-allowed ${
+                    isApproving || isPending 
+                      ? 'bg-gray-600 text-gray-300' 
+                      : 'bg-yellow-600 text-white hover:bg-yellow-700'
+                  }`}
                 >
                   {isApproving || isPending ? (
                     <span className="flex items-center justify-center">
-                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      <div className="animate-spin w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
                       Approving...
                     </span>
                   ) : (
@@ -259,7 +265,11 @@ export function BettingInterface({
                   disabled={isPending || !betAmount || parseFloat(betAmount) <= 0}
                   className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isPending ? (
+                  {justPlacedBet ? (
+                    <span className="flex items-center justify-center">
+                      ✅ Bet Placed Successfully!
+                    </span>
+                  ) : isPending ? (
                     <span className="flex items-center justify-center">
                       <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                       Placing Bet...
