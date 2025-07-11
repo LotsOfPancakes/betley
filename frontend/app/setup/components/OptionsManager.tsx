@@ -63,7 +63,7 @@ export default function OptionsManager({
     return 'border-gray-600 focus:border-blue-500'
   }
 
-  // Get status message
+  // Get status message - UPDATED: Removed "Great! Your options look good"
   const getStatusMessage = () => {
     if (filledOptions.length < minOptions) {
       return 'Enter at least two bet options'
@@ -74,9 +74,7 @@ export default function OptionsManager({
     if (tooLongOptions.length > 0) {
       return 'Some options are too long - keep them under 50 characters'
     }
-    if (hasEnoughOptions && !hasDuplicates) {
-      return 'Great! Your options look good'
-    }
+    // REMOVED: The "Great! Your options look good" message
     return ''
   }
 
@@ -92,14 +90,7 @@ export default function OptionsManager({
         <label className="block text-sm font-medium text-gray-300">
           Betting Options ({minOptions}-{maxOptions} options)
         </label>
-        {hasEnoughOptions && !hasDuplicates && tooLongOptions.length === 0 && (
-          <div className="flex items-center text-green-400 text-sm">
-            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            Options ready
-          </div>
-        )}
+        {/* REMOVED: "Options ready" indicator that was shown in top-right */}
       </div>
 
       <div className="space-y-3">
@@ -150,9 +141,6 @@ export default function OptionsManager({
               </div>
               
               {/* Individual option feedback */}
-              {duplicateStatus === 'duplicate' && (
-                <p className="text-red-400 text-xs mt-1">This option is duplicated</p>
-              )}
               {option.length > maxLength && (
                 <p className="text-yellow-400 text-xs mt-1">Too long ({option.length}/{maxLength})</p>
               )}
@@ -160,6 +148,15 @@ export default function OptionsManager({
           )
         })}
       </div>
+
+      {/* Status message - UPDATED: Only shows when there are validation issues */}
+      {getStatusMessage() && (
+        <div className="mt-3">
+          <p className={`text-sm ${getStatusColor()}`}>
+            💡 {getStatusMessage()}
+          </p>
+        </div>
+      )}
 
       {/* Add option button */}
       {options.length < maxOptions && (
@@ -173,15 +170,6 @@ export default function OptionsManager({
           </svg>
           Add Option ({options.length}/{maxOptions})
         </button>
-      )}
-
-      {/* Status message */}
-      {getStatusMessage() && (
-        <div className="mt-2">
-          <p className={`text-sm ${getStatusColor()}`}>
-            {hasEnoughOptions && !hasDuplicates && tooLongOptions.length === 0 ? '✅' : '💡'} {getStatusMessage()}
-          </p>
-        </div>
       )}
 
       {/* Error message */}

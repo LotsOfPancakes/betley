@@ -7,7 +7,8 @@ import {
 } from '@/lib/queries/betQueries'
 import { useNotification } from '@/lib/hooks/useNotification'
 
-export function useBetActions(betId: string, onRefresh?: () => void) {
+// FIXED: Removed unused 'onRefresh' parameter
+export function useBetActions(betId: string) {
   const [justPlacedBet, setJustPlacedBet] = useState(false)
   const [betAmount, setBetAmount] = useState('')
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
@@ -30,8 +31,8 @@ export function useBetActions(betId: string, onRefresh?: () => void) {
       setIsApprovalPending(true) // Start local pending state
       await approveMutation.mutateAsync({ amount: betAmount })
       // Keep isApprovalPending true until allowance updates
-    } catch (error) {
-      // ✅ REPLACED: console.error + alert with professional notification
+    } catch {
+      // FIXED: Removed unused 'error' parameter - no longer needed since we're using notifications
       showError(
         'Please check your wallet and try again. Make sure you have sufficient funds to bet & pay transaction fees.',
         'Failed to Approve Tokens'
@@ -55,8 +56,8 @@ export function useBetActions(betId: string, onRefresh?: () => void) {
       // DON'T set success state here - it will be handled by useEffect
       
       // React Query automatically refetches related data
-    } catch (error) {
-      // ✅ REPLACED: console.error + alert with professional notification
+    } catch {
+      // FIXED: Removed unused 'error' parameter - no longer needed since we're using notifications
       showError(
         'Your tokens may not be approved or you might have insufficient balance. Please try again.',
         'Failed to Place Bet'
@@ -69,8 +70,8 @@ export function useBetActions(betId: string, onRefresh?: () => void) {
       await claimWinningsMutation.mutateAsync()
       // React Query automatically refetches user balance and claim status
       showSuccess('Your winnings have been transferred to your wallet!')
-    } catch (error) {
-      // ✅ REPLACED: console.error + alert with professional notification
+    } catch {
+      // FIXED: Removed unused 'error' parameter - no longer needed since we're using notifications
       showError(
         'You may have already claimed your winnings or the bet is not yet resolved.',
         'Failed to Claim Winnings'
@@ -78,14 +79,14 @@ export function useBetActions(betId: string, onRefresh?: () => void) {
     }
   }
 
-  const handleResolveBet = async (winningOptionIndex: number) => {
+  // FIXED: Removed unused 'winningOptionIndex' parameter since function is not implemented yet
+  const handleResolveBet = async () => {
     try {
       // You can create a separate mutation for this if needed
       // For now, keeping the existing pattern
-      // ✅ REMOVED: console.log - no more debug statements in production code
-      // Implement resolution mutation here
-    } catch (error) {
-      // ✅ REPLACED: console.error + alert with professional notification
+      // Implementation would go here when resolution feature is added
+    } catch {
+      // FIXED: Removed unused 'error' parameter - no longer needed since we're using notifications
       showError(
         'Only the bet creator can resolve this bet. Make sure the betting period has ended.',
         'Failed to Resolve Bet'
