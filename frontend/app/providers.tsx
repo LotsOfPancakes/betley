@@ -1,4 +1,4 @@
-// frontend/app/providers.tsx - Fixed TypeScript errors
+// frontend/app/providers.tsx - Final fix for WalletConnect initialization
 'use client'
 
 import { WagmiProvider, createConfig, http } from 'wagmi'
@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import { hyperevm } from '@/lib/chains'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
 import { 
   networkConfig, 
@@ -16,12 +16,12 @@ import {
   devConfig 
 } from '@/lib/config'
 
-// ✅ FIXED: Create config outside component to prevent recreation
-let wagmiConfig: ReturnType<typeof createConfig> | null = null
-
-function getWagmiConfig() {
-  if (!wagmiConfig) {
-    wagmiConfig = createConfig(
+export function Providers({ children }: { children: React.ReactNode }) {
+  // ✅ FINAL FIX: Use useRef to ensure config is only created once per component instance
+  const configRef = useRef<ReturnType<typeof createConfig> | null>(null)
+  
+  if (!configRef.current) {
+    configRef.current = createConfig(
       getDefaultConfig({
         chains: [hyperevm],
         transports: {
@@ -34,12 +34,6 @@ function getWagmiConfig() {
       })
     )
   }
-  return wagmiConfig
-}
-
-export function Providers({ children }: { children: React.ReactNode }) {
-  // ✅ FIXED: Use singleton config to prevent double initialization
-  const config = getWagmiConfig()
 
   // Create optimized QueryClient with configurable timeouts
   const [queryClient] = useState(() => new QueryClient({
@@ -65,7 +59,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }))
 
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={configRef.current}>
       <QueryClientProvider client={queryClient}>
         <NotificationProvider>
           <ConnectKitProvider 
@@ -93,7 +87,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
             options={{
               initialChainId: networkConfig.chainId,
               enforceSupportedChains: false,
-              // ✅ REMOVED: walletConnectEnabled (not a valid ConnectKit option)
             }}
           >
             {children}

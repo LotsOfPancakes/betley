@@ -98,11 +98,9 @@ export function useTokenDecimalsQuery() {
 }
 
 // ===== MUTATIONS =====
-
 // Place Bet Mutation
 export function usePlaceBetMutation(betId: number) {
   const queryClient = useQueryClient()
-  const { showError } = useNotification()
   const { writeContract } = useWriteContract()
 
   return useMutation({
@@ -118,26 +116,23 @@ export function usePlaceBetMutation(betId: number) {
       })
     },
     onSuccess: () => {
-      // Invalidate related queries to trigger refetch
+      // Only invalidate queries - NO success toast here
+      // Success will be handled in useBetActions after transaction receipt
       queryClient.invalidateQueries({ queryKey: ['bet', betId] })
       queryClient.invalidateQueries({ queryKey: ['userBets', betId] })
       queryClient.invalidateQueries({ queryKey: ['balance'] })
-      
     },
     onError: (error) => {
       console.error('Place bet error:', error)
-      showError(
-        'Failed to place bet. Please check your wallet and try again.',
-        'Transaction Failed'
-      )
+      // Don't show error here either - let useBetActions handle it
+      // This prevents double error messages
     }
   })
 }
 
-// Approve Token Mutation
+// Approve Token Mutation - REMOVE onSuccess callback
 export function useApproveMutation() {
   const queryClient = useQueryClient()
-  const { showError } = useNotification()
   const { writeContract } = useWriteContract()
 
   return useMutation({
@@ -152,21 +147,19 @@ export function useApproveMutation() {
         args: [BETLEY_ADDRESS as AddressType, amountWei],
       })
     },
-onSuccess: () => {
-  queryClient.invalidateQueries({ queryKey: ['allowance'] })
-  // ✅ No immediate success toast - let the user see wallet confirmation
-},
+    onSuccess: () => {
+      // Only invalidate queries - NO success toast here
+      // Success will be handled in useBetActions after transaction receipt
+      queryClient.invalidateQueries({ queryKey: ['allowance'] })
+    },
     onError: (error) => {
       console.error('Approval error:', error)
-      showError(
-        'Failed to approve tokens. Please try again.',
-        'Approval Failed'
-      )
+      // Don't show error here either - let useBetActions handle it
     }
   })
 }
 
-// Claim Winnings Mutation
+// Claim Winnings Mutation - Keep success here as it's immediate
 export function useClaimWinningsMutation(betId: number) {
   const queryClient = useQueryClient()
   const { showSuccess, showError } = useNotification()
@@ -182,10 +175,9 @@ export function useClaimWinningsMutation(betId: number) {
       })
     },
     onSuccess: () => {
-      // Invalidate related queries
+      // Keep this success toast as claiming is usually immediate
       queryClient.invalidateQueries({ queryKey: ['balance'] })
       queryClient.invalidateQueries({ queryKey: ['claimed', betId] })
-      
       showSuccess('Your winnings have been claimed successfully!')
     },
     onError: (error) => {
@@ -198,7 +190,7 @@ export function useClaimWinningsMutation(betId: number) {
   })
 }
 
-// Resolve Bet Mutation (for creators)
+// Resolve Bet Mutation - Keep success here as resolution is immediate
 export function useResolveBetMutation(betId: number) {
   const queryClient = useQueryClient()
   const { showSuccess, showError } = useNotification()
@@ -214,9 +206,8 @@ export function useResolveBetMutation(betId: number) {
       })
     },
     onSuccess: () => {
-      // Invalidate bet details to show resolved state
+      // Keep this success toast as resolution is usually immediate
       queryClient.invalidateQueries({ queryKey: ['bet', betId] })
-      
       showSuccess('Bet has been resolved successfully!')
     },
     onError: (error) => {
