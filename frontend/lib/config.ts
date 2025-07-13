@@ -1,87 +1,34 @@
-// frontend/lib/config.ts
-// Centralized configuration for all environment-dependent values
+// frontend/lib/config.ts - Clean production version without debug logs
+'use client'
 
-export interface AppConfig {
-  // Network Configuration
-  network: {
-    chainId: number
-    rpcUrl: string
-    explorerUrl: string
-    name: string
-    isTestnet: boolean
-  }
-  
-  // Contract Addresses
-  contracts: {
-    betley: `0x${string}`
-    hypeToken: `0x${string}`
-  }
-  
-  // App Configuration
-  app: {
-    name: string
-    description: string
-    url: string
-  }
-  
-  // WalletConnect Configuration
-  walletConnect: {
-    projectId: string
-  }
-  
-  // Timing Configuration (in milliseconds)
-  timeouts: {
-    approval: number
-    queryStale: number
-    queryRefetch: number
-    mutationRetry: number
-  }
-  
-  // Development flags
-  dev: {
-    enableDevtools: boolean
-    enableConsoleLogging: boolean
-  }
-}
-
-// Helper function to validate required environment variables
+// Environment variable helpers
 function getRequiredEnv(key: string, fallback?: string): string {
-  const value = process.env[key]
-  if (value !== undefined && value !== '') {
-    return value
+  const value = process.env[key] || fallback
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`)
   }
-  if (fallback !== undefined) {
-    return fallback
-  }
-  throw new Error(`Missing required environment variable: ${key}`)
+  return value
 }
 
-// Helper function to get optional environment variables with defaults
 function getOptionalEnv(key: string, fallback: string): string {
   return process.env[key] || fallback
 }
 
-// Helper function to get boolean environment variables
+function getNumericEnv(key: string, fallback: number): number {
+  const value = process.env[key]
+  if (!value) return fallback
+  const parsed = parseInt(value, 10)
+  return isNaN(parsed) ? fallback : parsed
+}
+
 function getBooleanEnv(key: string, fallback: boolean): boolean {
   const value = process.env[key]
-  if (value === undefined) return fallback
+  if (!value) return fallback
   return value.toLowerCase() === 'true'
 }
 
-// Helper function to get numeric environment variables
-function getNumericEnv(key: string, fallback: number): number {
-  const value = process.env[key]
-  if (value === undefined) return fallback
-  const parsed = parseInt(value, 10)
-  if (isNaN(parsed)) {
-    console.warn(`Invalid numeric value for ${key}: ${value}, using fallback: ${fallback}`)
-    return fallback
-  }
-  return parsed
-}
-
-// Create the configuration object
-export const config: AppConfig = {
+// Centralized configuration object
+export const config = {
   network: {
     chainId: getNumericEnv('NEXT_PUBLIC_CHAIN_ID', 998),
     rpcUrl: getRequiredEnv(
@@ -89,7 +36,7 @@ export const config: AppConfig = {
       'https://rpc.hyperliquid-testnet.xyz/evm'
     ),
     explorerUrl: getOptionalEnv(
-      'NEXT_PUBLIC_EXPLORER_URL', 
+      'NEXT_PUBLIC_EXPLORER_URL',
       getBooleanEnv('NEXT_PUBLIC_IS_TESTNET', true) 
         ? 'https://explorer.hyperliquid-testnet.xyz'
         : 'https://hyperevmscan.io/'
@@ -99,19 +46,10 @@ export const config: AppConfig = {
   },
   
   contracts: {
-    betley: (() => {
-      const envValue = process.env.NEXT_PUBLIC_BETLEY_ADDRESS;
-      const fallbackValue = '0xCFf7b01Fe9838a913C2Bc06499C3CBEA169D1725';
-      console.log('🐛 BETLEY ADDRESS DEBUG:', {
-        envValue,
-        fallbackValue,
-        envValueType: typeof envValue,
-        envValueLength: envValue?.length,
-      });
-      const result = getRequiredEnv('NEXT_PUBLIC_BETLEY_ADDRESS', fallbackValue) as `0x${string}`;
-      console.log('🐛 getRequiredEnv result:', result);
-      return result;
-    })(),
+    betley: getRequiredEnv(
+      'NEXT_PUBLIC_BETLEY_ADDRESS', 
+      '0xCFf7b01Fe9838a913C2Bc06499C3CBEA169D1725'
+    ) as `0x${string}`,
     hypeToken: getRequiredEnv(
       'NEXT_PUBLIC_HYPE_TOKEN_ADDRESS', 
       '0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C'
@@ -197,17 +135,14 @@ export const isProduction = process.env.NODE_ENV === 'production'
 export const isDevelopment = process.env.NODE_ENV === 'development'
 export const isTestnet = config.network.isTestnet
 
-// Debug logging (only in development)
+// Clean debug logging (only in development)
 if (isDevelopment && config.dev.enableConsoleLogging) {
   console.log('🔧 Betley Configuration Loaded:', {
     network: config.network.name,
     chainId: config.network.chainId,
     isTestnet: config.network.isTestnet,
-    contracts: {
-      betley: config.contracts.betley,
-      hypeToken: config.contracts.hypeToken,
-    },
     timeouts: config.timeouts,
+    // Note: Contract addresses intentionally excluded from logs for security
   })
 }
 

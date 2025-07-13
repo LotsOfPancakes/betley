@@ -1,4 +1,4 @@
-// frontend/app/providers.tsx
+// frontend/app/providers.tsx - Fixed TypeScript errors
 'use client'
 
 import { WagmiProvider, createConfig, http } from 'wagmi'
@@ -16,20 +16,31 @@ import {
   devConfig 
 } from '@/lib/config'
 
-const config = createConfig(
-  getDefaultConfig({
-    chains: [hyperevm],
-    transports: {
-      [hyperevm.id]: http(networkConfig.rpcUrl),
-    },
-    walletConnectProjectId: walletConnectConfig.projectId,
-    appName: appConfig.name,
-    appDescription: appConfig.description,
-    appUrl: appConfig.url,
-  })
-)
+// ✅ FIXED: Create config outside component to prevent recreation
+let wagmiConfig: ReturnType<typeof createConfig> | null = null
+
+function getWagmiConfig() {
+  if (!wagmiConfig) {
+    wagmiConfig = createConfig(
+      getDefaultConfig({
+        chains: [hyperevm],
+        transports: {
+          [hyperevm.id]: http(networkConfig.rpcUrl),
+        },
+        walletConnectProjectId: walletConnectConfig.projectId,
+        appName: appConfig.name,
+        appDescription: appConfig.description,
+        appUrl: appConfig.url,
+      })
+    )
+  }
+  return wagmiConfig
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // ✅ FIXED: Use singleton config to prevent double initialization
+  const config = getWagmiConfig()
+
   // Create optimized QueryClient with configurable timeouts
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -82,6 +93,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             options={{
               initialChainId: networkConfig.chainId,
               enforceSupportedChains: false,
+              // ✅ REMOVED: walletConnectEnabled (not a valid ConnectKit option)
             }}
           >
             {children}

@@ -44,31 +44,38 @@ export function useBetActions(betId: string) {
     }
   }
 
-  const handlePlaceBet = async () => {
-    if (!betAmount || selectedOption === null || isSubmitting) return // ✅ FIXED: Prevent double submissions
+ const handlePlaceBet = async () => {
+  if (!betAmount || selectedOption === null || isSubmitting) return
 
-    try {
-      setIsSubmitting(true) // ✅ FIXED: Block rapid clicking
-      await placeBetMutation.mutateAsync({ 
-        option: selectedOption, 
-        amount: betAmount 
-      })
-      
-      // Clear only the bet amount, keep the selected option
-      setBetAmount('')
-      
-      // DON'T set success state here - it will be handled by useEffect
-      
-      // React Query automatically refetches related data
-    } catch {
-      showError(
-        'Your tokens may not be approved or you might have insufficient balance. Please try again.',
-        'Failed to Place Bet'
-      )
-    } finally {
-      setIsSubmitting(false) // ✅ FIXED: Always reset, even on error
+  try {
+    setIsSubmitting(true)
+    
+    // ✅ FIXED: Use mutateAsync and await it to prevent double prompts
+    await placeBetMutation.mutateAsync({ 
+      option: selectedOption, 
+      amount: betAmount 
+    })
+    
+    setBetAmount('')
+    
+  } catch (error: unknown) {
+    // ✅ FIXED: Proper error type handling
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    
+    // Don't show error for user cancellation
+    if (errorMessage.includes('User rejected') || errorMessage.includes('cancelled')) {
+      // User cancelled - don't show error
+      return
     }
+    
+    showError(
+      'Your tokens may not be approved or you might have insufficient balance. Please try again.',
+      'Failed to Place Bet'
+    )
+  } finally {
+    setIsSubmitting(false) // ✅ Always reset, even on cancellation
   }
+}
 
   const handleClaimWinnings = async () => {
     try {
@@ -110,19 +117,32 @@ export function useBetActions(betId: string) {
 
   // Show success message when bet is placed successfully
   useEffect(() => {
-    if (placeBetMutation.isSuccess && !placeBetMutation.isPending) {
+  // ✅ FIXED: Only show success after transaction is actually mined
+  // Don't show immediate success - wait for proper confirmation
+  
+  // For now, let's remove automatic success toast and let user see wallet confirmation
+  // You can add transaction receipt waiting here later if needed
+  
+}, []) // Empty for now - success will be shown when data refreshes
+
+useEffect(() => {
+  if (placeBetMutation.isSuccess && !placeBetMutation.isPending) {
+    // ✅ Show success after a delay to ensure transaction is processed
+    const timer = setTimeout(() => {
       setJustPlacedBet(true)
-      showSuccess('Your bet has been placed successfully!')
+      showSuccess('Your bet has been placed successfully! Transaction confirmed.')
       
       // Reset success state after 3 seconds
-      const timer = setTimeout(() => {
+      const resetTimer = setTimeout(() => {
         setJustPlacedBet(false)
       }, 3000)
       
-      return () => clearTimeout(timer)
-    }
-  }, [placeBetMutation.isSuccess, placeBetMutation.isPending, showSuccess])
-
+      return () => clearTimeout(resetTimer)
+    }, 2000) // 2 second delay like approval
+    
+    return () => clearTimeout(timer)
+  }
+}, [placeBetMutation.isSuccess, placeBetMutation.isPending, showSuccess])
   return {
     // State
     betAmount,

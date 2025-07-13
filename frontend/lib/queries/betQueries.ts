@@ -102,7 +102,7 @@ export function useTokenDecimalsQuery() {
 // Place Bet Mutation
 export function usePlaceBetMutation(betId: number) {
   const queryClient = useQueryClient()
-  const { showSuccess, showError } = useNotification()
+  const { showError } = useNotification()
   const { writeContract } = useWriteContract()
 
   return useMutation({
@@ -123,7 +123,6 @@ export function usePlaceBetMutation(betId: number) {
       queryClient.invalidateQueries({ queryKey: ['userBets', betId] })
       queryClient.invalidateQueries({ queryKey: ['balance'] })
       
-      showSuccess('Your bet has been placed successfully!')
     },
     onError: (error) => {
       console.error('Place bet error:', error)
