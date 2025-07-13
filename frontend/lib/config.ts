@@ -46,11 +46,14 @@ export interface AppConfig {
 
 // Helper function to validate required environment variables
 function getRequiredEnv(key: string, fallback?: string): string {
-  const value = process.env[key] || fallback
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`)
+  const value = process.env[key]
+  if (value !== undefined && value !== '') {
+    return value
   }
-  return value
+  if (fallback !== undefined) {
+    return fallback
+  }
+  throw new Error(`Missing required environment variable: ${key}`)
 }
 
 // Helper function to get optional environment variables with defaults
@@ -96,10 +99,19 @@ export const config: AppConfig = {
   },
   
   contracts: {
-    betley: getRequiredEnv(
-      'NEXT_PUBLIC_BETLEY_ADDRESS', 
-      '0xCFf7b01Fe9838a913C2Bc06499C3CBEA169D1725'
-    ) as `0x${string}`,
+    betley: (() => {
+      const envValue = process.env.NEXT_PUBLIC_BETLEY_ADDRESS;
+      const fallbackValue = '0xCFf7b01Fe9838a913C2Bc06499C3CBEA169D1725';
+      console.log('🐛 BETLEY ADDRESS DEBUG:', {
+        envValue,
+        fallbackValue,
+        envValueType: typeof envValue,
+        envValueLength: envValue?.length,
+      });
+      const result = getRequiredEnv('NEXT_PUBLIC_BETLEY_ADDRESS', fallbackValue) as `0x${string}`;
+      console.log('🐛 getRequiredEnv result:', result);
+      return result;
+    })(),
     hypeToken: getRequiredEnv(
       'NEXT_PUBLIC_HYPE_TOKEN_ADDRESS', 
       '0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C'
@@ -208,10 +220,3 @@ try {
     throw error // Fail fast in production
   }
 }
-
-// Add this debug section at the very end of the file, after the existing debug logging
-console.log('🔧 Raw Environment Variables:', {
-  BETLEY_ADDRESS: process.env.NEXT_PUBLIC_BETLEY_ADDRESS,
-  HYPE_ADDRESS: process.env.NEXT_PUBLIC_HYPE_TOKEN_ADDRESS,
-  IS_TESTNET: process.env.NEXT_PUBLIC_IS_TESTNET,
-});
