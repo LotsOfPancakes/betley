@@ -6,6 +6,7 @@ import {
   useClaimWinningsMutation 
 } from '@/lib/queries/betQueries'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { timeoutsConfig } from '@/lib/config'
 
 // FIXED: Removed unused 'onRefresh' parameter
 export function useBetActions(betId: string) {
@@ -97,10 +98,10 @@ export function useBetActions(betId: string) {
   // Reset approval pending when mutation succeeds AND wait for allowance to update
   useEffect(() => {
     if (approveMutation.isSuccess && !approveMutation.isPending) {
-      // Give allowance query time to update (8 seconds should be enough for blockchain + refetch)
+      // UPDATED: Use configurable approval timeout from config
       const timer = setTimeout(() => {
         setIsApprovalPending(false)
-      }, 8000) // 8 seconds for testnet - can be reduced to 3-5s for production
+      }, timeoutsConfig.approval)
       
       return () => clearTimeout(timer)
     }

@@ -1,23 +1,25 @@
+// frontend/lib/chains.ts
 import { defineChain } from 'viem'
+import { networkConfig } from './config'
 
 export const hyperevm = defineChain({
-  id: 998,
-  name: 'HyperEVM Testnet',
+  id: networkConfig.chainId,
+  name: networkConfig.name,
   nativeCurrency: {
     decimals: 18,
-    name: 'Ether',
-    symbol: 'ETH',
+    name: 'Testnet HYPE',
+    symbol: 'HYPE',
   },
   rpcUrls: {
     default: {
-      http: ['https://rpc.hyperliquid-testnet.xyz/evm'],
+      http: [networkConfig.rpcUrl],
     },
   },
   blockExplorers: {
     default: { 
-      name: 'HyperEVM Explorer', 
-      url: 'https://explorer.hyperliquid-testnet.xyz' 
+      name: `${networkConfig.name} Explorer`, 
+      url: networkConfig.explorerUrl
     },
   },
-  testnet: true,
+  testnet: networkConfig.isTestnet,
 })

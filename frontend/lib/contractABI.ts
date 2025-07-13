@@ -1,7 +1,11 @@
-export const BETLEY_ADDRESS = '0xCFf7b01Fe9838a913C2Bc06499C3CBEA169D1725' // REPLACE WITH YOUR NEW DEPLOYED CONTRACT ADDRESS!
+// frontend/lib/contractABI.ts
+import { contractsConfig } from './config'
 
-export const HYPE_TOKEN_ADDRESS = '0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C'
+// Contract addresses from centralized configuration
+export const BETLEY_ADDRESS = contractsConfig.betley
+export const HYPE_TOKEN_ADDRESS = contractsConfig.hypeToken
 
+// Betley contract ABI
 export const BETLEY_ABI = [
   {
     inputs: [{ name: '_hypeToken', type: 'address' }],
@@ -97,67 +101,51 @@ export const BETLEY_ABI = [
     type: 'function'
   },
   {
-    anonymous: false,
-    inputs: [
-      { indexed: true, name: 'betId', type: 'uint256' },
-      { indexed: false, name: 'name', type: 'string' },
-      { indexed: false, name: 'creator', type: 'address' }
-    ],
-    name: 'BetCreated',
-    type: 'event'
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, name: 'betId', type: 'uint256' },
-      { indexed: false, name: 'user', type: 'address' },
-      { indexed: false, name: 'option', type: 'uint8' },
-      { indexed: false, name: 'amount', type: 'uint256' }
-    ],
-    name: 'BetPlaced',
-    type: 'event'
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, name: 'betId', type: 'uint256' },
-      { indexed: false, name: 'winningOption', type: 'uint8' }
-    ],
-    name: 'BetResolved',
-    type: 'event'
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, name: 'betId', type: 'uint256' },
-      { indexed: false, name: 'user', type: 'address' },
-      { indexed: false, name: 'amount', type: 'uint256' }
-    ],
-    name: 'WinningsClaimed',
-    type: 'event'
+    inputs: [{ name: '_betId', type: 'uint256' }],
+    name: 'claimRefund',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
   }
 ] as const
 
+// Standard ERC20 ABI (commonly used functions)
 export const ERC20_ABI = [
   {
-    inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }],
+    inputs: [{ name: 'account', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' }
+    ],
     name: 'allowance',
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function'
   },
   {
-    inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }],
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
     name: 'approve',
     outputs: [{ name: '', type: 'bool' }],
     stateMutability: 'nonpayable',
     type: 'function'
   },
   {
-    inputs: [{ name: 'account', type: 'address' }],
-    name: 'balanceOf',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    name: 'transfer',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
     type: 'function'
   },
   {
@@ -170,6 +158,13 @@ export const ERC20_ABI = [
   {
     inputs: [],
     name: 'symbol',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'name',
     outputs: [{ name: '', type: 'string' }],
     stateMutability: 'view',
     type: 'function'

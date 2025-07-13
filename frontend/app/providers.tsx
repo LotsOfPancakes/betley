@@ -8,34 +8,38 @@ import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import { hyperevm } from '@/lib/chains'
 import { useState } from 'react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
-
-// Use a placeholder project ID if you don't have one yet
-const walletConnectProjectId = 'a7b53d050fbc92b0e503d20e293d6ff5'
+import { 
+  networkConfig, 
+  appConfig, 
+  walletConnectConfig, 
+  timeoutsConfig, 
+  devConfig 
+} from '@/lib/config'
 
 const config = createConfig(
   getDefaultConfig({
     chains: [hyperevm],
     transports: {
-      [hyperevm.id]: http('https://rpc.hyperliquid-testnet.xyz/evm'),
+      [hyperevm.id]: http(networkConfig.rpcUrl),
     },
-    walletConnectProjectId,
-    appName: 'Betley',
-    appDescription: 'Decentralized betting platform',
-    appUrl: 'http://localhost:3000',
+    walletConnectProjectId: walletConnectConfig.projectId,
+    appName: appConfig.name,
+    appDescription: appConfig.description,
+    appUrl: appConfig.url,
   })
 )
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Create optimized QueryClient with useState to ensure stability
+  // Create optimized QueryClient with configurable timeouts
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        // Data stays fresh for 30 seconds before automatic refetch
-        staleTime: 30 * 1000,
+        // Use configurable stale time
+        staleTime: timeoutsConfig.queryStale,
         // Data stays in cache for 5 minutes after component unmounts
         gcTime: 5 * 60 * 1000,
-        // Retry failed requests 3 times with exponential backoff
-        retry: 3,
+        // Use configurable retry count
+        retry: timeoutsConfig.mutationRetry,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
         // Don't refetch on window focus by default (can override per query)
         refetchOnWindowFocus: false,
@@ -76,14 +80,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
               "--ck-body-color-muted-hover": "#D1D5DB",
             }}
             options={{
-              initialChainId: 998,
+              initialChainId: networkConfig.chainId,
               enforceSupportedChains: false,
             }}
           >
             {children}
           </ConnectKitProvider>
-          {/* React Query DevTools - only shows in development */}
-          <ReactQueryDevtools initialIsOpen={false} />
+          {/* React Query DevTools - configurable visibility */}
+          {devConfig.enableDevtools && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
         </NotificationProvider>
       </QueryClientProvider>
     </WagmiProvider>
