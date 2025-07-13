@@ -7,6 +7,7 @@ import {
 } from '@/lib/queries/betQueries'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { timeoutsConfig } from '@/lib/config'
+import { useResolveBetMutation } from '@/lib/queries/betQueries'
 
 // FIXED: Removed unused 'onRefresh' parameter
 export function useBetActions(betId: string) {
@@ -20,6 +21,7 @@ export function useBetActions(betId: string) {
   const { showError, showSuccess } = useNotification()
 
   // === REACT QUERY MUTATIONS ===
+  const resolveBetMutation = useResolveBetMutation(numericBetId)
   const placeBetMutation = usePlaceBetMutation(numericBetId)
   const approveMutation = useApproveMutation()
   const claimWinningsMutation = useClaimWinningsMutation(numericBetId)
@@ -80,14 +82,10 @@ export function useBetActions(betId: string) {
     }
   }
 
-  // FIXED: Removed unused 'winningOptionIndex' parameter since function is not implemented yet
-  const handleResolveBet = async () => {
+  const handleResolveBet = async (winningOptionIndex: number) => {
     try {
-      // You can create a separate mutation for this if needed
-      // For now, keeping the existing pattern
-      // Implementation would go here when resolution feature is added
+      await resolveBetMutation.mutateAsync({ winningOptionIndex })
     } catch {
-      // FIXED: Removed unused 'error' parameter - no longer needed since we're using notifications
       showError(
         'Only the bet creator can resolve this bet. Make sure the betting period has ended.',
         'Failed to Resolve Bet'

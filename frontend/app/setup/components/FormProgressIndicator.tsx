@@ -48,7 +48,7 @@ export default function FormProgressIndicator({ formData, isValid }: FormProgres
 
       {/* Step indicators */}
       <div className="flex justify-between">
-        {steps.map((step, index) => (
+        {steps.map((step) => (
           <div key={step.name} className="flex flex-col items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors ${
               step.completed 

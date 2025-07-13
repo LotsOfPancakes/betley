@@ -1,10 +1,17 @@
-// frontend/lib/betIdMapping.ts
+// frontend/lib/betIdMapping.ts - Fixed with proper types
 export interface BetMapping {
   randomId: string
   numericId: number
   name: string
   creator: string
   createdAt: number
+}
+
+// Type for bet details from contract
+interface BetDetailsFromContract {
+  name: string
+  creator: string
+  [key: string]: unknown // Allow other properties
 }
 
 export class BetIdMapper {
@@ -71,11 +78,8 @@ export class BetIdMapper {
     return mapping ? mapping.numericId : null
   }
 
-  // FIXED: Use consistent storage and data structure
   static getRandomId(numericId: number): string | undefined {
-    const mappings = this.getAllMappings() // Use same method as others
-    
-    // Find the mapping where the numeric ID matches
+    const mappings = this.getAllMappings()
     const mapping = mappings.find(m => m.numericId === numericId)
     return mapping ? mapping.randomId : undefined
   }
@@ -85,7 +89,10 @@ export class BetIdMapper {
     return mappings.find(m => m.randomId === randomId) || null
   }
 
-  static async discoverMissingMappings(betCounter: number, getBetDetails: (id: number) => Promise<any>) {
+  static async discoverMissingMappings(
+    betCounter: number, 
+    getBetDetails: (id: number) => Promise<BetDetailsFromContract | null>
+  ): Promise<void> {
     const mappings = this.getAllMappings()
     const existingNumericIds = mappings.map(m => m.numericId)
 
@@ -93,7 +100,7 @@ export class BetIdMapper {
       if (!existingNumericIds.includes(i)) {
         try {
           const details = await getBetDetails(i)
-          if (details) {
+          if (details && details.name && details.creator) {
             this.addMapping(i, details.name, details.creator)
           }
         } catch (error) {

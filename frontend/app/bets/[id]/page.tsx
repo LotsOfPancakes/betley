@@ -1,10 +1,11 @@
-// frontend/app/bets/[id]/page.tsx
+// app/bets/[id]/page.tsx - With resolve modal integration
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { useState, useEffect } from 'react'
 import { useBetIdMapping } from '@/lib/hooks/useBetIdMapping'
+import { parseUnits } from 'viem'
 
 // Import existing components
 import { BetHeader } from './components/BetHeader'
@@ -13,6 +14,8 @@ import { CreatorActions } from './components/CreatorActions'
 import { UserActions } from './components/UserActions'
 import { BettingInterface } from './components/BettingInterface'
 import { BetCreationPending } from './components/BetCreationPending'
+import { ShareButton } from './components/ShareButton'
+import { ResolveModal } from './components/ResolveModal'
 
 // Import hooks
 import { useBetData } from './hooks/useBetData'
@@ -86,7 +89,7 @@ export default function BetPage() {
     resolutionTimeLeft,
     resolutionDeadlinePassed,
     refreshAllData
-} = useBetData(isValidBetId ? numericBetId.toString() : '999999', { useReactQuery: true })
+  } = useBetData(isValidBetId ? numericBetId.toString() : '999999', { useReactQuery: true })
 
   const {
     betAmount,
@@ -99,16 +102,13 @@ export default function BetPage() {
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
-    handleResolveBet,
-    optimisticUpdate
-  } = useBetActions(isValidBetId ? numericBetId.toString() : '999999', betDetails, refreshAllData)
+    handleResolveBet
+  } = useBetActions(isValidBetId ? numericBetId.toString() : '999999')
 
   // Auto-retry logic for newly created bets
   useEffect(() => {
     if (isValidBetId && betError && retryCount < 10) {
       const timer = setTimeout(() => {
-        // ✅ REMOVED: console.log retry debug statement
-        // Silent retry for better UX - no need to log this in production
         setRetryCount(prev => prev + 1)
         refreshAllData()
       }, 2000) // Retry every 2 seconds
@@ -159,14 +159,20 @@ export default function BetPage() {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
-  // ✅ REMOVED: All debug console.log statements
-  // Production code doesn't need to log contract data to console
-
+  // ✅ FIXED: Remove unused 'endTime' variable by using placeholder
   // Contract returns: [name, options, creator, endTime, resolved, winningOption, totalAmounts]
-  const [name, options, creator, endTime, resolved, winningOption, totalAmounts] = betDetails || []
+  const [name, options, creator, , resolved, winningOption, totalAmounts] = betDetails || []
+  //                                  ^ placeholder for endTime (unused)
 
   // Calculate derived state
   const isActive = timeLeft > 0 && !resolved
+
+  // Handle resolve bet with modal
+  const handleResolveBetWithModal = async (winningOptionIndex: number) => {
+    await handleResolveBet(winningOptionIndex)
+    // Modal will close automatically on success
+    refreshAllData() // Refresh to show updated state
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 py-12">
@@ -206,18 +212,32 @@ export default function BetPage() {
             decimals={decimals}
           />
 
-          {/* Show optimistic update feedback */}
-          {optimisticUpdate?.type && (
-            <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500 rounded-lg">
-              <p className="text-blue-300 text-sm">
-                {optimisticUpdate.type === 'approval' && '⏳ Approving tokens...'}
-                {optimisticUpdate.type === 'bet' && '⏳ Placing your bet...'}
-                {optimisticUpdate.type === 'resolution' && '⏳ Resolving bet...'}
-              </p>
-            </div>
-          )}
+          {/* Creator actions */}
+          <CreatorActions
+            address={address}
+            creator={creator}
+            timeLeft={timeLeft}
+            resolved={resolved}
+            resolutionDeadlinePassed={resolutionDeadlinePassed}
+            resolutionTimeLeft={resolutionTimeLeft}
+            onShowResolveModal={() => setShowResolveModal(true)}
+          />
 
-          {/* Betting interface for active bets */}
+          {/* User actions */}
+          <UserActions
+            address={address}
+            resolved={resolved}
+            winningOption={winningOption}
+            userBets={userBets}
+            totalAmounts={totalAmounts}
+            resolutionDeadlinePassed={resolutionDeadlinePassed}
+            hasClaimed={hasClaimed}
+            decimals={decimals}
+            isPending={isPending}
+            handleClaimWinnings={handleClaimWinnings}
+          />
+
+          {/* Betting interface */}
           <BettingInterface
             isActive={isActive}
             address={address}
@@ -227,21 +247,8 @@ export default function BetPage() {
             setSelectedOption={setSelectedOption}
             betAmount={betAmount}
             setBetAmount={setBetAmount}
-            justPlacedBet={justPlacedBet}
-            needsApproval={(() => {
-            // If we're currently approving, always show approval state
-            if (isApproving) return true
-            
-            // If we don't have the required data, default to requiring approval
-            if (!betAmount || !allowance || !decimals) return true
-            
-            try {
-              const requiredAmount = parseUnits(betAmount, decimals)
-              return allowance < requiredAmount
-            } catch {
-              return true // Invalid bet amount format
-            }
-          })()}
+            needsApproval={allowance !== undefined && hypeBalance !== undefined && betAmount !== '' ? 
+              allowance < parseUnits(betAmount, decimals || 18) : false}
             isApproving={isApproving}
             isPending={isPending}
             handleApprove={handleApprove}
@@ -249,38 +256,28 @@ export default function BetPage() {
             totalAmounts={totalAmounts}
             decimals={decimals}
             hypeBalance={hypeBalance}
+            justPlacedBet={justPlacedBet}
           />
 
-          {/* Creator Actions */}
-          {address && creator && address.toLowerCase() === creator.toLowerCase() && (
-            <CreatorActions
-              resolved={resolved}
-              resolutionDeadlinePassed={resolutionDeadlinePassed}
-              resolutionTimeLeft={resolutionTimeLeft}
-              options={options}
-              onResolve={(optionIndex: number) => {
-                handleResolveBet(optionIndex)
-                setShowResolveModal(false)
-              }}
-              showResolveModal={showResolveModal}
-              setShowResolveModal={setShowResolveModal}
+          {/* Share button */}
+          <div className="mt-8 pt-6 border-t border-gray-700">
+            <ShareButton 
+              betUrlId={randomBetId as string}
+              betName={name}
             />
-          )}
+          </div>
 
-          {/* User Actions (for non-creators) */}
-          {address && creator && address.toLowerCase() !== creator.toLowerCase() && (
-            <UserActions
-              resolved={resolved}
-              winningOption={winningOption}
-              userBets={userBets}
-              hasClaimed={hasClaimed}
-              resolutionDeadlinePassed={resolutionDeadlinePassed}
-              decimals={decimals}
-              onClaimWinnings={handleClaimWinnings}
-              options={options}
-            />
-          )}
         </div>
+
+        {/* Resolve Modal */}
+        <ResolveModal
+          isOpen={showResolveModal}
+          onClose={() => setShowResolveModal(false)}
+          onResolve={handleResolveBetWithModal}
+          options={options}
+          betName={name}
+        />
+
       </div>
     </div>
   )

@@ -38,32 +38,32 @@ export default function DurationSelector({ duration, onChange, error }: Duration
   const isTooLong = totalMinutes > 7 * 24 * 60 // More than 1 week
 
   // Get duration description
-  const getDurationDescription = () => {
-    if (totalMinutes === 0) return 'Set a duration for your bet'
-    if (totalMinutes < 60) return `Very short - only ${totalMinutes} minutes`
-    if (totalMinutes < 24 * 60) return `${Math.floor(totalMinutes / 60)} hours`
-    const days = Math.floor(totalMinutes / (24 * 60))
-    const remainingHours = Math.floor((totalMinutes % (24 * 60)) / 60)
-    return `${days} day${days === 1 ? '' : 's'}${remainingHours > 0 ? ` and ${remainingHours} hour${remainingHours === 1 ? '' : 's'}` : ''}`
-  }
+  // const getDurationDescription = () => {
+  //   if (totalMinutes === 0) return 'Set a duration for your bet'
+  //   if (totalMinutes < 60) return `Very short - only ${totalMinutes} minutes`
+  //   if (totalMinutes < 24 * 60) return `${Math.floor(totalMinutes / 60)} hours`
+  //   const days = Math.floor(totalMinutes / (24 * 60))
+  //   const remainingHours = Math.floor((totalMinutes % (24 * 60)) / 60)
+  //   return `${days} day${days === 1 ? '' : 's'}${remainingHours > 0 ? ` and ${remainingHours} hour${remainingHours === 1 ? '' : 's'}` : ''}`
+  // }
 
   // Get recommendation
-  const getRecommendation = () => {
-    if (totalMinutes === 0) return 'Choose how long people can place bets'
-    if (totalMinutes < 30) return 'Very short - consider at least 1 hour for people to participate'
-    if (totalMinutes < 60) return 'Short duration - good for quick decisions'
-    if (totalMinutes <= 24 * 60) return 'Good duration for most bets'
-    if (totalMinutes <= 7 * 24 * 60) return 'Long duration - gives everyone time to participate'
-    return 'Very long duration - consider if this is necessary'
-  }
+  // const getRecommendation = () => {
+  //   if (totalMinutes === 0) return 'Choose how long people can place bets'
+  //   if (totalMinutes < 30) return 'Very short - consider at least 1 hour for people to participate'
+  //   if (totalMinutes < 60) return 'Short duration - good for quick decisions'
+  //   if (totalMinutes <= 24 * 60) return 'Good duration for most bets'
+  //   if (totalMinutes <= 7 * 24 * 60) return 'Long duration - gives everyone time to participate'
+  //   return 'Very long duration - consider if this is necessary'
+  // }
 
-  const getStatusColor = () => {
-    if (totalMinutes === 0) return 'text-gray-400'
-    if (totalMinutes < 30) return 'text-yellow-400'
-    if (isReasonable && !isTooLong) return 'text-green-400'
-    if (isTooLong) return 'text-yellow-400'
-    return 'text-blue-400'
-  }
+  // const getStatusColor = () => {
+  //   if (totalMinutes === 0) return 'text-gray-400'
+  //   if (totalMinutes < 30) return 'text-yellow-400'
+  //   if (isReasonable && !isTooLong) return 'text-green-400'
+  //   if (isTooLong) return 'text-yellow-400'
+  //   return 'text-blue-400'
+  // }
 
   const getBorderColor = () => {
     if (error) return 'border-red-500 focus:border-red-500'

@@ -2,7 +2,7 @@ import { BETLEY_ADDRESS } from '@/lib/contractABI'
 
 interface ErrorStateProps {
   betId: string
-  error?: any
+  error?: Error | string | null
 }
 
 export function ErrorState({ 
@@ -16,7 +16,9 @@ export function ErrorState({
         <p className="text-gray-300">This bet might not exist yet.</p>
         <p className="text-sm text-gray-400 mt-4">Contract: {BETLEY_ADDRESS}</p>
         {error && (
-          <p className="text-sm text-red-400 mt-2">Error: {error.message}</p>
+          <p className="text-sm text-red-400 mt-2">
+            Error: {error instanceof Error ? error.message : String(error)}
+          </p>
         )}
       </div>
     </div>

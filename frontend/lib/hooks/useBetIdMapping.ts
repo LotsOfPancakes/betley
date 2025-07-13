@@ -19,9 +19,9 @@ export function useBetIdMapping() {
     return BetIdMapper.getNumericId(randomId)
   }
 
-  const getRandomId = (numericId: number): string | null => {
-    return BetIdMapper.getRandomId(numericId)
-  }
+ const getRandomId = (numericId: number): string | null => {
+    return BetIdMapper.getRandomId(numericId) ?? null  // ✅ Convert undefined to null
+}
 
   const getMapping = (randomId: string): BetMapping | null => {
     return BetIdMapper.getMapping(randomId)

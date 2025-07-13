@@ -1,13 +1,17 @@
-// frontend/lib/contexts/NotificationContext.tsx
+// lib/contexts/NotificationContext.tsx - Fixed hook dependency
 'use client'
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { NotificationType, NotificationItem, NotificationContextType } from '../types/notifications'
+import { NotificationItem, NotificationContextType } from '../types/notifications'
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
+
+  const removeNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(notification => notification.id !== id))
+  }, [])
 
   const addNotification = useCallback((notification: Omit<NotificationItem, 'id'>) => {
     const id = Date.now().toString()
@@ -27,11 +31,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
 
     return id
-  }, [])
-
-  const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id))
-  }, [])
+  }, [removeNotification]) // ✅ Fixed: Added removeNotification to dependencies
 
   const clearAllNotifications = useCallback(() => {
     setNotifications([])

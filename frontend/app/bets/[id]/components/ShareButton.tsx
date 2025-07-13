@@ -1,9 +1,20 @@
+// app/bets/[id]/components/ShareButton.tsx - Fixed TypeScript issues
 import { useState } from 'react'
+import { devConfig } from '@/lib/config'
 
 interface ShareButtonProps {
   betUrlId: string
   betName?: string
   className?: string
+}
+
+// Error logging helper that respects production settings
+const logError = (message: string, error?: unknown) => {
+  if (devConfig.enableConsoleLogging) {
+    console.error(message, error)
+  }
+  // In production, you could send to error tracking service here
+  // e.g., Sentry.captureException(error)
 }
 
 export function ShareButton({ betUrlId, betName, className = '' }: ShareButtonProps) {
@@ -22,7 +33,7 @@ export function ShareButton({ betUrlId, betName, className = '' }: ShareButtonPr
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      console.error('Failed to copy:', error)
+      logError('Failed to copy:', error)
       // Fallback: create a temporary text area
       fallbackCopyToClipboard(generateShareUrl())
     }
@@ -43,7 +54,7 @@ export function ShareButton({ betUrlId, betName, className = '' }: ShareButtonPr
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      console.error('Fallback copy failed:', error)
+      logError('Fallback copy failed:', error)
     }
     
     document.body.removeChild(textArea)
@@ -64,7 +75,7 @@ export function ShareButton({ betUrlId, betName, className = '' }: ShareButtonPr
       })
     } catch (error) {
       // User cancelled or error occurred, fall back to copy
-      if (error.name !== 'AbortError') {
+      if (error && typeof error === 'object' && 'name' in error && error.name !== 'AbortError') {
         copyToClipboard()
       }
     } finally {
@@ -73,12 +84,12 @@ export function ShareButton({ betUrlId, betName, className = '' }: ShareButtonPr
   }
 
   const handleShare = () => {
-    if (navigator.share && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-      shareNative()
-    } else {
-      copyToClipboard()
-    }
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    shareNative() // This function already has its own navigator.share check
+  } else {
+    copyToClipboard()
   }
+}
 
   return (
     <div className="flex items-center gap-2">
@@ -142,7 +153,7 @@ export function ShareButtonCompact({ betUrlId, className = '' }: { betUrlId: str
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      console.error('Failed to copy:', error)
+      logError('Failed to copy:', error)
     }
   }
 

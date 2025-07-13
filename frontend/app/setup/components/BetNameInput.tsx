@@ -13,11 +13,9 @@ export default function BetNameInput({
   value, 
   onChange, 
   maxLength = 100,
-  error,
-  isValid
+  error
 }: BetNameInputProps) {
   // Calculate validation state
-  const isEmpty = !value.trim()
   const isTooShort = value.length > 0 && value.length < 5
   const isGoodLength = value.length >= 5 && value.length <= maxLength
   const isNearLimit = value.length > maxLength * 0.8

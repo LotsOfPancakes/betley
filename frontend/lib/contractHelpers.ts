@@ -16,11 +16,10 @@ export async function fetchBetDetails(betId: number, config: Config) {
       name: betDetails[0],
       options: betDetails[1],
       creator: betDetails[2],
-      startTime: betDetails[3],
-      endTime: betDetails[4],
-      resolved: betDetails[5],
-      winningOption: betDetails[6],
-      totalAmounts: betDetails[7],
+      endTime: betDetails[3],
+      resolved: betDetails[4],
+      winningOption: betDetails[5],
+      totalAmounts: betDetails[6],
     }
   } catch (error) {
     console.error(`Error fetching bet ${betId}:`, error)
