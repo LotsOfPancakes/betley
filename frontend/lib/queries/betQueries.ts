@@ -178,7 +178,7 @@ export function useClaimWinningsMutation(betId: number) {
       // Keep this success toast as claiming is usually immediate
       queryClient.invalidateQueries({ queryKey: ['balance'] })
       queryClient.invalidateQueries({ queryKey: ['claimed', betId] })
-      showSuccess('Your winnings have been claimed successfully!')
+      showSuccess('Your winnings have been transferred to your wallet', 'Winnings Claimed!')
     },
     onError: (error) => {
       console.error('Claim winnings error:', error)
@@ -208,7 +208,8 @@ export function useResolveBetMutation(betId: number) {
     onSuccess: () => {
       // Keep this success toast as resolution is usually immediate
       queryClient.invalidateQueries({ queryKey: ['bet', betId] })
-      showSuccess('Bet has been resolved successfully!')
+      showSuccess('The bet outcome has been recorded', 'Bet Resolved!')
+
     },
     onError: (error) => {
       console.error('Resolve bet error:', error)
