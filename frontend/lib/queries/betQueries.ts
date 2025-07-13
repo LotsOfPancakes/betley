@@ -138,7 +138,7 @@ export function usePlaceBetMutation(betId: number) {
 // Approve Token Mutation
 export function useApproveMutation() {
   const queryClient = useQueryClient()
-  const { showSuccess, showError } = useNotification()
+  const { showError } = useNotification()
   const { writeContract } = useWriteContract()
 
   return useMutation({
@@ -153,12 +153,10 @@ export function useApproveMutation() {
         args: [BETLEY_ADDRESS as AddressType, amountWei],
       })
     },
-    onSuccess: () => {
-      // Invalidate allowance query
-      queryClient.invalidateQueries({ queryKey: ['allowance'] })
-      
-      showSuccess('Token approval successful!')
-    },
+onSuccess: () => {
+  queryClient.invalidateQueries({ queryKey: ['allowance'] })
+  // ✅ No immediate success toast - let the user see wallet confirmation
+},
     onError: (error) => {
       console.error('Approval error:', error)
       showError(

@@ -1,20 +1,20 @@
-// frontend/app/bets/[id]/hooks/useBetActions.ts
+// frontend/app/bets/[id]/hooks/useBetActions.ts - Fixed version
 import { useState, useEffect } from 'react'
 import { 
   usePlaceBetMutation,
   useApproveMutation,
-  useClaimWinningsMutation 
+  useClaimWinningsMutation,
+  useResolveBetMutation
 } from '@/lib/queries/betQueries'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { timeoutsConfig } from '@/lib/config'
-import { useResolveBetMutation } from '@/lib/queries/betQueries'
 
-// FIXED: Removed unused 'onRefresh' parameter
 export function useBetActions(betId: string) {
   const [justPlacedBet, setJustPlacedBet] = useState(false)
   const [betAmount, setBetAmount] = useState('')
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [isApprovalPending, setIsApprovalPending] = useState(false) // Track approval state locally
+  const [isSubmitting, setIsSubmitting] = useState(false) // ✅ NEW: Prevent double submissions
   const numericBetId = parseInt(betId)
 
   // === NOTIFICATION SYSTEM ===
@@ -34,8 +34,8 @@ export function useBetActions(betId: string) {
       setIsApprovalPending(true) // Start local pending state
       await approveMutation.mutateAsync({ amount: betAmount })
       // Keep isApprovalPending true until allowance updates
+      // ✅ FIXED: No immediate success toast - let user see wallet confirmation
     } catch {
-      // FIXED: Removed unused 'error' parameter - no longer needed since we're using notifications
       showError(
         'Please check your wallet and try again. Make sure you have sufficient funds to bet & pay transaction fees.',
         'Failed to Approve Tokens'
@@ -45,9 +45,10 @@ export function useBetActions(betId: string) {
   }
 
   const handlePlaceBet = async () => {
-    if (!betAmount || selectedOption === null) return
+    if (!betAmount || selectedOption === null || isSubmitting) return // ✅ FIXED: Prevent double submissions
 
     try {
+      setIsSubmitting(true) // ✅ FIXED: Block rapid clicking
       await placeBetMutation.mutateAsync({ 
         option: selectedOption, 
         amount: betAmount 
@@ -60,11 +61,12 @@ export function useBetActions(betId: string) {
       
       // React Query automatically refetches related data
     } catch {
-      // FIXED: Removed unused 'error' parameter - no longer needed since we're using notifications
       showError(
         'Your tokens may not be approved or you might have insufficient balance. Please try again.',
         'Failed to Place Bet'
       )
+    } finally {
+      setIsSubmitting(false) // ✅ FIXED: Always reset, even on error
     }
   }
 
@@ -74,7 +76,6 @@ export function useBetActions(betId: string) {
       // React Query automatically refetches user balance and claim status
       showSuccess('Your winnings have been transferred to your wallet!')
     } catch {
-      // FIXED: Removed unused 'error' parameter - no longer needed since we're using notifications
       showError(
         'You may have already claimed your winnings or the bet is not yet resolved.',
         'Failed to Claim Winnings'
@@ -99,17 +100,18 @@ export function useBetActions(betId: string) {
       // UPDATED: Use configurable approval timeout from config
       const timer = setTimeout(() => {
         setIsApprovalPending(false)
+        // ✅ FIXED: Show success only after timeout (when allowance should be updated)
+        showSuccess('Token approval successful! You can now place your bet.')
       }, timeoutsConfig.approval)
       
       return () => clearTimeout(timer)
     }
-  }, [approveMutation.isSuccess, approveMutation.isPending])
+  }, [approveMutation.isSuccess, approveMutation.isPending, showSuccess])
 
   // Show success message when bet is placed successfully
   useEffect(() => {
     if (placeBetMutation.isSuccess && !placeBetMutation.isPending) {
       setJustPlacedBet(true)
-      // ✅ ENHANCED: Better success messaging
       showSuccess('Your bet has been placed successfully!')
       
       // Reset success state after 3 seconds
@@ -130,7 +132,7 @@ export function useBetActions(betId: string) {
     justPlacedBet,
     
     // Loading states
-    isPending: placeBetMutation.isPending,
+    isPending: placeBetMutation.isPending || isSubmitting, // ✅ FIXED: Include isSubmitting
     isApproving: approveMutation.isPending || isApprovalPending,
     isClaiming: claimWinningsMutation.isPending,
     
