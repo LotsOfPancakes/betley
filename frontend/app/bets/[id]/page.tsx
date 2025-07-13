@@ -14,7 +14,6 @@ import { CreatorActions } from './components/CreatorActions'
 import { UserActions } from './components/UserActions'
 import { BettingInterface } from './components/BettingInterface'
 import { BetCreationPending } from './components/BetCreationPending'
-import { ShareButton } from './components/ShareButton'
 import { ResolveModal } from './components/ResolveModal'
 
 // Import hooks
@@ -183,6 +182,7 @@ export default function BetPage() {
           address={address}
           hypeBalance={hypeBalance}
           decimals={decimals}
+          betUrlId={randomBetId as string}  // ← ADD THIS LINE
         />
         
         <div className="bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
@@ -258,14 +258,6 @@ export default function BetPage() {
             hypeBalance={hypeBalance}
             justPlacedBet={justPlacedBet}
           />
-
-          {/* Share button */}
-          <div className="mt-8 pt-6 border-t border-gray-700">
-            <ShareButton 
-              betUrlId={randomBetId as string}
-              betName={name}
-            />
-          </div>
 
         </div>
 

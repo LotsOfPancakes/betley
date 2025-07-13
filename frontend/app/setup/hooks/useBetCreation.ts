@@ -1,4 +1,4 @@
-// frontend/app/setup/hooks/useBetCreation.ts
+// frontend/app/setup/hooks/useBetCreation.ts - WITH DESCRIPTIVE TOASTS
 import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi'
 import { useRouter } from 'next/navigation'
@@ -47,17 +47,11 @@ export function useBetCreation() {
       // Transaction is now ACTUALLY mined
       const newNumericBetId = Number(betCounter)
       
-      // ✅ REMOVED: console.log debug statements
-      // Production code doesn't need to log bet creation details
-      
       // Create random ID mapping
       const randomId = BetIdMapper.addMapping(newNumericBetId, lastBetName || 'Untitled Bet', address)
       
-      // ✅ REMOVED: console.log debug statements about mapping
-      // Silent success is better UX - user gets notification instead
-      
-      // Show success notification
-      showSuccess(`Your bet "${lastBetName}" has been created successfully!`)
+      // Show success notification with descriptive title
+      showSuccess('Your bet is now live and ready for participants', 'Bet Created!')
       
       // Now it's safe to redirect
       setTimeout(() => {
@@ -89,9 +83,6 @@ export function useBetCreation() {
       // Refresh bet counter to get accurate next ID
       await refetchBetCounter()
       
-      // ✅ REMOVED: console.log debug statement about bet creation
-      // Professional deployment doesn't need debug logging
-      
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
@@ -101,7 +92,6 @@ export function useBetCreation() {
 
       // NOTE: Redirect now happens in useEffect when transaction is actually mined
     } catch (err) {
-      // ✅ REPLACED: console.error with professional notification
       const errorMessage = err instanceof Error ? err.message : 'Failed to create bet'
       showError(
         'Please check your wallet connection and try again. Make sure you have sufficient funds for gas fees.',

@@ -132,7 +132,7 @@ export function BettingInterface({
                     ? 'bg-blue-900/30 border-blue-500 shadow-lg shadow-blue-500/20'
                     : isUsersBet
                     ? 'bg-green-900/30 border-green-500'
-                    : 'bg-gray-800 border-gray-600 hover:border-gray-500 hover:bg-gray-750'
+                    : 'bg-gray-800 border-gray-600 hover:border-blue-500 hover:bg-blue-900/10'
                 }`}
               >
                 {/* Selection indicator */}

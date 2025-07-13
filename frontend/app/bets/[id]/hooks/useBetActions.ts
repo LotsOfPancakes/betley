@@ -1,111 +1,56 @@
-// frontend/app/bets/[id]/hooks/useBetActions.ts - FIXED VERSION
+// frontend/app/bets/[id]/hooks/useBetActions.ts - UNIFIED PATTERN WITH DESCRIPTIVE TOASTS
 import { useState, useEffect } from 'react'
-import { useWaitForTransactionReceipt } from 'wagmi'
-import { 
-  usePlaceBetMutation,
-  useApproveMutation,
-  useClaimWinningsMutation,
-  useResolveBetMutation
-} from '@/lib/queries/betQueries'
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useQueryClient } from '@tanstack/react-query'
+import { parseUnits } from 'viem'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
+
+type TransactionType = 'approve' | 'placeBet' | 'claimWinnings' | 'resolveBet'
 
 export function useBetActions(betId: string) {
   const [justPlacedBet, setJustPlacedBet] = useState(false)
   const [betAmount, setBetAmount] = useState('')
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
-  const [isApprovalPending, setIsApprovalPending] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [currentTxType, setCurrentTxType] = useState<TransactionType | null>(null)
+  
   const numericBetId = parseInt(betId)
-
-  // === NOTIFICATION SYSTEM ===
+  const queryClient = useQueryClient()
   const { showError, showSuccess } = useNotification()
 
-  // === REACT QUERY MUTATIONS ===
-  const resolveBetMutation = useResolveBetMutation(numericBetId)
-  const placeBetMutation = usePlaceBetMutation(numericBetId)
-  const approveMutation = useApproveMutation()
-  const claimWinningsMutation = useClaimWinningsMutation(numericBetId)
+  // === DIRECT CONTRACT INTERACTIONS (like useBetCreation) ===
+  const { 
+    writeContract, 
+    data: txHash, 
+    isPending: isWritePending, 
+    error: writeError 
+  } = useWriteContract()
 
-  // === TRANSACTION RECEIPT MONITORING ===
-  // Wait for place bet transaction to be mined
-  const { data: placeBetReceipt } = useWaitForTransactionReceipt({
-    hash: placeBetMutation.data as `0x${string}` | undefined,
-  })
-
-  // Wait for approval transaction to be mined
-  const { data: approvalReceipt } = useWaitForTransactionReceipt({
-    hash: approveMutation.data as `0x${string}` | undefined,
-  })
+  const { 
+    isLoading: isConfirming, 
+    isSuccess: isConfirmed, 
+    data: receipt 
+  } = useWaitForTransactionReceipt({ hash: txHash })
 
   // === ACTION HANDLERS ===
   const handleApprove = async () => {
-    if (!betAmount) return
+    if (!betAmount || isWritePending) return
     
     try {
-      setIsApprovalPending(true)
-      await approveMutation.mutateAsync({ amount: betAmount })
-      // Keep isApprovalPending true until transaction is mined
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      
-      // Don't show error for user cancellation
-      if (errorMessage.toLowerCase().includes('user rejected') || 
-          errorMessage.toLowerCase().includes('cancelled') ||
-          errorMessage.toLowerCase().includes('denied') ||
-          errorMessage.includes('4001')) { // MetaMask rejection code
-        // User cancelled - silently return
-        setIsApprovalPending(false)
-        return
-      }
-      
-      showError(
-        'Please check your wallet and try again. Make sure you have sufficient funds to bet & pay transaction fees.',
-        'Failed to Approve Tokens'
-      )
-      setIsApprovalPending(false)
-    }
-  }
-
-  const handlePlaceBet = async () => {
-    if (!betAmount || selectedOption === null || isSubmitting) return
-
-    try {
       setIsSubmitting(true)
+      setCurrentTxType('approve')
       
-      await placeBetMutation.mutateAsync({ 
-        option: selectedOption, 
-        amount: betAmount 
+      const decimals = 18
+      const amountWei = parseUnits(betAmount, decimals)
+      
+      await writeContract({
+        address: HYPE_TOKEN_ADDRESS,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [BETLEY_ADDRESS, amountWei],
       })
       
-      // Only clear amount if transaction was successful (no exception thrown)
-      setBetAmount('')
-      
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      
-      // Check for user cancellation - be more comprehensive
-      if (errorMessage.toLowerCase().includes('user rejected') || 
-          errorMessage.toLowerCase().includes('cancelled') ||
-          errorMessage.toLowerCase().includes('denied') ||
-          errorMessage.includes('4001')) { // MetaMask rejection code
-        // User cancelled - silently return without any action or error message
-        return
-      }
-      
-      // Only show error for actual failures, not cancellations
-      showError(
-        'Your tokens may not be approved or you might have insufficient balance. Please try again.',
-        'Failed to Place Bet'
-      )
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleClaimWinnings = async () => {
-    try {
-      await claimWinningsMutation.mutateAsync()
-      showSuccess('Your winnings have been transferred to your wallet!')
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       
@@ -114,6 +59,84 @@ export function useBetActions(betId: string) {
           errorMessage.toLowerCase().includes('cancelled') ||
           errorMessage.toLowerCase().includes('denied') ||
           errorMessage.includes('4001')) {
+        // User cancelled - silently return
+        setIsSubmitting(false)
+        setCurrentTxType(null)
+        return
+      }
+      
+      showError(
+        'Please check your wallet and try again. Make sure you have sufficient funds for gas fees.',
+        'Failed to Approve Tokens'
+      )
+      setIsSubmitting(false)
+      setCurrentTxType(null)
+    }
+  }
+
+  const handlePlaceBet = async () => {
+    if (!betAmount || selectedOption === null || isWritePending) return
+
+    try {
+      setIsSubmitting(true)
+      setCurrentTxType('placeBet')
+      
+      const decimals = 18
+      const amountWei = parseUnits(betAmount, decimals)
+      
+      await writeContract({
+        address: BETLEY_ADDRESS,
+        abi: BETLEY_ABI,
+        functionName: 'placeBet',
+        args: [BigInt(numericBetId), selectedOption, amountWei],
+      })
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      
+      // Check for user cancellation
+      if (errorMessage.toLowerCase().includes('user rejected') || 
+          errorMessage.toLowerCase().includes('cancelled') ||
+          errorMessage.toLowerCase().includes('denied') ||
+          errorMessage.includes('4001')) {
+        // User cancelled - silently return
+        setIsSubmitting(false)
+        setCurrentTxType(null)
+        return
+      }
+      
+      showError(
+        'Your tokens may not be approved or you might have insufficient balance. Please try again.',
+        'Failed to Place Bet'
+      )
+      setIsSubmitting(false)
+      setCurrentTxType(null)
+    }
+  }
+
+  const handleClaimWinnings = async () => {
+    if (isWritePending) return
+
+    try {
+      setIsSubmitting(true)
+      setCurrentTxType('claimWinnings')
+      
+      await writeContract({
+        address: BETLEY_ADDRESS,
+        abi: BETLEY_ABI,
+        functionName: 'claimWinnings',
+        args: [BigInt(numericBetId)],
+      })
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      
+      if (errorMessage.toLowerCase().includes('user rejected') || 
+          errorMessage.toLowerCase().includes('cancelled') ||
+          errorMessage.toLowerCase().includes('denied') ||
+          errorMessage.includes('4001')) {
+        setIsSubmitting(false)
+        setCurrentTxType(null)
         return
       }
       
@@ -121,20 +144,34 @@ export function useBetActions(betId: string) {
         'You may have already claimed your winnings or the bet is not yet resolved.',
         'Failed to Claim Winnings'
       )
+      setIsSubmitting(false)
+      setCurrentTxType(null)
     }
   }
 
   const handleResolveBet = async (winningOptionIndex: number) => {
+    if (isWritePending) return
+
     try {
-      await resolveBetMutation.mutateAsync({ winningOptionIndex })
+      setIsSubmitting(true)
+      setCurrentTxType('resolveBet')
+      
+      await writeContract({
+        address: BETLEY_ADDRESS,
+        abi: BETLEY_ABI,
+        functionName: 'resolveBet',
+        args: [BigInt(numericBetId), winningOptionIndex],
+      })
+      
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       
-      // Don't show error for user cancellation
       if (errorMessage.toLowerCase().includes('user rejected') || 
           errorMessage.toLowerCase().includes('cancelled') ||
           errorMessage.toLowerCase().includes('denied') ||
           errorMessage.includes('4001')) {
+        setIsSubmitting(false)
+        setCurrentTxType(null)
         return
       }
       
@@ -142,35 +179,61 @@ export function useBetActions(betId: string) {
         'Only the bet creator can resolve this bet. Make sure the betting period has ended.',
         'Failed to Resolve Bet'
       )
+      setIsSubmitting(false)
+      setCurrentTxType(null)
     }
   }
 
-  // === TRANSACTION SUCCESS MONITORING ===
-  
-  // Handle approval success - wait for actual transaction confirmation
+  // === TRANSACTION SUCCESS MONITORING (like useBetCreation) ===
   useEffect(() => {
-    if (approvalReceipt && approveMutation.isSuccess) {
-      // Now the approval transaction is actually mined
-      setIsApprovalPending(false)
-      showSuccess('Token approval successful! You can now place your bet.')
+    if (isConfirmed && receipt && currentTxType) {
+      // Transaction successfully mined - handle based on type
+      
+      switch (currentTxType) {
+        case 'approve':
+          queryClient.invalidateQueries({ queryKey: ['allowance'] })
+          showSuccess('You can now place your bet', 'Tokens Approved!')
+          break
+          
+        case 'placeBet':
+          queryClient.invalidateQueries({ queryKey: ['bet', numericBetId] })
+          queryClient.invalidateQueries({ queryKey: ['userBets', numericBetId] })
+          queryClient.invalidateQueries({ queryKey: ['balance'] })
+          setBetAmount('') // Only clear on successful confirmation
+          setJustPlacedBet(true)
+          showSuccess('Your transaction has been confirmed', 'Bet Placed!')
+          
+          // Reset success state after 3 seconds
+          setTimeout(() => {
+            setJustPlacedBet(false)
+          }, 3000)
+          break
+          
+        case 'claimWinnings':
+          queryClient.invalidateQueries({ queryKey: ['balance'] })
+          queryClient.invalidateQueries({ queryKey: ['claimed', numericBetId] })
+          showSuccess('Your winnings have been transferred to your wallet', 'Winnings Claimed!')
+          break
+          
+        case 'resolveBet':
+          queryClient.invalidateQueries({ queryKey: ['bet', numericBetId] })
+          showSuccess('The bet outcome has been recorded', 'Bet Resolved!')
+          break
+      }
+      
+      // Reset transaction state
+      setIsSubmitting(false)
+      setCurrentTxType(null)
     }
-  }, [approvalReceipt, approveMutation.isSuccess, showSuccess])
+  }, [isConfirmed, receipt, currentTxType, queryClient, numericBetId, showSuccess])
 
-  // Handle place bet success - wait for actual transaction confirmation
+  // Handle write errors
   useEffect(() => {
-    if (placeBetReceipt && placeBetMutation.isSuccess) {
-      // Now the bet transaction is actually mined
-      setJustPlacedBet(true)
-      showSuccess('Your bet has been placed successfully! Transaction confirmed.')
-      
-      // Reset success state after 3 seconds
-      const resetTimer = setTimeout(() => {
-        setJustPlacedBet(false)
-      }, 3000)
-      
-      return () => clearTimeout(resetTimer)
+    if (writeError && currentTxType) {
+      setIsSubmitting(false)
+      setCurrentTxType(null)
     }
-  }, [placeBetReceipt, placeBetMutation.isSuccess, showSuccess])
+  }, [writeError, currentTxType])
 
   return {
     // State
@@ -180,10 +243,12 @@ export function useBetActions(betId: string) {
     setSelectedOption,
     justPlacedBet,
     
-    // Loading states
-    isPending: placeBetMutation.isPending || isSubmitting,
-    isApproving: approveMutation.isPending || isApprovalPending,
-    isClaiming: claimWinningsMutation.isPending,
+    // Loading states - unified and reliable
+    isPending: (currentTxType === 'placeBet' && (isWritePending || isConfirming)) || isSubmitting,
+    isApproving: (currentTxType === 'approve' && (isWritePending || isConfirming)) || 
+                 (currentTxType === 'approve' && isSubmitting),
+    isClaiming: (currentTxType === 'claimWinnings' && (isWritePending || isConfirming)) || 
+                (currentTxType === 'claimWinnings' && isSubmitting),
     
     // Actions
     handleApprove,
@@ -191,9 +256,10 @@ export function useBetActions(betId: string) {
     handleClaimWinnings,
     handleResolveBet,
     
-    // Mutation objects for advanced usage
-    placeBetMutation,
-    approveMutation,
-    claimWinningsMutation,
+    // Transaction state for debugging
+    txHash,
+    isWritePending,
+    isConfirming,
+    currentTxType,
   }
 }
