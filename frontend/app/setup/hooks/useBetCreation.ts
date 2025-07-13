@@ -51,7 +51,7 @@ export function useBetCreation() {
       const randomId = BetIdMapper.addMapping(newNumericBetId, lastBetName || 'Untitled Bet', address)
       
       // Show success notification with descriptive title
-      showSuccess('Your bet is now live and ready for participants', 'Bet Created!')
+      showSuccess('Your bet is now live and ready!', 'Created bet "${lastBetName}"')
       
       // Now it's safe to redirect
       setTimeout(() => {
