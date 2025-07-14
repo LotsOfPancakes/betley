@@ -1,4 +1,4 @@
-// frontend/lib/config.ts - Clean production version without debug logs
+// frontend/lib/config.ts - Fixed to prioritize environment variables
 'use client'
 
 // Environment variable helpers
@@ -46,9 +46,10 @@ export const config = {
   },
   
   contracts: {
+    // 🔧 TEMPORARY: Add fallback while debugging
     betley: getRequiredEnv(
-      'NEXT_PUBLIC_BETLEY_ADDRESS', 
-      '0xCFf7b01Fe9838a913C2Bc06499C3CBEA169D1725'
+      'NEXT_PUBLIC_BETLEY_ADDRESS',
+      '0x1240A24df5C4eEAA27A92A378e01545A10e0aEbf'  // Your new contract
     ) as `0x${string}`,
     hypeToken: getRequiredEnv(
       'NEXT_PUBLIC_HYPE_TOKEN_ADDRESS', 
@@ -141,8 +142,8 @@ if (isDevelopment && config.dev.enableConsoleLogging) {
     network: config.network.name,
     chainId: config.network.chainId,
     isTestnet: config.network.isTestnet,
+    betleyAddress: config.contracts.betley, // 🔧 Added for debugging
     timeouts: config.timeouts,
-    // Note: Contract addresses intentionally excluded from logs for security
   })
 }
 
