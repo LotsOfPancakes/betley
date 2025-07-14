@@ -192,15 +192,12 @@ export function UnifiedBettingInterface({
             if (amount === BigInt(0)) return null
             return (
               <div key={index}>
-                <h4 className="font-semibold mb-2 text-blue-300">
+                <h4 className="font-semibold text-blue-300">
                   Your Current Bet: {formatUnits(amount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'} on <span className="text-gray-300">{options[index]}</span>
                 </h4>
               </div>
             )
           })}
-          <p className="text-sm text-gray-400 mt-2">
-            💡 You can add more to the same option, but cannot switch options.
-          </p>
         </div>
       )}
 
@@ -208,7 +205,7 @@ export function UnifiedBettingInterface({
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">
-            {hasExistingBet ? 'Add More to Your Bet' : 'Bet Options'}
+            {hasExistingBet ? 'Bet More - Single Option' : 'Bet Options'}
           </h3>
           
           {/* Show wallet connection prompt if not connected */}
@@ -255,12 +252,7 @@ export function UnifiedBettingInterface({
                       <span className="font-medium">{option}</span>
                       {isUserCurrentOption && (
                         <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
-                          Your Choice
-                        </span>
-                      )}
-                      {isDisabled && !isUserCurrentOption && (
-                        <span className="text-xs bg-gray-600 text-gray-300 px-2 py-1 rounded">
-                          Locked
+                          Current Bet
                         </span>
                       )}
                     </div>
@@ -295,7 +287,7 @@ export function UnifiedBettingInterface({
             {/* Amount Input */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-3">
-                {hasExistingBet ? 'Additional bet amount:' : 'Bet amount:'}
+                {hasExistingBet ? 'Additional bet:' : 'Bet amount:'}
               </label>
               <div className="relative">
                 <input

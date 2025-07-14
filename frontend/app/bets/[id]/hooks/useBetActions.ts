@@ -223,9 +223,9 @@ export function useBetActions(betId: string, tokenAddress?: string) {
           setJustPlacedBet(true)
           
           const successMessage = isNativeBet 
-            ? 'Your native HYPE bet has been confirmed!' 
-            : 'Your ERC20 token bet has been confirmed!'
-          showSuccess('Your transaction has been confirmed', successMessage)
+            ? 'Bet Confirmed.' 
+            : 'Bet Confirmed.'
+          showSuccess('Good Luck!', successMessage)
           
           setTimeout(() => {
             setJustPlacedBet(false)
