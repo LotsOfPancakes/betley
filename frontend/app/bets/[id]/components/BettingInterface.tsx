@@ -143,15 +143,6 @@ export function BettingInterface({
                 Balance: {formatUnits(hypeBalance, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}
               </div>
             )}
-
-            {/* 🚀 NEW: Native HYPE info message */}
-            {isNativeBet && (
-              <div className="mt-2 p-3 bg-green-900/20 border border-green-600 rounded-lg">
-                <p className="text-green-300 text-sm flex items-center">
-                  ⚡ Native HYPE - No approval needed! Your bet will be placed directly.
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Action Button */}
@@ -212,19 +203,6 @@ export function BettingInterface({
           </p>
         </div>
       )}
-
-      {/* 🚀 NEW: Token type indicator at bottom */}
-      <div className="mt-4 pt-4 border-t border-gray-700">
-        <div className="flex items-center justify-center text-sm text-gray-400">
-          <span className="flex items-center">
-            {isNativeBet ? (
-              <>⚡ Using Native HYPE Token</>
-            ) : (
-              <>🔗 Using ERC20 Mock HYPE Token</>
-            )}
-          </span>
-        </div>
-      </div>
     </div>
   )
 }

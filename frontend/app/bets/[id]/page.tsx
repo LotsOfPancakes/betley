@@ -8,7 +8,6 @@ import { useBetIdMapping } from '@/lib/hooks/useBetIdMapping'
 import { parseUnits } from 'viem'
 
 // Import existing components
-import { BetHeader } from './components/BetHeader'
 import { BetInfo } from './components/BetInfo'
 import { CreatorActions } from './components/CreatorActions'
 import { UserActions } from './components/UserActions'
@@ -193,21 +192,6 @@ export default function BetPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        {betDetails && name && creator && options && numericBetId !== null && (
-          <BetHeader 
-            name={name}
-            randomId={randomBetId as string}
-            numericId={numericBetId}
-            creator={creator}
-            isCreator={isCreator}
-            endTime={endTime}
-            resolved={resolved}
-            winningOption={winningOption}
-            isNativeBet={isNativeBet} // 🚀 STEP 6: Pass native bet info
-            tokenAddress={tokenAddress} // 🚀 STEP 6: Pass token address
-          />
-        )}
         {/* 🔧 FIXED: Only render BetInfo when required data is available, with CORRECT props */}
         {betDetails && name && creator && options && (
           <BetInfo 

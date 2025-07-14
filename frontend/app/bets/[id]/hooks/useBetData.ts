@@ -1,7 +1,8 @@
-// frontend/app/bets/[id]/hooks/useBetData.ts (ENHANCED VERSION)
+// frontend/app/bets/[id]/hooks/useBetData.ts - Fixed with native balance support
 import { useState, useEffect, useCallback } from 'react'
-import { useAccount, useReadContract } from 'wagmi'
+import { useAccount, useReadContract, useBalance } from 'wagmi'
 import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
+import { isNativeHype } from '@/lib/tokenUtils'
 // Optional: Use React Query hooks if available
 import { 
   useBetDetailsQuery, 
@@ -51,6 +52,20 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     }
   })
 
+  // 🔧 FIX: Get token address from raw data BEFORE using it
+  const rawBetDetails = useReactQuery ? reactQueryBetDetails.data : fallbackBetDetails.data
+  const tokenAddress = rawBetDetails?.[7] as string
+  const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : false
+
+  // 🔧 NEW: Native balance query (for native HYPE)
+  const { data: nativeBalance } = useBalance({
+    address: address,
+    query: {
+      enabled: !!address && isNativeBet,
+      refetchInterval: 8000,
+    }
+  })
+
   const fallbackUserBets = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
@@ -62,14 +77,15 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     }
   })
 
-  const fallbackBalance = useReadContract({
+  // 🔧 UPDATED: ERC20 balance query (only for ERC20 tokens)
+  const fallbackERC20Balance = useReadContract({
     address: HYPE_TOKEN_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
       refetchInterval: 8000,
-      enabled: !!address && !useReactQuery
+      enabled: !!address && !useReactQuery && !isNativeBet // Only for ERC20 tokens
     }
   })
 
@@ -96,9 +112,14 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
   })
 
   // === CHOOSE DATA SOURCE ===
-  const betDetails = useReactQuery ? reactQueryBetDetails.data : fallbackBetDetails.data
+  const betDetails = rawBetDetails // Use the data we already fetched
   const userBets = useReactQuery ? reactQueryUserBets.data : fallbackUserBets.data  
-  const hypeBalance = useReactQuery ? reactQueryBalance.data : fallbackBalance.data
+  
+  // 🔧 NEW: Smart balance selection based on token type
+  const hypeBalance = isNativeBet 
+    ? nativeBalance?.value // Use native balance for native HYPE
+    : (useReactQuery ? reactQueryBalance.data : fallbackERC20Balance.data) // Use ERC20 balance for ERC20 tokens
+    
   const allowance = useReactQuery ? reactQueryAllowance.data : fallbackAllowance.data
   const hasClaimed = useReactQuery ? reactQueryClaimed.data : fallbackClaimed.data
 
@@ -126,67 +147,45 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     functionName: 'getResolutionDeadline',
     args: numericBetId !== null ? [BigInt(numericBetId)] : undefined,
     query: {
-      enabled: numericBetId !== null
+      enabled: numericBetId !== null,
+      staleTime: 30000,
     }
   })
 
-  // === MANUAL REFRESH (Works with both approaches) ===
-  const refreshAllData = useCallback(() => {
-    if (numericBetId !== null) {
-      if (useReactQuery) {
-        // React Query refetch
-        reactQueryBetDetails.refetch()
-        reactQueryUserBets.refetch()
-        reactQueryBalance.refetch()
-        reactQueryAllowance.refetch()
-        reactQueryClaimed.refetch()
-      } else {
-        // Fallback refetch
-        fallbackBetDetails.refetch()
-        fallbackUserBets.refetch()
-        fallbackBalance.refetch()
-        fallbackAllowance.refetch()
-        fallbackClaimed.refetch()
-      }
-    }
-  }, [
-    numericBetId, 
-    useReactQuery,
-    reactQueryBetDetails, reactQueryUserBets, reactQueryBalance, reactQueryAllowance, reactQueryClaimed,
-    fallbackBetDetails, fallbackUserBets, fallbackBalance, fallbackAllowance, fallbackClaimed
-  ])
-
-  // === TIME-BASED STATE (Same for both) ===
+  // === TIME CALCULATIONS ===
   useEffect(() => {
-    const updateTimes = () => {
-      const now = Math.floor(Date.now() / 1000)
-      
-      if (betDetails && betDetails[3]) {
-        const endTime = Number(betDetails[3])
-        setTimeLeft(Math.max(0, endTime - now))
-      }
-
-      if (resolutionDeadline) {
-        const deadline = Number(resolutionDeadline)
-        const timeUntilDeadline = Math.max(0, deadline - now)
-        setResolutionTimeLeft(timeUntilDeadline)
-        setResolutionDeadlinePassed(timeUntilDeadline === 0)
-      }
+    if (betDetails && betDetails[3]) {
+      const endTime = Number(betDetails[3]) * 1000
+      const now = Date.now()
+      setTimeLeft(Math.max(0, Math.floor((endTime - now) / 1000)))
     }
+  }, [betDetails, refreshTrigger])
 
-    updateTimes()
-    const interval = setInterval(updateTimes, 1000)
+  useEffect(() => {
+    if (resolutionDeadline) {
+      const deadline = Number(resolutionDeadline) * 1000
+      const now = Date.now()
+      setResolutionTimeLeft(Math.max(0, Math.floor((deadline - now) / 1000)))
+      setResolutionDeadlinePassed(now > deadline)
+    }
+  }, [resolutionDeadline, refreshTrigger])
+
+  // Auto-refresh timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTrigger(prev => prev + 1)
+    }, 1000)
+
     return () => clearInterval(interval)
-  }, [betDetails, resolutionDeadline])
+  }, [])
 
-  // Trigger refresh when external trigger changes
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      refreshAllData()
-    }
-  }, [refreshTrigger, refreshAllData])
+  // Manual refresh all data
+  const refreshAllData = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1)
+    // Could also manually refetch specific queries here if needed
+  }, [])
 
-  // Custom error for invalid bet ID
+  // Validation error for invalid bet IDs
   const validationError = !isValidBetId ? 
     new Error(`Invalid bet ID: "${betId}". Bet IDs must be numbers.`) : null
 
@@ -194,11 +193,12 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     // Data
     betDetails,
     userBets,
-    hypeBalance,
+    hypeBalance, // Now correctly shows native or ERC20 balance
     decimals,
     hasClaimed,
     resolutionDeadline,
     allowance,
+    isNativeBet, // 🔧 NEW: Export this so components know token type
     
     // Loading states
     isBetLoading: numericBetId === null ? false : isBetLoading,

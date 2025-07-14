@@ -20,7 +20,6 @@ interface BetInfoProps {
 
 export function BetInfo({
   name,
-  creator,
   options,
   totalAmounts,
   decimals,
@@ -97,9 +96,6 @@ export function BetInfo({
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-white mb-2">{name}</h1>
-          <p className="text-gray-400">
-            Created by {creator.slice(0, 6)}...{creator.slice(-4)}
-          </p>
         </div>
         <div className="flex flex-col items-end space-y-3">
           {/* Status badge with time info */}
@@ -113,9 +109,6 @@ export function BetInfo({
                 </>
               )}
             </div>
-            {status.timeInfo && (
-              <p className="text-xs text-gray-400 mt-1">remaining to bet</p>
-            )}
           </div>
           
           {/* Total pool */}
