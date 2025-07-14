@@ -87,7 +87,7 @@ export function UnifiedBettingInterface({
         text: 'Resolved',
         color: 'bg-green-600',
         description: options && winningOption !== undefined ? 
-          `Winning Option: ${options[winningOption]}` : 'Bet has been resolved',
+          `Winner: ${options[winningOption]}` : 'Bet has been resolved',
         timeInfo: null
       }
     }
@@ -266,12 +266,7 @@ export function UnifiedBettingInterface({
                       <span className="font-medium">{option}</span>
                       {isUserCurrentOption && (
                         <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
-                          Your Choice
-                        </span>
-                      )}
-                      {isDisabled && !isUserCurrentOption && (
-                        <span className="text-xs bg-gray-600 text-gray-300 px-2 py-1 rounded">
-                          Locked
+                          Current Bet
                         </span>
                       )}
                     </div>
