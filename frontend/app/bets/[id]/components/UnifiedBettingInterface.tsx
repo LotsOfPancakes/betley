@@ -1,8 +1,8 @@
-// frontend/app/bets/[id]/components/UnifiedBettingInterface.tsx
+// frontend/app/bets/[id]/components/UnifiedBettingInterface.tsx - Cleaned up version
 'use client'
 
 import { formatUnits } from 'viem'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 interface UnifiedBettingInterfaceProps {
   // Bet Info props
@@ -66,6 +66,8 @@ export function UnifiedBettingInterface({
   isNativeBet = false
 }: UnifiedBettingInterfaceProps) {
 
+  const [linkCopied, setLinkCopied] = useState(false)
+
   const formatTimeRemaining = (seconds: number) => {
     if (seconds <= 0) return 'Expired'
     const hours = Math.floor(seconds / 3600)
@@ -104,11 +106,9 @@ export function UnifiedBettingInterface({
     if (!isActive) {
       return {
         text: 'Pending Resolution',
-        color: 'bg-orange-700',
-        description: resolutionTimeLeft > 0 ? 
-          `Creator has ${formatTimeRemaining(resolutionTimeLeft)} to resolve` :
-          'Betting period has ended',
-        timeInfo: null
+        color: 'bg-orange-600',
+        description: 'Betting period has ended',
+        timeInfo: resolutionTimeLeft > 0 ? formatTimeRemaining(resolutionTimeLeft) : null
       }
     }
     
@@ -160,19 +160,34 @@ export function UnifiedBettingInterface({
               onClick={() => {
                 const url = window.location.href
                 navigator.clipboard.writeText(url).then(() => {
-                  console.log('🔗 Link copied to clipboard')
-                  // You could add a toast notification here
+                  setLinkCopied(true)
+                  setTimeout(() => setLinkCopied(false), 2000) // Reset after 2 seconds
                 }).catch(() => {
                   console.error('Failed to copy link')
                 })
               }}
-              className="bg-gray-700 hover:bg-gray-600 text-gray-100 hover:text-white px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm"
+              className={`${
+                linkCopied 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-gray-700 hover:bg-gray-600'
+              } text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm`}
               title="Copy link to share this bet"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-              </svg>
-              Share
+              {linkCopied ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy Link
+                </>
+              )}
             </button>
             
             {/* Status Badge */}
@@ -186,39 +201,38 @@ export function UnifiedBettingInterface({
               )}
             </div>
           </div>
-          
-          {/* Total pool */}
-          {totalAmounts && decimals !== undefined && totalPool > BigInt(0) && (
-            <div className="text-right">
-              <p className="text-sm text-gray-400">Total Bets</p>
-              <p className="text-xl font-bold text-white">
-                {formatUnits(totalPool, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Status Description - Only show if relevant */}
-      {(!status.timeInfo || !isActive) && (
-        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mb-6">
-          <p className="text-gray-300">{status.description}</p>
-        </div>
-      )}
+      {/* Total Pool and Your Bet Cards */}
+      {(totalPool > BigInt(0) || hasExistingBet) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Pool Total Card */}
+          {totalPool > BigInt(0) && (
+            <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-400 mb-2">Pool Total</h3>
+              <p className="text-2xl font-bold text-white">
+                {formatUnits(totalPool, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+              </p>
+            </div>
+          )}
 
-      {/* Show existing bet info if user has bet */}
-      {hasExistingBet && userBets && options && (
-        <div className="mb-6 p-4 bg-blue-900/30 border border-blue-600 rounded-lg">
-          {userBets.map((amount, index) => {
-            if (amount === BigInt(0)) return null
-            return (
-              <div key={index}>
-                <h4 className="font-semibold text-blue-300">
-                  Your Current Bet: {formatUnits(amount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'} on <span className="text-gray-300">{options[index]}</span>
-                </h4>
-              </div>
-            )
-          })}
+          {/* Your Bet Card */}
+          {hasExistingBet && userBets && options && (
+            <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-400 mb-2">Your Bet</h3>
+              {userBets.map((amount, index) => {
+                if (amount === BigInt(0)) return null
+                return (
+                  <div key={index} className="space-y-1">
+                    <p className="text-xl font-bold text-white">
+                      {formatUnits(amount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'} <span className="text-lg font-medium text-white">on {options[index]}</span>
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -226,7 +240,7 @@ export function UnifiedBettingInterface({
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">
-            {hasExistingBet ? 'Add More to Your Bet' : 'Bet Options'}
+            {hasExistingBet && isActive ? 'Add More to Your Bet' : 'Bet Options'}
           </h3>
           
           {/* Show wallet connection prompt if not connected */}
@@ -247,6 +261,7 @@ export function UnifiedBettingInterface({
               const isUserCurrentOption = hasExistingBet && index === userExistingOptionIndex
               const isDisabled = !canBet || (hasExistingBet && !isUserCurrentOption)
               const isSelected = effectiveSelectedOption === index
+              const isWinningOption = resolved && winningOption === index
               
               return (
                 <button
@@ -254,7 +269,9 @@ export function UnifiedBettingInterface({
                   onClick={() => !isDisabled && setSelectedOption(index)}
                   disabled={isDisabled}
                   className={`p-4 rounded-lg border text-left transition-all ${
-                    isSelected
+                    isWinningOption
+                      ? 'border-green-800 bg-green-900/20 text-green-300'
+                      : isSelected
                       ? 'border-blue-500 bg-blue-900/30 text-blue-300'
                       : isDisabled
                       ? 'border-gray-700 bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
@@ -264,15 +281,20 @@ export function UnifiedBettingInterface({
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{option}</span>
-                      {isUserCurrentOption && (
+                      {isWinningOption && (
+                        <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">
+                          Winner
+                        </span>
+                      )}
+                      {isUserCurrentOption && !isWinningOption && (
                         <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
-                          Current Bet
+                          Your Bet
                         </span>
                       )}
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium text-gray-300">
-                        {parseFloat(totalFormatted).toFixed(3)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+                        {parseFloat(totalFormatted).toFixed(2)} {isNativeBet ? 'HYPE' : 'mHYPE'}
                       </div>
                       <div className="text-xs text-gray-400">
                         {percentage.toFixed(1)}%
@@ -284,7 +306,11 @@ export function UnifiedBettingInterface({
                   <div className="w-full bg-gray-700 rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full transition-all ${
-                        isSelected ? 'bg-blue-500' : 'bg-gray-600'
+                        isWinningOption
+                          ? 'bg-green-500'
+                          : isSelected 
+                          ? 'bg-blue-500' 
+                          : 'bg-gray-600'
                       }`}
                       style={{ width: `${Math.max(percentage, 2)}%` }}
                     />
@@ -338,18 +364,7 @@ export function UnifiedBettingInterface({
                 </button>
               ) : (
                 <button
-                  onClick={() => {
-                    console.log('🔍 Button clicked with:', {
-                      betAmount,
-                      effectiveSelectedOption,
-                      selectedOption,
-                      hasExistingBet,
-                      userExistingOptionIndex,
-                      isPending,
-                      canBet
-                    })
-                    handlePlaceBet()
-                  }}
+                  onClick={handlePlaceBet}
                   disabled={
                     isPending || 
                     !betAmount || 

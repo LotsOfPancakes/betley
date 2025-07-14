@@ -119,6 +119,11 @@ export default function BetPage() {
   const isCreator = address?.toLowerCase() === creator.toLowerCase()
   const timeLeft = isActive ? Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000)) : 0
 
+  // Calculate resolution time left (72 hours after betting ends)
+  const resolutionDeadlineMs = endTimeMs + (72 * 60 * 60 * 1000) // 72 hours after end time
+  const resolutionTimeLeft = !resolved && !isActive ? Math.max(0, Math.floor((resolutionDeadlineMs - Date.now()) / 1000)) : 0
+  const resolutionDeadlinePassed = !resolved && Date.now() > resolutionDeadlineMs
+
   // Check if user has existing bet
   const hasExistingBet = userBets?.some(amount => amount > BigInt(0)) || false
 
@@ -143,8 +148,8 @@ export default function BetPage() {
           resolved={resolved}
           winningOption={winningOption}
           timeLeft={timeLeft}
-          resolutionTimeLeft={0} // TODO: Calculate based on contract data
-          resolutionDeadlinePassed={false} // TODO: Calculate based on timestamps
+          resolutionTimeLeft={resolutionTimeLeft}
+          resolutionDeadlinePassed={resolutionDeadlinePassed}
           
           // Betting interface props
           address={address}
@@ -175,8 +180,8 @@ export default function BetPage() {
               creator={creator}
               timeLeft={timeLeft}
               resolved={resolved}
-              resolutionDeadlinePassed={false}
-              resolutionTimeLeft={0}
+              resolutionDeadlinePassed={resolutionDeadlinePassed}
+              resolutionTimeLeft={resolutionTimeLeft}
               onShowResolveModal={() => setShowResolveModal(true)}
             />
           </div>
@@ -191,7 +196,7 @@ export default function BetPage() {
               winningOption={winningOption}
               userBets={userBets}
               totalAmounts={totalAmounts}
-              resolutionDeadlinePassed={false}
+              resolutionDeadlinePassed={resolutionDeadlinePassed}
               hasClaimed={hasClaimed}
               decimals={decimals}
               isPending={isPending}
