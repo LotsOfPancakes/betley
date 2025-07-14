@@ -1,65 +1,87 @@
-// frontend/app/setup/hooks/useBetCreation.ts - WITH DESCRIPTIVE TOASTS
+// frontend/app/setup/hooks/useBetCreation.ts - Updated for Native HYPE
+'use client'
+
 import { useState, useEffect } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi'
 import { useRouter } from 'next/navigation'
-import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
-import { BetIdMapper } from '@/lib/betIdMapping'
-import { BetCreationState } from '../types/setup.types'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
+import { useReadContract } from 'wagmi'
+import { ZERO_ADDRESS } from '@/lib/tokenUtils'
+
+interface BetCreationState {
+  isLoading: boolean
+  error: string | null
+}
 
 export function useBetCreation() {
-  const router = useRouter()
-  const { address } = useAccount()
-  const { showSuccess, showError } = useNotification()
-  const [lastBetName, setLastBetName] = useState<string | null>(null)
   const [state, setState] = useState<BetCreationState>({
-    isCreating: false,
-    isConfirming: false,
-    isSuccess: false,
+    isLoading: false,
     error: null
   })
-
-  // Contract hooks
-  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({ hash })
-
-  // Get current bet counter for ID mapping
+  const [lastBetName, setLastBetName] = useState<string>('')
+  
+  const router = useRouter()
+  const { address } = useAccount()
+  const queryClient = useQueryClient()
+  const { showError, showSuccess } = useNotification()
+  
+  // Get current bet counter for ID prediction
   const { data: betCounter, refetch: refetchBetCounter } = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'betCounter',
+    query: {
+      staleTime: 5000,
+    }
   })
+  
+  // Contract interaction
+  const { 
+    writeContract, 
+    data: txHash, 
+    isPending: isWritePending
+  } = useWriteContract()
 
-  // Update state based on transaction status
+  const { 
+    isLoading: isConfirming, 
+    isSuccess, 
+    data: receipt 
+  } = useWaitForTransactionReceipt({ hash: txHash })
+
+  // Generate random ID for immediate redirect
+  const generateRandomId = () => Math.random().toString(36).substring(2, 15)
+
+  // Handle successful transaction
   useEffect(() => {
-    setState(prev => ({
-      ...prev,
-      isCreating: isPending,
-      isConfirming,
-      isSuccess,
-      error: writeError?.message || null
-    }))
-  }, [isPending, isConfirming, isSuccess, writeError])
+    if (isSuccess && receipt && betCounter !== undefined) {
+      const randomId = generateRandomId()
+      
+      // Store mapping in localStorage for the redirect
+      const betMapping = {
+        randomId,
+        actualBetId: betCounter.toString(),
+        timestamp: Date.now()
+      }
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`bet_${randomId}`, JSON.stringify(betMapping))
+      }
+      
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['betCounter'] })
+      queryClient.invalidateQueries({ queryKey: ['bet'] })
+      
+      setState(prev => ({ ...prev, isLoading: false }))
+      showSuccess('Redirecting to your new bet...', `Created Bet "${lastBetName}"`)
 
-  // Handle successful bet creation - WAIT for transaction receipt
-  useEffect(() => {
-    if (isSuccess && receipt && betCounter !== undefined && address) {
-      // Transaction is now ACTUALLY mined
-      const newNumericBetId = Number(betCounter)
-      
-      // Create random ID mapping
-      const randomId = BetIdMapper.addMapping(newNumericBetId, lastBetName || 'Untitled Bet', address)
-      
-      // Show success notification with descriptive title
-      showSuccess('Your bet is now live and ready!', `Created Bet "${lastBetName}"`)
-
-      
-      // Now it's safe to redirect
+      // Redirect to the bet page
       setTimeout(() => {
         router.push(`/bets/${randomId}`)
-      }, 1000) // Small delay to ensure everything is processed
+      }, 1000)
     }
-  }, [isSuccess, receipt, betCounter, address, router, lastBetName, showSuccess])
+  }, [isSuccess, receipt, betCounter, address, router, lastBetName, showSuccess, queryClient])
 
   const createBet = async (
     name: string, 
@@ -77,29 +99,46 @@ export function useBetCreation() {
     }
 
     try {
-      // Clear any previous errors and store bet name
-      setState(prev => ({ ...prev, error: null }))
+      setState(prev => ({ ...prev, error: null, isLoading: true }))
       setLastBetName(name)
       
       // Refresh bet counter to get accurate next ID
       await refetchBetCounter()
       
+      // Create bet with Native HYPE (ZERO_ADDRESS)
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'createBet',
-        args: [name, options, BigInt(durationInSeconds)],
+        args: [
+          name, 
+          options, 
+          BigInt(durationInSeconds),
+          ZERO_ADDRESS  // 🔥 THIS IS THE KEY CHANGE - Use native HYPE
+        ],
       })
 
-      // NOTE: Redirect now happens in useEffect when transaction is actually mined
+      // Success handling happens in useEffect
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create bet'
+      
+      // Check for user cancellation
+      if (errorMessage.toLowerCase().includes('user rejected') || 
+          errorMessage.toLowerCase().includes('cancelled') ||
+          errorMessage.toLowerCase().includes('denied') ||
+          errorMessage.includes('4001')) {
+        // User cancelled - silently return
+        setState(prev => ({ ...prev, isLoading: false, error: null }))
+        return
+      }
+      
       showError(
         'Please check your wallet connection and try again. Make sure you have sufficient funds for gas fees.',
         'Failed to Create Bet'
       )
       setState(prev => ({ 
         ...prev, 
+        isLoading: false,
         error: errorMessage
       }))
     }
@@ -111,6 +150,7 @@ export function useBetCreation() {
 
   return {
     ...state,
+    isLoading: state.isLoading || isWritePending || isConfirming,
     createBet,
     clearError,
     betCounter

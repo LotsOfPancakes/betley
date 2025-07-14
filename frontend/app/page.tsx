@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { ConnectKitButton } from 'connectkit'
 import { useAccount } from 'wagmi'
+import { TokenTest } from '@/components/TokenTest'
 
 export default function HomePage() {
   const router = useRouter()
@@ -15,12 +16,11 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-5xl font-bold text-white mb-6">
-              Decentralized Betting, 
+              Betting, 
               <span className="text-blue-500"> Simplified</span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Create and participate in trustless bets on HyperEVM. 
-              Pari-mutuel style payouts ensure fair distribution of winnings.
+              Bet anything.
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -29,17 +29,11 @@ export default function HomePage() {
               >
                 Create a Bet
               </button>
-              <button
-                onClick={() => router.push('/bets')}
-                className="bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors border border-gray-600"
-              >
-                Browse Bets
-              </button>
             </div>
           </div>
         </div>
       </div>
-
+<TokenTest />
       {/* Features Section */}
       <div className="py-20 border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,7 +45,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Create a Bet</h3>
               <p className="text-gray-300">
-                Define your bet terms, set up to 3 options, and specify the betting duration. 
+                Define your bet terms & betting duration. 
+                <br></br>
+                <br></br>
                 Anyone can create a bet on any topic.
               </p>
             </div>
@@ -60,10 +56,12 @@ export default function HomePage() {
               <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-white font-bold text-xl">2</span>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Place Your Bets</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">Place Bets</h3>
               <p className="text-gray-300">
-                Bet with HYPE tokens on your preferred outcome. 
-                Smart contracts ensure all funds are held securely until resolution.
+                Bet with HYPE on your preferred outcome. 
+                <br></br>
+                <br></br>
+                Betley&apos;s contracts ensure all funds are held securely until resolution.
               </p>
             </div>
 
@@ -74,7 +72,9 @@ export default function HomePage() {
               <h3 className="text-xl font-semibold text-white mb-2">Win & Claim</h3>
               <p className="text-gray-300">
                 Winners share the losing pool proportionally to their stake. 
-                Claim your winnings directly to your wallet.
+                <br></br>
+                <br></br>
+                Claim winnings directly to your wallet.
               </p>
             </div>
           </div>
@@ -90,8 +90,8 @@ export default function HomePage() {
               <p className="text-gray-300 mt-2">No intermediaries needed</p>
             </div>
             <div>
-              <p className="text-4xl font-bold text-blue-500">72 Hours</p>
-              <p className="text-gray-300 mt-2">Resolution deadline</p>
+              <p className="text-4xl font-bold text-blue-500">Flexible</p>
+              <p className="text-gray-300 mt-2">Custom resolution deadline</p>
             </div>
             <div>
               <p className="text-4xl font-bold text-blue-500">Pari-mutuel</p>
@@ -125,7 +125,7 @@ export default function HomePage() {
       <footer className="border-t border-gray-800 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-gray-400">
-            Built on HyperEVM • Powered by HYPE tokens
+            Built on HyperEVM • Powered by HYPE
           </p>
         </div>
       </footer>

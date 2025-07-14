@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";  // 🔧 FIXED: Updated path
 
 /**
  * @title BetleyNative
@@ -212,7 +212,14 @@ contract BetleyNative is ReentrancyGuard {
     /**
      * @dev Get comprehensive bet details
      * @param _betId ID of the bet
-     * @return All bet information including token address
+     * @return name The name of the bet
+     * @return options Array of betting options
+     * @return creator Address of the bet creator
+     * @return endTime When betting period ends
+     * @return resolved Whether the bet is resolved
+     * @return winningOption Index of winning option (if resolved)
+     * @return totalAmounts Total amounts bet on each option
+     * @return token Token address used for betting
      */
     function getBetDetails(uint256 _betId) external view returns (
         string memory name,
@@ -249,7 +256,7 @@ contract BetleyNative is ReentrancyGuard {
      * @dev Get user's bets for a specific bet
      * @param _betId ID of the bet
      * @param _user Address of the user
-     * @return Array of bet amounts per option
+     * @return userBets Array of bet amounts per option
      */
     function getUserBets(uint256 _betId, address _user) external view returns (uint256[] memory) {
         require(_betId < betCounter, "Bet does not exist");
@@ -267,7 +274,7 @@ contract BetleyNative is ReentrancyGuard {
      * @dev Check if user has claimed winnings/refund
      * @param _betId ID of the bet
      * @param _user Address of the user
-     * @return Whether user has claimed
+     * @return claimed Whether user has claimed
      */
     function hasUserClaimed(uint256 _betId, address _user) external view returns (bool) {
         require(_betId < betCounter, "Bet does not exist");
@@ -277,7 +284,7 @@ contract BetleyNative is ReentrancyGuard {
     /**
      * @dev Get time remaining for betting
      * @param _betId ID of the bet
-     * @return Seconds remaining (0 if ended)
+     * @return timeLeft Seconds remaining (0 if ended)
      */
     function getTimeLeft(uint256 _betId) external view returns (uint256) {
         require(_betId < betCounter, "Bet does not exist");
@@ -292,7 +299,7 @@ contract BetleyNative is ReentrancyGuard {
     /**
      * @dev Get time remaining for resolution
      * @param _betId ID of the bet
-     * @return Seconds remaining for resolution (0 if passed)
+     * @return timeLeft Seconds remaining for resolution (0 if passed)
      */
     function getResolutionTimeLeft(uint256 _betId) external view returns (uint256) {
         require(_betId < betCounter, "Bet does not exist");
@@ -307,7 +314,7 @@ contract BetleyNative is ReentrancyGuard {
     /**
      * @dev Get resolution deadline timestamp
      * @param _betId ID of the bet
-     * @return Resolution deadline timestamp
+     * @return deadline Resolution deadline timestamp
      */
     function getResolutionDeadline(uint256 _betId) external view returns (uint256) {
         require(_betId < betCounter, "Bet does not exist");
