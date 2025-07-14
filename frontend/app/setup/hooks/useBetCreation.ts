@@ -52,83 +52,52 @@ export function useBetCreation() {
   } = useWaitForTransactionReceipt({ hash: txHash })
 
   // 🔧 FIXED: Handle successful transaction ONLY after receipt is confirmed
-  useEffect(() => {
-  if (isSuccess && receipt && betCounter !== undefined && address) {
-    console.log('🎉 Transaction successful! Creating unified mapping...')
+  // Replace the useEffect in your useBetCreation.ts with this corrected version:
+
+useEffect(() => {
+  // 🔧 FIXED: Use betCounterWhenStarted instead of betCounter
+  if (isSuccess && receipt && betCounterWhenStarted !== null && address && lastBetName) {
+    console.log('🎉 Transaction MINED and CONFIRMED! Creating mapping...')
     
-    // 🔍 STEP 1: Log initial state
-    console.log('🔍 STEP 1 - Initial State:', {
-      betCounter: betCounter?.toString(),
-      betCounterType: typeof betCounter,
-      lastBetName,
-      address,
+    // 🔧 FIXED: Use the captured bet counter value
+    const newBetId = betCounterWhenStarted
+    
+    console.log('🔢 Final mapping creation:', {
+      betCounterWhenStarted,
+      newBetId,
+      betName: lastBetName,
       txHash: receipt.transactionHash,
-      blockNumber: receipt.blockNumber?.toString()
+      blockNumber: receipt.blockNumber
     })
     
-    // 🔍 STEP 2: Check existing mappings
-    const existingMappings = UnifiedBetMapper.getAllMappings()
-    console.log('🔍 STEP 2 - Existing mappings before creation:', existingMappings)
-    
-    // 🔍 STEP 3: Calculate the bet ID
-    const numericBetId = Number(betCounter)
-    console.log('🔍 STEP 3 - Bet ID calculation:', {
-      rawBetCounter: betCounter,
-      numericBetId,
-      calculationCorrect: numericBetId >= 0
-    })
-    
-    // 🔍 STEP 4: Create mapping with detailed logging
-    console.log('🔍 STEP 4 - About to create mapping with:', {
-      numericBetId,
-      lastBetName,
-      address
-    })
-    
+    // Create the mapping AFTER transaction is confirmed
     const randomId = UnifiedBetMapper.createMapping(
-      numericBetId,
+      newBetId,
       lastBetName,
       address
     )
     
-    console.log('🔍 STEP 4 - Mapping creation result:', randomId)
+    console.log('✅ Mapping created successfully:', randomId)
     
-    // 🔍 STEP 5: Verify mapping was created
-    const newMappings = UnifiedBetMapper.getAllMappings()
-    console.log('🔍 STEP 5 - All mappings after creation:', newMappings)
-    
-    // 🔍 STEP 6: Test the specific mapping
-    const specificMapping = UnifiedBetMapper.getMapping(randomId)
-    console.log('🔍 STEP 6 - Specific mapping test:', {
-      randomId,
-      foundMapping: specificMapping,
-      canReverseLookup: UnifiedBetMapper.getNumericId(randomId)
-    })
-    
-    // 🔍 STEP 7: Log localStorage directly
-    const rawStorage = localStorage.getItem('betley_unified_mappings')
-    console.log('🔍 STEP 7 - Raw localStorage content:', rawStorage)
-    
-    // Invalidate queries
+    // Invalidate queries to refresh data
     queryClient.invalidateQueries({ queryKey: ['betCounter'] })
     queryClient.invalidateQueries({ queryKey: ['bet'] })
     
     setState(prev => ({ ...prev, isLoading: false }))
-    showSuccess('Redirecting to your new bet...', `Created Bet "${lastBetName}"`)
+    showSuccess('Bet created successfully! Redirecting...', `Created Bet "${lastBetName}"`)
 
-    // 🔍 STEP 8: Pre-redirect final check
+    // Reset state
+    setBetCounterWhenStarted(null)
+    setLastBetName('')
+
+    // Redirect with shorter delay since transaction is confirmed
     setTimeout(() => {
-      console.log('🔍 STEP 8 - Pre-redirect final check:', {
-        randomId,
-        willRedirectTo: `/bets/${randomId}`,
-        mappingStillExists: !!UnifiedBetMapper.getMapping(randomId),
-        allCurrentMappings: UnifiedBetMapper.getAllMappings()
-      })
-      
+      console.log('🔄 Redirecting to confirmed bet:', `/bets/${randomId}`)
       router.push(`/bets/${randomId}`)
-    }, 3000)
+    }, 500)
   }
-}, [isSuccess, receipt, betCounter, address, router, lastBetName, showSuccess, queryClient])
+// 🔧 FIXED: Use betCounterWhenStarted in dependencies instead of betCounter
+}, [isSuccess, receipt, betCounterWhenStarted, address, router, lastBetName, showSuccess, queryClient])
 
   const createBet = async (
     name: string, 

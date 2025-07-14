@@ -6,29 +6,30 @@ import { formatUnits } from 'viem'
 interface BetInfoProps {
   name: string
   creator: string
-  timeLeft: number
+  options: readonly string[]
+  totalAmounts?: readonly bigint[]
+  decimals?: number
   isActive: boolean
   resolved: boolean
   winningOption?: number
-  options?: readonly string[]
+  userBets?: readonly bigint[]
+  timeLeft: number
   resolutionTimeLeft: number
   resolutionDeadlinePassed: boolean
-  totalAmounts?: readonly bigint[]
-  decimals?: number
 }
 
 export function BetInfo({
   name,
   creator,
-  timeLeft,
+  options,
+  totalAmounts,
+  decimals,
   isActive,
   resolved,
   winningOption,
-  options,
+  timeLeft,
   resolutionTimeLeft,
-  resolutionDeadlinePassed,
-  totalAmounts,
-  decimals
+  resolutionDeadlinePassed
 }: BetInfoProps) {
   const formatTimeRemaining = (seconds: number) => {
     if (seconds <= 0) return 'Expired'

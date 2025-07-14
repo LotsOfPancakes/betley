@@ -87,7 +87,7 @@ export default function BetPage() {
     isBetLoading,
     betError,
     refreshAllData
-  } = useBetData(isValidBetId ? numericBetId.toString() : '999999', { useReactQuery: true })
+  } = useBetData(isValidBetId && numericBetId !== null ? numericBetId.toString() : '999999', { useReactQuery: true })
 
   // 🚀 STEP 6: Extract token address from bet details (8th element, index 7)
   const tokenAddress = betDetails?.[7] as string
@@ -107,7 +107,7 @@ export default function BetPage() {
     handleClaimWinnings,
     handleResolveBet
   } = useBetActions(
-    isValidBetId ? numericBetId.toString() : '999999',
+    isValidBetId && numericBetId !== null ? numericBetId.toString() : '999999',
     tokenAddress // 🚀 STEP 6: Pass token address
   )
 
@@ -177,9 +177,6 @@ export default function BetPage() {
   // Calculate user's total bet amount for claiming logic
   const userTotalBet = userBets?.reduce((sum, amount) => sum + amount, BigInt(0)) || BigInt(0)
 
-  // Check if user won
-  const userWon = resolved && userBets && userBets[winningOption] > BigInt(0)
-
   // 🚀 STEP 6: Smart approval logic - skip approval for native HYPE
   const needsApproval = !isNativeBet && // 🚀 NEW: Skip approval for native HYPE
     allowance !== undefined && 
@@ -197,48 +194,79 @@ export default function BetPage() {
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
-        <BetHeader 
-          name={name}
-          randomId={randomBetId as string}
-          numericId={numericBetId}
-          creator={creator}
-          isCreator={isCreator}
-          endTime={endTime}
-          resolved={resolved}
-          winningOption={winningOption}
-          isNativeBet={isNativeBet} // 🚀 STEP 6: Pass native bet info
-          tokenAddress={tokenAddress} // 🚀 STEP 6: Pass token address
-        />
+        {betDetails && name && creator && options && numericBetId !== null && (
+          <BetHeader 
+            name={name}
+            randomId={randomBetId as string}
+            numericId={numericBetId}
+            creator={creator}
+            isCreator={isCreator}
+            endTime={endTime}
+            resolved={resolved}
+            winningOption={winningOption}
+            isNativeBet={isNativeBet} // 🚀 STEP 6: Pass native bet info
+            tokenAddress={tokenAddress} // 🚀 STEP 6: Pass token address
+          />
+        )}
+        {/* 🔧 FIXED: Only render BetInfo when required data is available, with CORRECT props */}
+        {betDetails && name && creator && options && (
+          <BetInfo 
+            name={name}
+            creator={creator}
+            options={options}
+            totalAmounts={totalAmounts}
+            decimals={decimals}
+            isActive={isActive}
+            resolved={resolved}
+            winningOption={winningOption}
+            timeLeft={Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000))} // Calculate actual time left
+            resolutionTimeLeft={0} // Set to 0 for now, implement if needed
+            resolutionDeadlinePassed={false} // Set to false for now, implement if needed
+            // 🔧 REMOVED: userBets and tokenSymbol are NOT used by BetInfo
+          />
+        )}
 
-        {/* Bet Information */}
-        <BetInfo 
-          options={options}
-          totalAmounts={totalAmounts}
-          decimals={decimals}
-          isActive={isActive}
-          resolved={resolved}
-          winningOption={winningOption}
-          userBets={userBets}
-          tokenSymbol={isNativeBet ? 'HYPE' : 'mHYPE'} // 🚀 STEP 6: Show correct token symbol
-        />
+        {/* Show loading state while waiting for bet details */}
+        {!betDetails && !isBetLoading && (
+          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-700 rounded mb-4 w-3/4"></div>
+              <div className="h-4 bg-gray-700 rounded mb-2 w-1/2"></div>
+              <div className="h-4 bg-gray-700 rounded w-1/4"></div>
+            </div>
+          </div>
+        )}
 
         {/* Creator Actions (Resolve) */}
         {isCreator && !resolved && !isActive && (
           <CreatorActions
-            onResolve={() => setShowResolveModal(true)}
+            address={address}
+            creator={creator}
+            timeLeft={Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000))}
+            resolved={resolved}
+            resolutionDeadlinePassed={false} // Calculate based on your logic
+            resolutionTimeLeft={0} // Calculate based on your logic  
+            onShowResolveModal={() => setShowResolveModal(true)} // Note: prop name is onShowResolveModal, not onResolve
           />
         )}
+
 
         {/* User Actions (Claim/Refund) */}
         {!isCreator && resolved && userTotalBet > BigInt(0) && !hasClaimed && (
           <UserActions
-            userWon={!!userWon}
-            onClaim={handleClaimWinnings}
+            address={address}
+            resolved={resolved}
             winningOption={winningOption}
             userBets={userBets}
-            options={options}
+            totalAmounts={totalAmounts}
+            resolutionDeadlinePassed={false} // Calculate based on your logic
+            hasClaimed={hasClaimed}
+            decimals={decimals}
+            isPending={isPending} // From useBetActions
+            handleClaimWinnings={handleClaimWinnings}
           />
         )}
+
 
         {/* 🚀 STEP 6: Enhanced Betting Interface with native token support */}
         <BettingInterface
@@ -269,6 +297,7 @@ export default function BetPage() {
           onClose={() => setShowResolveModal(false)}
           options={options}
           onResolve={handleResolveBet}
+          betName={name}
         />
       </div>
     </div>
