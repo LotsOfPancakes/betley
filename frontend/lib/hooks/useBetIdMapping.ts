@@ -1,8 +1,48 @@
-// frontend/lib/hooks/useBetIdMapping.ts - Updated for unified system
+// frontend/lib/hooks/useBetIdMapping.ts - Enhanced with the expected interface
 import { useState, useEffect } from 'react'
 import { UnifiedBetMapper, BetMapping } from '@/lib/betIdMapping'
 
-export function useBetIdMapping() {
+// Hook for single ID mapping (what the page expects)
+export function useBetIdMapping(randomId: string) {
+  const [isLoading, setIsLoading] = useState(true)
+  const [numericBetId, setNumericBetId] = useState<number | null>(null)
+  const [isValidId, setIsValidId] = useState(false)
+
+  useEffect(() => {
+    if (!randomId) {
+      setIsLoading(false)
+      setNumericBetId(null)
+      setIsValidId(false)
+      return
+    }
+
+    // Small delay to ensure localStorage is read properly
+    const timer = setTimeout(() => {
+      const mappedId = UnifiedBetMapper.getNumericId(randomId)
+      setNumericBetId(mappedId)
+      setIsValidId(mappedId !== null)
+      setIsLoading(false)
+      
+      console.log('🔍 useBetIdMapping result:', {
+        randomId,
+        numericBetId: mappedId,
+        isValidId: mappedId !== null,
+        allMappings: UnifiedBetMapper.getAllMappings()
+      })
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [randomId])
+
+  return {
+    numericBetId,
+    isValidId,
+    isLoading
+  }
+}
+
+// Hook for managing all mappings (existing functionality)
+export function useBetIdMappingManager() {
   const [mappings, setMappings] = useState<BetMapping[]>([])
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-// frontend/app/setup/hooks/useBetCreation.ts - Fixed TypeScript types
+// frontend/app/setup/hooks/useBetCreation.ts - PROPERLY FIXED: Wait for transaction receipt
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -21,6 +21,7 @@ export function useBetCreation() {
     error: null
   })
   const [lastBetName, setLastBetName] = useState<string>('')
+  const [betCounterWhenStarted, setBetCounterWhenStarted] = useState<number | null>(null)
   
   const router = useRouter()
   const { address } = useAccount()
@@ -50,33 +51,84 @@ export function useBetCreation() {
     data: receipt 
   } = useWaitForTransactionReceipt({ hash: txHash })
 
-  // Handle successful transaction
+  // 🔧 FIXED: Handle successful transaction ONLY after receipt is confirmed
   useEffect(() => {
-    if (isSuccess && receipt && betCounter !== undefined && address) {
-      console.log('🎉 Transaction successful! Creating unified mapping...')
-      
-      // Use the unified mapping system
-      const numericBetId = Number(betCounter)
-      const randomId = UnifiedBetMapper.createMapping(
-        numericBetId,
-        lastBetName,
-        address
-      )
-      
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ['betCounter'] })
-      queryClient.invalidateQueries({ queryKey: ['bet'] })
-      
-      setState(prev => ({ ...prev, isLoading: false }))
-      showSuccess('Redirecting to your new bet...', `Created Bet "${lastBetName}"`)
+  if (isSuccess && receipt && betCounter !== undefined && address) {
+    console.log('🎉 Transaction successful! Creating unified mapping...')
+    
+    // 🔍 STEP 1: Log initial state
+    console.log('🔍 STEP 1 - Initial State:', {
+      betCounter: betCounter?.toString(),
+      betCounterType: typeof betCounter,
+      lastBetName,
+      address,
+      txHash: receipt.transactionHash,
+      blockNumber: receipt.blockNumber?.toString()
+    })
+    
+    // 🔍 STEP 2: Check existing mappings
+    const existingMappings = UnifiedBetMapper.getAllMappings()
+    console.log('🔍 STEP 2 - Existing mappings before creation:', existingMappings)
+    
+    // 🔍 STEP 3: Calculate the bet ID
+    const numericBetId = Number(betCounter)
+    console.log('🔍 STEP 3 - Bet ID calculation:', {
+      rawBetCounter: betCounter,
+      numericBetId,
+      calculationCorrect: numericBetId >= 0
+    })
+    
+    // 🔍 STEP 4: Create mapping with detailed logging
+    console.log('🔍 STEP 4 - About to create mapping with:', {
+      numericBetId,
+      lastBetName,
+      address
+    })
+    
+    const randomId = UnifiedBetMapper.createMapping(
+      numericBetId,
+      lastBetName,
+      address
+    )
+    
+    console.log('🔍 STEP 4 - Mapping creation result:', randomId)
+    
+    // 🔍 STEP 5: Verify mapping was created
+    const newMappings = UnifiedBetMapper.getAllMappings()
+    console.log('🔍 STEP 5 - All mappings after creation:', newMappings)
+    
+    // 🔍 STEP 6: Test the specific mapping
+    const specificMapping = UnifiedBetMapper.getMapping(randomId)
+    console.log('🔍 STEP 6 - Specific mapping test:', {
+      randomId,
+      foundMapping: specificMapping,
+      canReverseLookup: UnifiedBetMapper.getNumericId(randomId)
+    })
+    
+    // 🔍 STEP 7: Log localStorage directly
+    const rawStorage = localStorage.getItem('betley_unified_mappings')
+    console.log('🔍 STEP 7 - Raw localStorage content:', rawStorage)
+    
+    // Invalidate queries
+    queryClient.invalidateQueries({ queryKey: ['betCounter'] })
+    queryClient.invalidateQueries({ queryKey: ['bet'] })
+    
+    setState(prev => ({ ...prev, isLoading: false }))
+    showSuccess('Redirecting to your new bet...', `Created Bet "${lastBetName}"`)
 
-      // Redirect to the bet page with unified random ID
-      setTimeout(() => {
-        console.log('🔄 Redirecting to:', `/bets/${randomId}`)
-        router.push(`/bets/${randomId}`)
-      }, 1000)
-    }
-  }, [isSuccess, receipt, betCounter, address, router, lastBetName, showSuccess, queryClient])
+    // 🔍 STEP 8: Pre-redirect final check
+    setTimeout(() => {
+      console.log('🔍 STEP 8 - Pre-redirect final check:', {
+        randomId,
+        willRedirectTo: `/bets/${randomId}`,
+        mappingStillExists: !!UnifiedBetMapper.getMapping(randomId),
+        allCurrentMappings: UnifiedBetMapper.getAllMappings()
+      })
+      
+      router.push(`/bets/${randomId}`)
+    }, 3000)
+  }
+}, [isSuccess, receipt, betCounter, address, router, lastBetName, showSuccess, queryClient])
 
   const createBet = async (
     name: string, 
@@ -100,19 +152,27 @@ export function useBetCreation() {
       // Refresh bet counter to get accurate next ID
       await refetchBetCounter()
       
-      // 🔧 FIXED: Properly typed contract arguments
+      // Store the current bet counter - this will be our bet's ID
+      if (betCounter !== undefined) {
+        setBetCounterWhenStarted(Number(betCounter))
+        console.log('📊 Starting bet creation - expected bet ID:', Number(betCounter))
+      } else {
+        throw new Error('Could not determine bet counter')
+      }
+      
       const contractArgs: readonly [string, readonly string[], bigint, `0x${string}`] = [
         name,
-        options as readonly string[], // Ensure readonly type
+        options as readonly string[],
         BigInt(durationInSeconds),
         ZERO_ADDRESS as `0x${string}` // Native HYPE token
       ]
       
-      console.log('📝 Contract call with unified mapping system:', {
+      console.log('📝 Submitting bet creation transaction:', {
         name,
         options,
         duration: durationInSeconds,
-        token: 'Native HYPE'
+        token: 'Native HYPE',
+        expectedBetId: Number(betCounter)
       })
       
       await writeContract({
@@ -122,11 +182,15 @@ export function useBetCreation() {
         args: contractArgs,
       })
 
-      console.log('✅ writeContract called successfully')
+      console.log('✅ Transaction submitted, waiting for confirmation...')
       
     } catch (err) {
       console.error('❌ createBet error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to create bet'
+      
+      // Reset state on error
+      setBetCounterWhenStarted(null)
+      setLastBetName('')
       
       // Check for user cancellation
       if (errorMessage.toLowerCase().includes('user rejected') || 
@@ -155,13 +219,16 @@ export function useBetCreation() {
   }
 
   return {
-    isCreating: isWritePending,           // ✅ Map to expected property names
-    isConfirming: isConfirming,           // ✅ Direct mapping
-    isSuccess: isSuccess,                 // ✅ Direct mapping  
-    isLoading: state.isLoading || isWritePending || isConfirming,  // Keep for backward compatibility
-    error: state.error,                   // ✅ Direct mapping
+    isCreating: isWritePending,
+    isConfirming: isConfirming, // 🔧 NEW: Expose confirming state
+    isSuccess: isSuccess,
+    isLoading: state.isLoading || isWritePending || isConfirming, // Include confirming in loading
+    error: state.error,
     createBet,
     clearError,
-    betCounter
+    betCounter,
+    // 🔧 NEW: Expose transaction states for better UX
+    txHash,
+    isWaitingForConfirmation: isWritePending === false && isConfirming === true
   }
 }

@@ -1,4 +1,4 @@
-// app/bets/[id]/page.tsx - With resolve modal integration
+// app/bets/[id]/page.tsx - Fixed with correct hook interface and Step 6 integration
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
@@ -15,8 +15,7 @@ import { UserActions } from './components/UserActions'
 import { BettingInterface } from './components/BettingInterface'
 import { BetCreationPending } from './components/BetCreationPending'
 import { ResolveModal } from './components/ResolveModal'
-import { BetLookupDebug } from './components/BetLookupDebug' // adjust path
-
+import { BetLookupDebug } from './components/BetLookupDebug'
 
 // Import hooks
 import { useBetData } from './hooks/useBetData'
@@ -35,18 +34,26 @@ function InvalidBetError({ randomId }: { randomId: string }) {
           <p className="text-gray-300 mb-4">
             The bet ID &quot;<span className="font-mono">{randomId}</span>&quot; was not found.
           </p>
+          <p className="text-gray-400 text-sm mb-6">
+            This could mean:
+          </p>
+          <ul className="text-left text-gray-400 text-sm mb-6 space-y-1">
+            <li>• The bet doesn&apos;t exist</li>
+            <li>• The bet is still being created</li>
+            <li>• There&apos;s a network issue</li>
+          </ul>
           <div className="space-y-3">
             <button
-              onClick={() => router.push('/bets')}
-              className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              onClick={() => window.location.reload()}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              View My Bets
+              🔄 Refresh Page
             </button>
             <button
-              onClick={() => router.push('/setup')}
-              className="w-full bg-gray-700 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+              onClick={() => router.push('/bets')}
+              className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
             >
-              Create New Bet
+              ← Back to All Bets
             </button>
           </div>
         </div>
@@ -56,43 +63,36 @@ function InvalidBetError({ randomId }: { randomId: string }) {
 }
 
 export default function BetPage() {
-  const { id: randomBetId } = useParams()
+  const params = useParams()
   const { address } = useAccount()
-  const [showResolveModal, setShowResolveModal] = useState(false)
-  const [isLoadingMappings, setIsLoadingMappings] = useState(true)
+  const randomBetId = params?.id
   const [retryCount, setRetryCount] = useState(0)
-  const { getNumericId, mappings } = useBetIdMapping()
+  const [showResolveModal, setShowResolveModal] = useState(false)
 
-  // Convert random ID to numeric ID
-  const numericBetId = getNumericId(randomBetId as string)
-  const isValidBetId = numericBetId !== null
+  // 🔧 FIXED: Use the correct hook interface
+  const { 
+    numericBetId, 
+    isValidId: isValidBetId, 
+    isLoading: isLoadingMappings 
+  } = useBetIdMapping(randomBetId as string)
 
-  // Wait for mappings to load before showing error
-  useEffect(() => {
-    // Small delay to ensure localStorage has been read
-    const timer = setTimeout(() => {
-      setIsLoadingMappings(false)
-    }, 100)
-    
-    return () => clearTimeout(timer)
-  }, [mappings])
-
-  // ALWAYS call hooks - use null/undefined values for invalid IDs
+  // Get bet data using the numeric ID
   const {
     betDetails,
     userBets,
     hypeBalance,
+    allowance,
     decimals,
     hasClaimed,
-    allowance,
     isBetLoading,
     betError,
-    timeLeft,
-    resolutionTimeLeft,
-    resolutionDeadlinePassed,
     refreshAllData
   } = useBetData(isValidBetId ? numericBetId.toString() : '999999', { useReactQuery: true })
 
+  // 🚀 STEP 6: Extract token address from bet details (8th element, index 7)
+  const tokenAddress = betDetails?.[7] as string
+
+  // 🚀 STEP 6: Pass token address to useBetActions hook
   const {
     betAmount,
     setBetAmount,
@@ -101,11 +101,15 @@ export default function BetPage() {
     isPending,
     isApproving,
     justPlacedBet,
+    isNativeBet, // 🚀 NEW: Get native bet information
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
     handleResolveBet
-  } = useBetActions(isValidBetId ? numericBetId.toString() : '999999')
+  } = useBetActions(
+    isValidBetId ? numericBetId.toString() : '999999',
+    tokenAddress // 🚀 STEP 6: Pass token address
+  )
 
   // Auto-retry logic for newly created bets
   useEffect(() => {
@@ -156,123 +160,116 @@ export default function BetPage() {
     )
   }
 
-  // Error state for bets that definitely don't exist
-  if (betError || !betDetails) {
+  // No bet details found
+  if (!betDetails) {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
-  // ✅ FIXED: Remove unused 'endTime' variable by using placeholder
-  // Contract returns: [name, options, creator, endTime, resolved, winningOption, totalAmounts]
-  const [name, options, creator, , resolved, winningOption, totalAmounts] = betDetails || []
-  //                                  ^ placeholder for endTime (unused)
+  // Destructure bet details
+  const [name, options, creator, endTime, resolved, winningOption, totalAmounts] = betDetails
+  const endTimeMs = Number(endTime) * 1000
+  const isActive = Date.now() < endTimeMs
+  const isCreator = address?.toLowerCase() === creator.toLowerCase()
 
-  // Calculate derived state
-  const isActive = timeLeft > 0 && !resolved
+  // Check if user has existing bet
+  const hasExistingBet = userBets?.some(amount => amount > BigInt(0)) || false
 
-  // Handle resolve bet with modal
-  const handleResolveBetWithModal = async (winningOptionIndex: number) => {
-    await handleResolveBet(winningOptionIndex)
-    // Modal will close automatically on success
-    refreshAllData() // Refresh to show updated state
-  }
+  // Calculate user's total bet amount for claiming logic
+  const userTotalBet = userBets?.reduce((sum, amount) => sum + amount, BigInt(0)) || BigInt(0)
+
+  // Check if user won
+  const userWon = resolved && userBets && userBets[winningOption] > BigInt(0)
+
+  // 🚀 STEP 6: Smart approval logic - skip approval for native HYPE
+  const needsApproval = !isNativeBet && // 🚀 NEW: Skip approval for native HYPE
+    allowance !== undefined && 
+    parseUnits(betAmount || '0', decimals || 18) > allowance &&
+    parseFloat(betAmount || '0') > 0
+
+  console.log('🚀 Step 6 Debug:', {
+    tokenAddress,
+    isNativeBet,
+    needsApproval,
+    betAmount
+  })
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        
-        {/* Header with balance */}
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Header */}
         <BetHeader 
-          address={address}
-          hypeBalance={hypeBalance}
-          decimals={decimals}
-          betUrlId={randomBetId as string}  // ← ADD THIS LINE
+          name={name}
+          randomId={randomBetId as string}
+          numericId={numericBetId}
+          creator={creator}
+          isCreator={isCreator}
+          endTime={endTime}
+          resolved={resolved}
+          winningOption={winningOption}
+          isNativeBet={isNativeBet} // 🚀 STEP 6: Pass native bet info
+          tokenAddress={tokenAddress} // 🚀 STEP 6: Pass token address
         />
-        
-        <div className="bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
-          
-          {/* Privacy indicator */}
-          <div className="flex justify-between items-center mb-4">
-            <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded text-sm font-medium">
-              🔒 Private Bet
-            </span>
-            <span className="text-gray-500 text-sm font-mono">
-              ID: {randomBetId}
-            </span>
-          </div>
 
-          {/* Bet information */}
-          <BetInfo 
-            name={name}
-            creator={creator}
-            timeLeft={timeLeft}
-            isActive={isActive}
-            resolved={resolved}
-            winningOption={winningOption}
-            options={options}
-            resolutionTimeLeft={resolutionTimeLeft}
-            resolutionDeadlinePassed={resolutionDeadlinePassed}
-            totalAmounts={totalAmounts}
-            decimals={decimals}
-          />
+        {/* Bet Information */}
+        <BetInfo 
+          options={options}
+          totalAmounts={totalAmounts}
+          decimals={decimals}
+          isActive={isActive}
+          resolved={resolved}
+          winningOption={winningOption}
+          userBets={userBets}
+          tokenSymbol={isNativeBet ? 'HYPE' : 'mHYPE'} // 🚀 STEP 6: Show correct token symbol
+        />
 
-          {/* Creator actions */}
+        {/* Creator Actions (Resolve) */}
+        {isCreator && !resolved && !isActive && (
           <CreatorActions
-            address={address}
-            creator={creator}
-            timeLeft={timeLeft}
-            resolved={resolved}
-            resolutionDeadlinePassed={resolutionDeadlinePassed}
-            resolutionTimeLeft={resolutionTimeLeft}
-            onShowResolveModal={() => setShowResolveModal(true)}
+            onResolve={() => setShowResolveModal(true)}
           />
+        )}
 
-          {/* User actions */}
+        {/* User Actions (Claim/Refund) */}
+        {!isCreator && resolved && userTotalBet > BigInt(0) && !hasClaimed && (
           <UserActions
-            address={address}
-            resolved={resolved}
+            userWon={!!userWon}
+            onClaim={handleClaimWinnings}
             winningOption={winningOption}
             userBets={userBets}
-            totalAmounts={totalAmounts}
-            resolutionDeadlinePassed={resolutionDeadlinePassed}
-            hasClaimed={hasClaimed}
-            decimals={decimals}
-            isPending={isPending}
-            handleClaimWinnings={handleClaimWinnings}
-          />
-
-          {/* Betting interface */}
-          <BettingInterface
-            isActive={isActive}
-            address={address}
             options={options}
-            userBets={userBets}
-            selectedOption={selectedOption}
-            setSelectedOption={setSelectedOption}
-            betAmount={betAmount}
-            setBetAmount={setBetAmount}
-            needsApproval={allowance !== undefined && hypeBalance !== undefined && betAmount !== '' ? 
-              allowance < parseUnits(betAmount, decimals || 18) : false}
-            isApproving={isApproving}
-            isPending={isPending}
-            handleApprove={handleApprove}
-            handlePlaceBet={handlePlaceBet}
-            totalAmounts={totalAmounts}
-            decimals={decimals}
-            hypeBalance={hypeBalance}
-            justPlacedBet={justPlacedBet}
           />
+        )}
 
-        </div>
+        {/* 🚀 STEP 6: Enhanced Betting Interface with native token support */}
+        <BettingInterface
+          isActive={isActive}
+          address={address}
+          options={options}
+          userBets={userBets}
+          selectedOption={selectedOption}
+          setSelectedOption={setSelectedOption}
+          betAmount={betAmount}
+          setBetAmount={setBetAmount}
+          needsApproval={needsApproval}
+          isApproving={isApproving}
+          isPending={isPending}
+          handleApprove={handleApprove}
+          handlePlaceBet={handlePlaceBet}
+          totalAmounts={totalAmounts}
+          decimals={decimals}
+          hypeBalance={hypeBalance}
+          justPlacedBet={justPlacedBet}
+          hasExistingBet={hasExistingBet}
+          isNativeBet={isNativeBet} // 🚀 STEP 6: Pass native bet info
+        />
 
         {/* Resolve Modal */}
         <ResolveModal
           isOpen={showResolveModal}
           onClose={() => setShowResolveModal(false)}
-          onResolve={handleResolveBetWithModal}
           options={options}
-          betName={name}
+          onResolve={handleResolveBet}
         />
-
       </div>
     </div>
   )
