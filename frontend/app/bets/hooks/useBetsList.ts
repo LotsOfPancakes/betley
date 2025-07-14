@@ -1,9 +1,9 @@
-// frontend/app/bets/hooks/useBetsList.ts
+// frontend/app/bets/hooks/useBetsList.ts - Fixed with unified mapping
 import { useState, useEffect } from 'react'
 import { useReadContract, useConfig, useAccount } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI, HYPE_TOKEN_ADDRESS } from '@/lib/contractABI'
-import { BetIdMapper } from '@/lib/betIdMapping'
+import { UnifiedBetMapper } from '@/lib/betIdMapping'  // Use unified system
 import { BetDetails } from '../types/bet.types'
 
 export function useBetsList() {
@@ -62,7 +62,8 @@ export function useBetsList() {
             })
 
             const isCreator = betData[2].toLowerCase() === address.toLowerCase()
-            const userTotalBet = userBets ? userBets.reduce((total: bigint, amount: bigint) => total + amount, BigInt(0)) : BigInt(0)
+            const userTotalBet = userBets ? 
+              userBets.reduce((total: bigint, amount: bigint) => total + amount, BigInt(0)) : BigInt(0)
             const hasBet = userTotalBet > BigInt(0)
 
             // Only include if user is creator OR has placed a bet
@@ -72,12 +73,12 @@ export function useBetsList() {
               else if (isCreator) userRole = 'creator'
               else userRole = 'bettor'
 
-              // Try to get random ID for this bet
-              const randomId = BetIdMapper.getRandomId(i)
+              // Get random ID using unified system (returns string | undefined)
+              const randomId = UnifiedBetMapper.getRandomId(i)
 
               fetchedBets.push({
                 id: i,
-                randomId, // This might be undefined if not found
+                randomId, // ✅ Now correctly typed as string | undefined
                 name: betData[0],
                 options: betData[1],
                 creator: betData[2],

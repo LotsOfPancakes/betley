@@ -15,6 +15,8 @@ import { UserActions } from './components/UserActions'
 import { BettingInterface } from './components/BettingInterface'
 import { BetCreationPending } from './components/BetCreationPending'
 import { ResolveModal } from './components/ResolveModal'
+import { BetLookupDebug } from './components/BetLookupDebug' // adjust path
+
 
 // Import hooks
 import { useBetData } from './hooks/useBetData'
@@ -26,6 +28,7 @@ function InvalidBetError({ randomId }: { randomId: string }) {
   
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <BetLookupDebug />
       <div className="text-center max-w-md mx-auto px-4">
         <div className="bg-red-900/20 border border-red-600 rounded-lg p-6">
           <h1 className="text-2xl font-bold text-red-400 mb-4">🔍 Bet Not Found</h1>

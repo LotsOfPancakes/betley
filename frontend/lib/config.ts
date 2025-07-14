@@ -49,7 +49,7 @@ export const config = {
     // 🔧 TEMPORARY: Add fallback while debugging
     betley: getRequiredEnv(
       'NEXT_PUBLIC_BETLEY_ADDRESS',
-      '0x1240A24df5C4eEAA27A92A378e01545A10e0aEbf'  // Your new contract
+      '0x699bE0b77ca3af478d60Cf7acD92B7fe2eBCF303'  // Your new contract
     ) as `0x${string}`,
     hypeToken: getRequiredEnv(
       'NEXT_PUBLIC_HYPE_TOKEN_ADDRESS', 

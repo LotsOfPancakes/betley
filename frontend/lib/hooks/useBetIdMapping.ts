@@ -1,34 +1,38 @@
-// lib/hooks/useBetIdMapping.ts
+// frontend/lib/hooks/useBetIdMapping.ts - Updated for unified system
 import { useState, useEffect } from 'react'
-import { BetIdMapper, BetMapping } from '@/lib/betIdMapping'
+import { UnifiedBetMapper, BetMapping } from '@/lib/betIdMapping'
 
 export function useBetIdMapping() {
   const [mappings, setMappings] = useState<BetMapping[]>([])
 
   useEffect(() => {
-    setMappings(BetIdMapper.getAllMappings())
+    setMappings(UnifiedBetMapper.getAllMappings())
   }, [])
 
   const addMapping = (numericId: number, name: string, creator: string): string => {
-    const randomId = BetIdMapper.addMapping(numericId, name, creator)
-    setMappings(BetIdMapper.getAllMappings())
+    const randomId = UnifiedBetMapper.createMapping(numericId, name, creator)
+    setMappings(UnifiedBetMapper.getAllMappings())
     return randomId
   }
 
   const getNumericId = (randomId: string): number | null => {
-    return BetIdMapper.getNumericId(randomId)
+    return UnifiedBetMapper.getNumericId(randomId)
   }
 
- const getRandomId = (numericId: number): string | null => {
-    return BetIdMapper.getRandomId(numericId) ?? null  // ✅ Convert undefined to null
-}
+  const getRandomId = (numericId: number): string | undefined => {
+    return UnifiedBetMapper.getRandomId(numericId)
+  }
 
   const getMapping = (randomId: string): BetMapping | null => {
-    return BetIdMapper.getMapping(randomId)
+    return UnifiedBetMapper.getMapping(randomId)
   }
 
   const refreshMappings = () => {
-    setMappings(BetIdMapper.getAllMappings())
+    setMappings(UnifiedBetMapper.getAllMappings())
+  }
+
+  const isValidRandomId = (randomId: string): boolean => {
+    return UnifiedBetMapper.isValidRandomId(randomId)
   }
 
   return {
@@ -37,6 +41,7 @@ export function useBetIdMapping() {
     getNumericId,
     getRandomId,
     getMapping,
-    refreshMappings
+    refreshMappings,
+    isValidRandomId
   }
 }

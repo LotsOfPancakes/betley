@@ -1,4 +1,4 @@
-// frontend/app/setup/hooks/useBetCreation.ts - ENHANCED DEBUG VERSION
+// frontend/app/setup/hooks/useBetCreation.ts - Fixed TypeScript types
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
 import { ZERO_ADDRESS } from '@/lib/tokenUtils'
+import { UnifiedBetMapper } from '@/lib/betIdMapping'
 
 interface BetCreationState {
   isLoading: boolean
@@ -26,12 +27,6 @@ export function useBetCreation() {
   const queryClient = useQueryClient()
   const { showError, showSuccess } = useNotification()
   
-  // Debug: Log contract address on load
-  useEffect(() => {
-    console.log('🏠 Contract Address:', BETLEY_ADDRESS)
-    console.log('🪙 Zero Address:', ZERO_ADDRESS)
-  }, [])
-  
   // Get current bet counter for ID prediction
   const { data: betCounter, refetch: refetchBetCounter } = useReadContract({
     address: BETLEY_ADDRESS,
@@ -46,65 +41,27 @@ export function useBetCreation() {
   const { 
     writeContract, 
     data: txHash, 
-    isPending: isWritePending,
-    error: writeError
+    isPending: isWritePending
   } = useWriteContract()
 
   const { 
     isLoading: isConfirming, 
     isSuccess, 
-    data: receipt,
-    error: receiptError
+    data: receipt 
   } = useWaitForTransactionReceipt({ hash: txHash })
-
-  // Debug: Log ALL transaction states
-  useEffect(() => {
-    console.log('🐛 FULL Transaction Debug:', {
-      // Contract info
-      contractAddress: BETLEY_ADDRESS,
-      userAddress: address,
-      betCounter: betCounter?.toString(),
-      
-      // Transaction states
-      txHash,
-      isWritePending,
-      isConfirming,
-      isSuccess,
-      
-      // Errors
-      writeError: writeError?.message,
-      receiptError: receiptError?.message,
-      
-      // Receipt
-      receipt: receipt ? 'received' : 'none',
-      
-      // State
-      stateLoading: state.isLoading,
-      stateError: state.error
-    })
-  }, [txHash, isWritePending, isConfirming, isSuccess, receipt, writeError, receiptError, betCounter, address, state])
-
-  // Generate random ID for immediate redirect
-  const generateRandomId = () => Math.random().toString(36).substring(2, 15)
 
   // Handle successful transaction
   useEffect(() => {
-    if (isSuccess && receipt && betCounter !== undefined) {
-      console.log('🎉 SUCCESS! Processing transaction...')
+    if (isSuccess && receipt && betCounter !== undefined && address) {
+      console.log('🎉 Transaction successful! Creating unified mapping...')
       
-      const randomId = generateRandomId()
-      
-      // Store mapping in localStorage for the redirect
-      const betMapping = {
-        randomId,
-        actualBetId: betCounter.toString(),
-        timestamp: Date.now()
-      }
-      
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`bet_${randomId}`, JSON.stringify(betMapping))
-        console.log('💾 Stored mapping:', betMapping)
-      }
+      // Use the unified mapping system
+      const numericBetId = Number(betCounter)
+      const randomId = UnifiedBetMapper.createMapping(
+        numericBetId,
+        lastBetName,
+        address
+      )
       
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['betCounter'] })
@@ -113,7 +70,7 @@ export function useBetCreation() {
       setState(prev => ({ ...prev, isLoading: false }))
       showSuccess('Redirecting to your new bet...', `Created Bet "${lastBetName}"`)
 
-      // Redirect to the bet page
+      // Redirect to the bet page with unified random ID
       setTimeout(() => {
         console.log('🔄 Redirecting to:', `/bets/${randomId}`)
         router.push(`/bets/${randomId}`)
@@ -121,34 +78,17 @@ export function useBetCreation() {
     }
   }, [isSuccess, receipt, betCounter, address, router, lastBetName, showSuccess, queryClient])
 
-  // Handle errors
-  useEffect(() => {
-    if (writeError) {
-      console.error('❌ Write Error:', writeError)
-    }
-    if (receiptError) {
-      console.error('❌ Receipt Error:', receiptError)
-    }
-  }, [writeError, receiptError])
-
   const createBet = async (
     name: string, 
     options: string[], 
     durationInSeconds: number
   ) => {
-    console.log('🚀 STARTING BET CREATION')
-    console.log('📝 Input params:', { name, options, durationInSeconds })
-    console.log('🏠 Using contract:', BETLEY_ADDRESS)
-    console.log('👤 User address:', address)
-    
     if (!address) {
-      console.log('❌ No wallet connected')
       setState(prev => ({ ...prev, error: 'Please connect your wallet' }))
       return
     }
 
     if (durationInSeconds <= 0) {
-      console.log('❌ Invalid duration')
       setState(prev => ({ ...prev, error: 'Please set a valid duration' }))
       return
     }
@@ -157,17 +97,24 @@ export function useBetCreation() {
       setState(prev => ({ ...prev, error: null, isLoading: true }))
       setLastBetName(name)
       
-      console.log('🔄 Refreshing bet counter...')
+      // Refresh bet counter to get accurate next ID
       await refetchBetCounter()
       
-      console.log('📋 Contract call parameters:')
-      const contractArgs = [name, options, BigInt(durationInSeconds), ZERO_ADDRESS]
-      console.log('  - name:', name)
-      console.log('  - options:', options)
-      console.log('  - duration:', BigInt(durationInSeconds).toString())
-      console.log('  - token (native HYPE):', ZERO_ADDRESS)
+      // 🔧 FIXED: Properly typed contract arguments
+      const contractArgs: readonly [string, readonly string[], bigint, `0x${string}`] = [
+        name,
+        options as readonly string[], // Ensure readonly type
+        BigInt(durationInSeconds),
+        ZERO_ADDRESS as `0x${string}` // Native HYPE token
+      ]
       
-      console.log('📞 Calling writeContract...')
+      console.log('📝 Contract call with unified mapping system:', {
+        name,
+        options,
+        duration: durationInSeconds,
+        token: 'Native HYPE'
+      })
+      
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
@@ -175,7 +122,7 @@ export function useBetCreation() {
         args: contractArgs,
       })
 
-      console.log('✅ writeContract called successfully, waiting for user approval...')
+      console.log('✅ writeContract called successfully')
       
     } catch (err) {
       console.error('❌ createBet error:', err)
@@ -191,7 +138,6 @@ export function useBetCreation() {
         return
       }
       
-      console.error('💥 Actual error to show user:', errorMessage)
       showError(
         'Please check your wallet connection and try again. Make sure you have sufficient funds for gas fees.',
         'Failed to Create Bet'
@@ -209,14 +155,13 @@ export function useBetCreation() {
   }
 
   return {
-    ...state,
-    isLoading: state.isLoading || isWritePending || isConfirming,
+    isCreating: isWritePending,           // ✅ Map to expected property names
+    isConfirming: isConfirming,           // ✅ Direct mapping
+    isSuccess: isSuccess,                 // ✅ Direct mapping  
+    isLoading: state.isLoading || isWritePending || isConfirming,  // Keep for backward compatibility
+    error: state.error,                   // ✅ Direct mapping
     createBet,
     clearError,
-    betCounter,
-    // Debug info
-    txHash,
-    writeError,
-    receiptError
+    betCounter
   }
 }
