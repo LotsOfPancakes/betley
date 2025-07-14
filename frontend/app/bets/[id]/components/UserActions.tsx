@@ -108,7 +108,7 @@ export function UserActions({
   if (userHasLost()) {
     return (
       <div className="mt-6 p-4 bg-red-900/20 border border-red-600 rounded-lg">
-        <p className="text-red-300 mb-2">You lost this bet.</p>
+        <p className="text-red-300 mb-2">You lost this bet. Better luck next time!</p>
         <p className="text-sm text-red-200">
           Your bet: {decimals ? formatUnits(getUserTotalBet(), decimals) : '0'} HYPE
         </p>

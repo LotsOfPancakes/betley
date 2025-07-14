@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/page.tsx - Updated to use UnifiedBettingInterface
+// frontend/app/bets/[id]/page.tsx - Cleaned up version
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
@@ -7,38 +7,28 @@ import { useState } from 'react'
 import { useBetIdMapping } from '@/lib/hooks/useBetIdMapping'
 import { parseUnits } from 'viem'
 
-// Import components
+// Import only the components we actually use
 import { CreatorActions } from './components/CreatorActions'
 import { UserActions } from './components/UserActions'
 import { UnifiedBettingInterface } from './components/UnifiedBettingInterface'
 import { ResolveModal } from './components/ResolveModal'
-import { BetLookupDebug } from './components/BetLookupDebug'
 
 // Import hooks
 import { useBetData } from './hooks/useBetData'
 import { useBetActions } from './hooks/useBetActions'
 
-// Simple error state for invalid IDs
+// Error state for invalid IDs
 function InvalidBetError({ randomId }: { randomId: string }) {
   const router = useRouter()
   
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <BetLookupDebug />
       <div className="text-center max-w-md mx-auto px-4">
         <div className="bg-red-900/20 border border-red-600 rounded-lg p-6">
           <h1 className="text-2xl font-bold text-red-400 mb-4">🔍 Bet Not Found</h1>
           <p className="text-gray-300 mb-4">
             The bet ID &quot;<span className="font-mono">{randomId}</span>&quot; was not found.
           </p>
-          <p className="text-gray-400 text-sm mb-6">
-            This could mean:
-          </p>
-          <ul className="text-left text-gray-400 text-sm mb-6 space-y-1">
-            <li>• The bet doesn&apos;t exist</li>
-            <li>• The bet is still being created</li>
-            <li>• There&apos;s a network issue</li>
-          </ul>
           <div className="space-y-3">
             <button
               onClick={() => window.location.reload()}
@@ -83,7 +73,7 @@ export default function BetPage() {
     isBetLoading
   } = useBetData(isValidBetId && numericBetId !== null ? numericBetId.toString() : '999999', { useReactQuery: true })
 
-  // Extract token address from bet details (8th element, index 7)
+  // Extract token address from bet details
   const tokenAddress = betDetails?.[7] as string
 
   // Get bet actions
@@ -105,8 +95,8 @@ export default function BetPage() {
     tokenAddress
   )
 
-  // Show loading while mapping is loading
-  if (isLoadingMappings) {
+  // Loading states
+  if (isLoadingMappings || isBetLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -117,25 +107,8 @@ export default function BetPage() {
     )
   }
 
-  // Show error if bet id is wrong
-  if (!isValidBetId) {
-    return <InvalidBetError randomId={randomBetId as string} />
-  }
-
-  // Show loading while bet data is loading
-  if (isBetLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-xl mb-4 text-white">Loading bet...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // No bet details found
-  if (!betDetails) {
+  // Invalid bet ID
+  if (!isValidBetId || !betDetails) {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
@@ -144,12 +117,10 @@ export default function BetPage() {
   const endTimeMs = Number(endTime) * 1000
   const isActive = Date.now() < endTimeMs
   const isCreator = address?.toLowerCase() === creator.toLowerCase()
+  const timeLeft = isActive ? Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000)) : 0
 
   // Check if user has existing bet
   const hasExistingBet = userBets?.some(amount => amount > BigInt(0)) || false
-
-  // Calculate time remaining
-  const timeLeft = isActive ? Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000)) : 0
 
   // Calculate user's total bet amount for claiming logic
   const userTotalBet = userBets?.reduce((sum, amount) => sum + amount, BigInt(0)) || BigInt(0)
@@ -204,8 +175,8 @@ export default function BetPage() {
               creator={creator}
               timeLeft={timeLeft}
               resolved={resolved}
-              resolutionDeadlinePassed={false} // TODO: Calculate based on timestamps
-              resolutionTimeLeft={0} // TODO: Calculate based on contract data
+              resolutionDeadlinePassed={false}
+              resolutionTimeLeft={0}
               onShowResolveModal={() => setShowResolveModal(true)}
             />
           </div>
@@ -220,7 +191,7 @@ export default function BetPage() {
               winningOption={winningOption}
               userBets={userBets}
               totalAmounts={totalAmounts}
-              resolutionDeadlinePassed={false} // TODO: Calculate based on timestamps
+              resolutionDeadlinePassed={false}
               hasClaimed={hasClaimed}
               decimals={decimals}
               isPending={isPending}

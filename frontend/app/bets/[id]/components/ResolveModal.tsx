@@ -69,7 +69,7 @@ export function ResolveModal({
         {/* Body */}
         <div className="p-6">
           <p className="text-gray-300 mb-6">
-            Select the correct outcome for this bet. This action cannot be undone.
+            Which option is the winning outcome?
           </p>
 
           {/* Options */}
@@ -106,9 +106,9 @@ export function ResolveModal({
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <div>
-                <p className="text-yellow-300 text-sm font-medium">Important</p>
+                <p className="text-yellow-300 text-sm font-medium">Resolution is permanent!</p>
                 <p className="text-yellow-200 text-sm mt-1">
-                  This resolution is permanent and cannot be changed. Winners will be able to claim their share of the total pool.
+                  Winners will be able to claim their share of the total pool.
                 </p>
               </div>
             </div>

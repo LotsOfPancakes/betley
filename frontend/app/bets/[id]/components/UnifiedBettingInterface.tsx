@@ -87,7 +87,7 @@ export function UnifiedBettingInterface({
         text: 'Resolved',
         color: 'bg-green-600',
         description: options && winningOption !== undefined ? 
-          `Winner: ${options[winningOption]}` : 'Bet has been resolved',
+          `Winning Option: ${options[winningOption]}` : 'Bet has been resolved',
         timeInfo: null
       }
     }
@@ -103,8 +103,8 @@ export function UnifiedBettingInterface({
     
     if (!isActive) {
       return {
-        text: 'Expired',
-        color: 'bg-gray-600',
+        text: 'Pending Resolution',
+        color: 'bg-orange-700',
         description: resolutionTimeLeft > 0 ? 
           `Creator has ${formatTimeRemaining(resolutionTimeLeft)} to resolve` :
           'Betting period has ended',
@@ -153,8 +153,29 @@ export function UnifiedBettingInterface({
           <h1 className="text-3xl font-bold text-white mb-2">{name}</h1>
         </div>
         <div className="flex flex-col items-end space-y-3">
-          {/* Status badge with time info */}
-          <div className="flex flex-col items-end">
+          {/* Status badge with time info and share button */}
+          <div className="flex items-center gap-3">
+            {/* Share Button */}
+            <button
+              onClick={() => {
+                const url = window.location.href
+                navigator.clipboard.writeText(url).then(() => {
+                  console.log('🔗 Link copied to clipboard')
+                  // You could add a toast notification here
+                }).catch(() => {
+                  console.error('Failed to copy link')
+                })
+              }}
+              className="bg-gray-700 hover:bg-gray-600 text-gray-100 hover:text-white px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm"
+              title="Copy link to share this bet"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+              </svg>
+              Share
+            </button>
+            
+            {/* Status Badge */}
             <div className={`${status.color} text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center space-x-2`}>
               <span>{status.text}</span>
               {status.timeInfo && (
@@ -169,7 +190,7 @@ export function UnifiedBettingInterface({
           {/* Total pool */}
           {totalAmounts && decimals !== undefined && totalPool > BigInt(0) && (
             <div className="text-right">
-              <p className="text-sm text-gray-400">Total Pool</p>
+              <p className="text-sm text-gray-400">Total Bets</p>
               <p className="text-xl font-bold text-white">
                 {formatUnits(totalPool, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
               </p>
@@ -205,20 +226,13 @@ export function UnifiedBettingInterface({
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">
-            {hasExistingBet ? 'Bet More - Single Option' : 'Bet Options'}
+            {hasExistingBet ? 'Add More to Your Bet' : 'Bet Options'}
           </h3>
           
           {/* Show wallet connection prompt if not connected */}
           {!address && (
             <div className="bg-gray-700/50 rounded-lg p-4 text-center mb-4">
               <p className="text-gray-400">Connect your wallet to place bets</p>
-            </div>
-          )}
-
-          {/* Show betting ended message if not active */}
-          {!canBet && address && (
-            <div className="bg-gray-700/50 rounded-lg p-4 text-center mb-4">
-              <p className="text-gray-400">Betting period has ended</p>
             </div>
           )}
 
@@ -252,7 +266,12 @@ export function UnifiedBettingInterface({
                       <span className="font-medium">{option}</span>
                       {isUserCurrentOption && (
                         <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
-                          Current Bet
+                          Your Choice
+                        </span>
+                      )}
+                      {isDisabled && !isUserCurrentOption && (
+                        <span className="text-xs bg-gray-600 text-gray-300 px-2 py-1 rounded">
+                          Locked
                         </span>
                       )}
                     </div>
@@ -287,7 +306,7 @@ export function UnifiedBettingInterface({
             {/* Amount Input */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-3">
-                {hasExistingBet ? 'Additional bet:' : 'Bet amount:'}
+                {hasExistingBet ? 'Additional bet amount:' : 'Bet amount:'}
               </label>
               <div className="relative">
                 <input
