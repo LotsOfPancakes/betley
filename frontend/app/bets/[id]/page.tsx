@@ -1,18 +1,16 @@
-// app/bets/[id]/page.tsx - Fixed with correct hook interface and Step 6 integration
+// frontend/app/bets/[id]/page.tsx - Updated to use UnifiedBettingInterface
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useBetIdMapping } from '@/lib/hooks/useBetIdMapping'
 import { parseUnits } from 'viem'
 
-// Import existing components
-import { BetInfo } from './components/BetInfo'
+// Import components
 import { CreatorActions } from './components/CreatorActions'
 import { UserActions } from './components/UserActions'
-import { BettingInterface } from './components/BettingInterface'
-import { BetCreationPending } from './components/BetCreationPending'
+import { UnifiedBettingInterface } from './components/UnifiedBettingInterface'
 import { ResolveModal } from './components/ResolveModal'
 import { BetLookupDebug } from './components/BetLookupDebug'
 
@@ -65,10 +63,9 @@ export default function BetPage() {
   const params = useParams()
   const { address } = useAccount()
   const randomBetId = params?.id
-  const [retryCount, setRetryCount] = useState(0)
   const [showResolveModal, setShowResolveModal] = useState(false)
 
-  // 🔧 FIXED: Use the correct hook interface
+  // Get numeric bet ID from random ID
   const { 
     numericBetId, 
     isValidId: isValidBetId, 
@@ -83,15 +80,13 @@ export default function BetPage() {
     allowance,
     decimals,
     hasClaimed,
-    isBetLoading,
-    betError,
-    refreshAllData
+    isBetLoading
   } = useBetData(isValidBetId && numericBetId !== null ? numericBetId.toString() : '999999', { useReactQuery: true })
 
-  // 🚀 STEP 6: Extract token address from bet details (8th element, index 7)
+  // Extract token address from bet details (8th element, index 7)
   const tokenAddress = betDetails?.[7] as string
 
-  // 🚀 STEP 6: Pass token address to useBetActions hook
+  // Get bet actions
   const {
     betAmount,
     setBetAmount,
@@ -100,29 +95,17 @@ export default function BetPage() {
     isPending,
     isApproving,
     justPlacedBet,
-    isNativeBet, // 🚀 NEW: Get native bet information
+    isNativeBet,
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
     handleResolveBet
   } = useBetActions(
     isValidBetId && numericBetId !== null ? numericBetId.toString() : '999999',
-    tokenAddress // 🚀 STEP 6: Pass token address
+    tokenAddress
   )
 
-  // Auto-retry logic for newly created bets
-  useEffect(() => {
-    if (isValidBetId && betError && retryCount < 10) {
-      const timer = setTimeout(() => {
-        setRetryCount(prev => prev + 1)
-        refreshAllData()
-      }, 2000) // Retry every 2 seconds
-      
-      return () => clearTimeout(timer)
-    }
-  }, [betError, retryCount, isValidBetId, refreshAllData])
-
-  // Show loading while mappings are being loaded
+  // Show loading while mapping is loading
   if (isLoadingMappings) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -134,20 +117,12 @@ export default function BetPage() {
     )
   }
 
-  // NOW handle invalid ID case after mappings are loaded
+  // Show error if bet id is wrong
   if (!isValidBetId) {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
-  // Check if this might be a newly created bet that hasn't been mined yet
-  const isPossiblyPendingCreation = isValidBetId && (betError || !betDetails) && retryCount < 10
-
-  // Show pending creation state for new bets
-  if (isPossiblyPendingCreation) {
-    return <BetCreationPending randomId={randomBetId as string} />
-  }
-
-  // Loading state for established bets
+  // Show loading while bet data is loading
   if (isBetLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -173,88 +148,34 @@ export default function BetPage() {
   // Check if user has existing bet
   const hasExistingBet = userBets?.some(amount => amount > BigInt(0)) || false
 
+  // Calculate time remaining
+  const timeLeft = isActive ? Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000)) : 0
+
   // Calculate user's total bet amount for claiming logic
   const userTotalBet = userBets?.reduce((sum, amount) => sum + amount, BigInt(0)) || BigInt(0)
 
-  // 🚀 STEP 6: Smart approval logic - skip approval for native HYPE
-  const needsApproval = !isNativeBet && // 🚀 NEW: Skip approval for native HYPE
+  // Smart approval logic - skip approval for native HYPE
+  const needsApproval = !isNativeBet && 
     allowance !== undefined && 
     parseUnits(betAmount || '0', decimals || 18) > allowance &&
     parseFloat(betAmount || '0') > 0
 
-  console.log('🚀 Step 6 Debug:', {
-    tokenAddress,
-    isNativeBet,
-    needsApproval,
-    betAmount
-  })
-
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* 🔧 FIXED: Only render BetInfo when required data is available, with CORRECT props */}
-        {betDetails && name && creator && options && (
-          <BetInfo 
-            name={name}
-            creator={creator}
-            options={options}
-            totalAmounts={totalAmounts}
-            decimals={decimals}
-            isActive={isActive}
-            resolved={resolved}
-            winningOption={winningOption}
-            timeLeft={Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000))} // Calculate actual time left
-            resolutionTimeLeft={0} // Set to 0 for now, implement if needed
-            resolutionDeadlinePassed={false} // Set to false for now, implement if needed
-            // 🔧 REMOVED: userBets and tokenSymbol are NOT used by BetInfo
-          />
-        )}
-
-        {/* Show loading state while waiting for bet details */}
-        {!betDetails && !isBetLoading && (
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-700 rounded mb-4 w-3/4"></div>
-              <div className="h-4 bg-gray-700 rounded mb-2 w-1/2"></div>
-              <div className="h-4 bg-gray-700 rounded w-1/4"></div>
-            </div>
-          </div>
-        )}
-
-        {/* Creator Actions (Resolve) */}
-        {isCreator && !resolved && !isActive && (
-          <CreatorActions
-            address={address}
-            creator={creator}
-            timeLeft={Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000))}
-            resolved={resolved}
-            resolutionDeadlinePassed={false} // Calculate based on your logic
-            resolutionTimeLeft={0} // Calculate based on your logic  
-            onShowResolveModal={() => setShowResolveModal(true)} // Note: prop name is onShowResolveModal, not onResolve
-          />
-        )}
-
-
-        {/* User Actions (Claim/Refund) */}
-        {!isCreator && resolved && userTotalBet > BigInt(0) && !hasClaimed && (
-          <UserActions
-            address={address}
-            resolved={resolved}
-            winningOption={winningOption}
-            userBets={userBets}
-            totalAmounts={totalAmounts}
-            resolutionDeadlinePassed={false} // Calculate based on your logic
-            hasClaimed={hasClaimed}
-            decimals={decimals}
-            isPending={isPending} // From useBetActions
-            handleClaimWinnings={handleClaimWinnings}
-          />
-        )}
-
-
-        {/* 🚀 STEP 6: Enhanced Betting Interface with native token support */}
-        <BettingInterface
+        
+        {/* Main Unified Betting Interface */}
+        <UnifiedBettingInterface
+          // Bet info props
+          name={name}
           isActive={isActive}
+          resolved={resolved}
+          winningOption={winningOption}
+          timeLeft={timeLeft}
+          resolutionTimeLeft={0} // TODO: Calculate based on contract data
+          resolutionDeadlinePassed={false} // TODO: Calculate based on timestamps
+          
+          // Betting interface props
           address={address}
           options={options}
           userBets={userBets}
@@ -272,8 +193,41 @@ export default function BetPage() {
           hypeBalance={hypeBalance}
           justPlacedBet={justPlacedBet}
           hasExistingBet={hasExistingBet}
-          isNativeBet={isNativeBet} // 🚀 STEP 6: Pass native bet info
+          isNativeBet={isNativeBet}
         />
+
+        {/* Creator Actions - Only show if user is creator and bet needs resolution */}
+        {isCreator && !isActive && !resolved && (
+          <div className="mt-6">
+            <CreatorActions
+              address={address}
+              creator={creator}
+              timeLeft={timeLeft}
+              resolved={resolved}
+              resolutionDeadlinePassed={false} // TODO: Calculate based on timestamps
+              resolutionTimeLeft={0} // TODO: Calculate based on contract data
+              onShowResolveModal={() => setShowResolveModal(true)}
+            />
+          </div>
+        )}
+
+        {/* User Actions - Only show if user won and can claim */}
+        {resolved && userTotalBet > BigInt(0) && !hasClaimed && (
+          <div className="mt-6">
+            <UserActions
+              address={address}
+              resolved={resolved}
+              winningOption={winningOption}
+              userBets={userBets}
+              totalAmounts={totalAmounts}
+              resolutionDeadlinePassed={false} // TODO: Calculate based on timestamps
+              hasClaimed={hasClaimed}
+              decimals={decimals}
+              isPending={isPending}
+              handleClaimWinnings={handleClaimWinnings}
+            />
+          </div>
+        )}
 
         {/* Resolve Modal */}
         <ResolveModal
