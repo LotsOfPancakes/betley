@@ -1,4 +1,4 @@
-// frontend/lib/hooks/useBetIdMapping.ts - Enhanced with the expected interface
+// frontend/lib/hooks/useBetIdMapping.ts - CLEANED VERSION
 import { useState, useEffect } from 'react'
 import { UnifiedBetMapper, BetMapping } from '@/lib/betIdMapping'
 
@@ -22,13 +22,6 @@ export function useBetIdMapping(randomId: string) {
       setNumericBetId(mappedId)
       setIsValidId(mappedId !== null)
       setIsLoading(false)
-      
-      console.log('🔍 useBetIdMapping result:', {
-        randomId,
-        numericBetId: mappedId,
-        isValidId: mappedId !== null,
-        allMappings: UnifiedBetMapper.getAllMappings()
-      })
     }, 100)
 
     return () => clearTimeout(timer)

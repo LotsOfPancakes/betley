@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/hooks/useBetActions.ts - FIXED TypeScript types for Step 6
+// frontend/app/bets/[id]/hooks/useBetActions.ts - CLEANED VERSION
 import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
@@ -68,16 +68,16 @@ export function useBetActions(betId: string, tokenAddress?: string) {
       }
       
       showError(
-        'Please check your wallet and try again. Make sure you have sufficient funds for gas fees.',
-        'Approval Failed'
+        'Please check your wallet and try again. Make sure you have sufficient funds for gas fees.'
       )
       setIsSubmitting(false)
       setCurrentTxType(null)
     }
   }
 
-  // 🔧 FIXED: Proper TypeScript types for conditional transaction
   const handlePlaceBet = async () => {
+    // REMOVED: console.log('🚀 Calling handlePlaceBet with selectedOption:', selectedOption)
+    
     if (!betAmount || selectedOption === null || isWritePending) return
     
     try {
@@ -87,33 +87,15 @@ export function useBetActions(betId: string, tokenAddress?: string) {
       const decimals = 18
       const amountWei = parseUnits(betAmount, decimals)
       
-      // 🔧 FIXED: Separate native and ERC20 transaction calls with proper types
-      if (isNativeBet) {
-        // Native HYPE transaction - include value
-        await writeContract({
-          address: BETLEY_ADDRESS,
-          abi: BETLEY_ABI,
-          functionName: 'placeBet',
-          args: [BigInt(numericBetId), selectedOption, amountWei],
-          value: amountWei, // ✅ Include value for native tokens
-        })
-      } else {
-        // ERC20 transaction - no value
-        await writeContract({
-          address: BETLEY_ADDRESS,
-          abi: BETLEY_ABI,
-          functionName: 'placeBet',
-          args: [BigInt(numericBetId), selectedOption, amountWei],
-          // ✅ No value property for ERC20 tokens
-        })
+      const txArgs = {
+        address: BETLEY_ADDRESS,
+        abi: BETLEY_ABI,
+        functionName: 'placeBet' as const,
+        args: [BigInt(numericBetId), selectedOption, amountWei] as const,
+        ...(isNativeBet && { value: amountWei })
       }
       
-      console.log('🚀 Step 6: Transaction submitted', {
-        isNativeBet,
-        tokenAddress,
-        includesValue: isNativeBet,
-        amount: betAmount
-      })
+      await writeContract(txArgs)
       
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -127,10 +109,16 @@ export function useBetActions(betId: string, tokenAddress?: string) {
         return
       }
       
-      showError(
-        'Please check your wallet balance and approvals. Make sure you have sufficient tokens and gas fees.',
-        'Bet Failed'
-      )
+      if (errorMessage.toLowerCase().includes('already placed bet on different option')) {
+        showError('You can only bet on one option per bet. To add more funds, select the same option you previously chose.')
+      } else {
+        showError(
+          isNativeBet 
+            ? 'Failed to place bet. Please check your HYPE balance and try again.'
+            : 'Failed to place bet. Please make sure you have approved the token transfer.'
+        )
+      }
+      
       setIsSubmitting(false)
       setCurrentTxType(null)
     }
@@ -138,7 +126,7 @@ export function useBetActions(betId: string, tokenAddress?: string) {
 
   const handleClaimWinnings = async () => {
     if (isWritePending) return
-
+    
     try {
       setIsSubmitting(true)
       setCurrentTxType('claimWinnings')
@@ -162,18 +150,15 @@ export function useBetActions(betId: string, tokenAddress?: string) {
         return
       }
       
-      showError(
-        'You may have already claimed your winnings or the bet is not yet resolved.',
-        'Failed to Claim Winnings'
-      )
+      showError('Failed to claim winnings. Please try again.')
       setIsSubmitting(false)
       setCurrentTxType(null)
     }
   }
 
-  const handleResolveBet = async (winningOptionIndex: number) => {
+  const handleResolveBet = async (winningOption: number) => {
     if (isWritePending) return
-
+    
     try {
       setIsSubmitting(true)
       setCurrentTxType('resolveBet')
@@ -182,7 +167,7 @@ export function useBetActions(betId: string, tokenAddress?: string) {
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'resolveBet',
-        args: [BigInt(numericBetId), winningOptionIndex],
+        args: [BigInt(numericBetId), winningOption],
       })
       
     } catch (error: unknown) {
@@ -197,65 +182,57 @@ export function useBetActions(betId: string, tokenAddress?: string) {
         return
       }
       
-      showError(
-        'Only the bet creator can resolve this bet. Make sure the betting period has ended.',
-        'Failed to Resolve Bet'
-      )
+      showError('Failed to resolve bet. Please try again.')
       setIsSubmitting(false)
       setCurrentTxType(null)
     }
   }
 
-  // Transaction success monitoring
+  // === EFFECTS ===
+  // Reset submission state when transaction is sent
+  useEffect(() => {
+    if (txHash) {
+      setIsSubmitting(false)
+    }
+  }, [txHash])
+
+  // Handle transaction confirmations
   useEffect(() => {
     if (isConfirmed && receipt && currentTxType) {
+      queryClient.invalidateQueries({ queryKey: ['bet', numericBetId] })
+      queryClient.invalidateQueries({ queryKey: ['userBets', numericBetId] })
+      queryClient.invalidateQueries({ queryKey: ['balance'] })
+      queryClient.invalidateQueries({ queryKey: ['allowance'] })
+      queryClient.invalidateQueries({ queryKey: ['userClaimed'] })
+      
       switch (currentTxType) {
         case 'approve':
-          queryClient.invalidateQueries({ queryKey: ['allowance'] })
-          showSuccess('You can now place your bet', 'Tokens Approved!')
+          showSuccess('Token approval successful! You can now place your bet.')
           break
-          
         case 'placeBet':
-          queryClient.invalidateQueries({ queryKey: ['bet', numericBetId] })
-          queryClient.invalidateQueries({ queryKey: ['userBets', numericBetId] })
-          queryClient.invalidateQueries({ queryKey: ['balance'] })
+          showSuccess('Bet placed successfully!')
           setBetAmount('')
           setJustPlacedBet(true)
-          
-          const successMessage = isNativeBet 
-            ? 'Bet Confirmed.' 
-            : 'Bet Confirmed.'
-          showSuccess('Good Luck!', successMessage)
-          
-          setTimeout(() => {
-            setJustPlacedBet(false)
-          }, 3000)
+          setTimeout(() => setJustPlacedBet(false), 5000)
           break
-          
         case 'claimWinnings':
-          queryClient.invalidateQueries({ queryKey: ['balance'] })
-          queryClient.invalidateQueries({ queryKey: ['claimed', numericBetId] })
-          showSuccess('Your winnings have been transferred to your wallet', 'Winnings Claimed!')
+          showSuccess('Winnings claimed successfully!')
           break
-          
         case 'resolveBet':
-          queryClient.invalidateQueries({ queryKey: ['bet', numericBetId] })
-          showSuccess('The bet outcome has been recorded', 'Bet Resolved!')
+          showSuccess('Bet resolved successfully!')
           break
       }
       
-      setIsSubmitting(false)
       setCurrentTxType(null)
     }
-  }, [isConfirmed, receipt, currentTxType, queryClient, numericBetId, showSuccess, isNativeBet])
+  }, [isConfirmed, receipt, currentTxType, queryClient, numericBetId, showSuccess])
 
   // Handle write errors
   useEffect(() => {
-    if (writeError && currentTxType) {
+    if (writeError) {
       setIsSubmitting(false)
-      setCurrentTxType(null)
     }
-  }, [writeError, currentTxType])
+  }, [writeError])
 
   return {
     // State
@@ -264,17 +241,7 @@ export function useBetActions(betId: string, tokenAddress?: string) {
     selectedOption,
     setSelectedOption,
     justPlacedBet,
-    
-    // Token type information
     isNativeBet,
-    tokenAddress,
-    
-    // Loading states
-    isPending: (currentTxType === 'placeBet' && (isWritePending || isConfirming)) || isSubmitting,
-    isApproving: (currentTxType === 'approve' && (isWritePending || isConfirming)) || 
-                 (currentTxType === 'approve' && isSubmitting),
-    isClaiming: (currentTxType === 'claimWinnings' && (isWritePending || isConfirming)) || 
-                (currentTxType === 'claimWinnings' && isSubmitting),
     
     // Actions
     handleApprove,
@@ -282,10 +249,8 @@ export function useBetActions(betId: string, tokenAddress?: string) {
     handleClaimWinnings,
     handleResolveBet,
     
-    // Transaction state
-    txHash,
-    isWritePending,
-    isConfirming,
-    currentTxType,
+    // Loading states
+    isPending: isWritePending || isConfirming || isSubmitting,
+    isApproving: currentTxType === 'approve' && (isWritePending || isConfirming),
   }
 }

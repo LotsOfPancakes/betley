@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation'
 import { ConnectKitButton } from 'connectkit'
 import { useAccount } from 'wagmi'
-import { TokenTest } from '@/components/TokenTest'
 
 export default function HomePage() {
   const router = useRouter()
@@ -33,7 +32,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-<TokenTest />
       {/* Features Section */}
       <div className="py-20 border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
