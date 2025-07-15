@@ -80,16 +80,16 @@ function ErrorFallback({ level, onRetry, error }: ErrorFallbackProps) {
     switch (level) {
       case 'critical':
         return {
-          title: 'Application Error',
-          message: 'A critical error occurred. Please refresh the page or contact support.',
+          title: 'Oops! There is an Application Error',
+          message: 'Please refresh the page or contact support.',
           action: 'Refresh Page',
           onClick: () => window.location.reload()
         }
       
       case 'page':
         return {
-          title: 'Page Error',
-          message: 'Something went wrong loading this page. Try refreshing or going back.',
+          title: 'Oops! Something went wrong on this page.',
+          message: 'Try refreshing or going back.',
           action: 'Try Again',
           onClick: onRetry
         }

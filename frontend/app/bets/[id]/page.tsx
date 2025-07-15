@@ -12,6 +12,7 @@ import { CreatorActions } from './components/CreatorActions'
 import { UserActions } from './components/UserActions'
 import { UnifiedBettingInterface } from './components/UnifiedBettingInterface'
 import { ResolveModal } from './components/ResolveModal'
+import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBoundary'
 
 // Import hooks
 import { useBetData } from './hooks/useBetData'
@@ -137,93 +138,101 @@ export default function BetPage() {
     parseFloat(betAmount || '0') > 0
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        
-        {/* Main Unified Betting Interface */}
-        <UnifiedBettingInterface
-          // Bet info props
-          name={name}
-          isActive={isActive}
-          resolved={resolved}
-          winningOption={winningOption}
-          timeLeft={timeLeft}
-          resolutionTimeLeft={resolutionTimeLeft}
-          resolutionDeadlinePassed={resolutionDeadlinePassed}
+    <PageErrorBoundary>
+      <div className="min-h-screen bg-gray-900 text-white">
+        <div className="max-w-4xl mx-auto px-4 py-8">
           
-          // Betting interface props
-          address={address}
-          options={options}
-          userBets={userBets}
-          selectedOption={selectedOption}
-          setSelectedOption={setSelectedOption}
-          betAmount={betAmount}
-          setBetAmount={setBetAmount}
-          needsApproval={needsApproval}
-          isApproving={isApproving}
-          isPending={isPending}
-          handleApprove={handleApprove}
-          handlePlaceBet={handlePlaceBet}
-          totalAmounts={totalAmounts}
-          decimals={decimals}
-          hypeBalance={hypeBalance}
-          justPlacedBet={justPlacedBet}
-          hasExistingBet={hasExistingBet}
-          isNativeBet={isNativeBet}
-        />
-
-        {/* Creator Actions - Only show if user is creator and bet needs resolution */}
-        {isCreator && !isActive && !resolved && (
-          <div className="mt-6">
-            <CreatorActions
-              address={address}
-              creator={creator}
-              timeLeft={timeLeft}
-              resolved={resolved}
-              resolutionDeadlinePassed={resolutionDeadlinePassed}
-              resolutionTimeLeft={resolutionTimeLeft}
-              onShowResolveModal={() => setShowResolveModal(true)}
-            />
-          </div>
-        )}
-
-        {/* User Actions - Only show if user won and can claim */}
-        {resolved && userTotalBet > BigInt(0) && !hasClaimed && (
-          <div className="mt-6">
-            <UserActions
-              address={address}
+          {/* Main Unified Betting Interface */}
+          <ComponentErrorBoundary>
+            <UnifiedBettingInterface
+              // Bet info props
+              name={name}
+              isActive={isActive}
               resolved={resolved}
               winningOption={winningOption}
-              userBets={userBets}
-              totalAmounts={totalAmounts}
+              timeLeft={timeLeft}
+              resolutionTimeLeft={resolutionTimeLeft}
               resolutionDeadlinePassed={resolutionDeadlinePassed}
-              hasClaimed={hasClaimed}
-              decimals={decimals}
+              
+              // Betting interface props
+              address={address}
+              options={options}
+              userBets={userBets}
+              selectedOption={selectedOption}
+              setSelectedOption={setSelectedOption}
+              betAmount={betAmount}
+              setBetAmount={setBetAmount}
+              needsApproval={needsApproval}
+              isApproving={isApproving}
               isPending={isPending}
-              handleClaimWinnings={handleClaimWinnings}
+              handleApprove={handleApprove}
+              handlePlaceBet={handlePlaceBet}
+              totalAmounts={totalAmounts}
+              decimals={decimals}
+              hypeBalance={hypeBalance}
+              justPlacedBet={justPlacedBet}
+              hasExistingBet={hasExistingBet}
+              isNativeBet={isNativeBet}
             />
-          </div>
-        )}
+          </ComponentErrorBoundary>
+          {/* Creator Actions - Only show if user is creator and bet needs resolution */}
+          {isCreator && !isActive && !resolved && (
+            <div className="mt-6">
+              <ComponentErrorBoundary>
+                <CreatorActions
+                  address={address}
+                  creator={creator}
+                  timeLeft={timeLeft}
+                  resolved={resolved}
+                  resolutionDeadlinePassed={resolutionDeadlinePassed}
+                  resolutionTimeLeft={resolutionTimeLeft}
+                  onShowResolveModal={() => setShowResolveModal(true)}
+                />
+              </ComponentErrorBoundary>
+            </div>
+          )}
 
-        {/* Resolve Modal */}
-        <ResolveModal
-          isOpen={showResolveModal}
-          onClose={() => setShowResolveModal(false)}
-          options={options}
-          onResolve={handleResolveBet}
-          betName={name}
-        />
-      </div>          
-      
-      {/* Footer */}
-      <footer>
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-green-600">
-          <span className ="hover:text-green-400 transition-colors"><a href="https://app.hyperliquid.xyz/trade/PLSNODUMP">Support me using my ref</a></span>
-          </p>
-          <p className="text-gray-400 text-sm">Get a 4% Fee Discount</p>
-        </div>
-      </footer>
-    </div>
+          {/* User Actions - Only show if user won and can claim */}
+          {resolved && userTotalBet > BigInt(0) && !hasClaimed && (
+            <div className="mt-6">
+              <ComponentErrorBoundary>
+                <UserActions
+                  address={address}
+                  resolved={resolved}
+                  winningOption={winningOption}
+                  userBets={userBets}
+                  totalAmounts={totalAmounts}
+                  resolutionDeadlinePassed={resolutionDeadlinePassed}
+                  hasClaimed={hasClaimed}
+                  decimals={decimals}
+                  isPending={isPending}
+                  handleClaimWinnings={handleClaimWinnings}
+                />
+              </ComponentErrorBoundary>
+            </div>
+          )}
+
+          {/* Resolve Modal */}
+            <ComponentErrorBoundary>
+              <ResolveModal
+                isOpen={showResolveModal}
+                onClose={() => setShowResolveModal(false)}
+                options={options}
+                onResolve={handleResolveBet}
+                betName={name}
+              />
+            </ComponentErrorBoundary>
+          </div>
+        {/* Footer */}
+        <footer>
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <p className="text-green-600">
+            <span className ="hover:text-green-400 transition-colors"><a href="https://app.hyperliquid.xyz/trade/PLSNODUMP">Support me using my ref</a></span>
+            </p>
+            <p className="text-gray-400 text-sm">Get a 4% Fee Discount</p>
+          </div>
+        </footer>
+      </div>
+    </PageErrorBoundary>
   )
 }

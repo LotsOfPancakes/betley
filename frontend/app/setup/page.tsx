@@ -4,6 +4,7 @@
 import { useAccount } from 'wagmi'
 import { ConnectKitButton } from 'connectkit'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBoundary'
 
 // Import our extracted components and hooks
 import BetNameInput from './components/BetNameInput'
@@ -29,8 +30,9 @@ export default function SetupPage() {
     getDurationInSeconds
   } = useBetForm()
   
-  const { isValid, getFieldError } = useBetValidation(formData)
-  
+  //const { isValid, getFieldError } = useBetValidation(formData) // removed getFieldError because not used, see Ln89 for BetNameInput
+  const { isValid } = useBetValidation(formData)
+
   const {
     isCreating,
     isConfirming,
@@ -60,65 +62,65 @@ export default function SetupPage() {
   }
 
   return (
+    <PageErrorBoundary>
     <div className="min-h-screen bg-gray-900 py-12">
       <div className="max-w-2xl mx-auto px-4">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-white">Create New Bet</h1>
-          <ConnectKitButton />
         </div>
 
         <div className="bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
           {!address ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🔗</div>
-              <h2 className="text-2xl font-bold text-white mb-4">Connect Your Wallet</h2>
-              <p className="text-gray-300 mb-6">
-                Please connect your wallet to create a new bet
-              </p>
-              <ConnectKitButton />
+              <h2 className="text-2xl font-bold text-white mb-4">Looking to Create a Bet?</h2>
+                <div className="flex gap-4 justify-center"><ConnectKitButton />
+                </div>
             </div>
           ) : (
             <div className="space-y-8">
 
-              {/* Bet Name Input */}
-              <div>
-                <BetNameInput 
-                  value={formData.name} 
-                  onChange={updateName}
-                  isValid={!getFieldError('name') && formData.name.length >= 5}
-                />
-              </div>
+               {/* Bet Name Input - PROTECTED */}
+                <ComponentErrorBoundary>
+                  <BetNameInput
+                    value={formData.name}
+                    onChange={updateName}
+                  //  isValid={!getFieldError('name') && formData.name.length >= 5} //temporarily remove since we already have a different form of protection
+                  />
+                </ComponentErrorBoundary>
 
-              {/* Options Manager */}
-              <div>
-                <OptionsManager 
-                  options={formData.options} 
-                  onChange={updateOptions}
-                />
-              </div>
+                {/* Options Manager - PROTECTED */}
+                <ComponentErrorBoundary>
+                  <OptionsManager
+                    options={formData.options}
+                    onChange={updateOptions}
+                  />
+                </ComponentErrorBoundary>
 
-              {/* Duration Selector */}
-              <div>
-                <DurationSelector 
-                  duration={formData.duration} 
-                  onChange={updateDuration}
-                />
-              </div>
+                {/*Duration Selector - PROTECTED */}
+                <ComponentErrorBoundary>
+                  <DurationSelector
+                    duration={formData.duration}
+                    onChange={updateDuration}                  />
+                </ComponentErrorBoundary>
 
-              {/* Submit Section */}
-              <SubmitSection
-                isValid={isValid}
-                isConnected={!!address}
-                state={creationState}
-                onSubmit={handleSubmit}
-                onClearError={clearError}
-              />
-              
+                {/* Submit Section - PROTECTED */}
+                <ComponentErrorBoundary>
+                  <SubmitSection
+                    isValid={isValid}
+                    isConnected={!!address}
+                    state={creationState}
+                    onSubmit={handleSubmit}
+                    onClearError={clearError}
+                  />
+                </ComponentErrorBoundary>
             </div>
           )}
         </div>
       </div>
     </div>
+    </PageErrorBoundary>
+
   )
 }

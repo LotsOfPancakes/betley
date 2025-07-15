@@ -29,9 +29,8 @@ export default function BetNameInput({
 
   // Get helpful suggestions
   const getSuggestion = () => {
-    // Removed initial suggestion for empty state - keep it clean
     if (isTooShort) return `Add ${5 - value.length} more characters to make it descriptive`
-    return ''
+    return '' //empty at start
   }
 
   return (

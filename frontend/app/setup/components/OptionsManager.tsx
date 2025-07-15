@@ -63,7 +63,6 @@ export default function OptionsManager({
     return 'border-gray-600 focus:border-blue-500'
   }
 
-  // Get status message - UPDATED: Removed "Great! Your options look good"
   const getStatusMessage = () => {
     if (filledOptions.length < minOptions) {
       return 'Enter at least two bet options'
@@ -74,7 +73,6 @@ export default function OptionsManager({
     if (tooLongOptions.length > 0) {
       return 'Some options are too long - keep them under 50 characters'
     }
-    // REMOVED: The "Great! Your options look good" message
     return ''
   }
 
@@ -88,9 +86,8 @@ export default function OptionsManager({
     <div>
       <div className="flex items-center justify-between mb-2">
         <label className="block text-sm font-medium text-gray-300">
-          Betting Options ({minOptions}-{maxOptions} options)
+          Betting Options ({minOptions} - {maxOptions} options)
         </label>
-        {/* REMOVED: "Options ready" indicator that was shown in top-right */}
       </div>
 
       <div className="space-y-3">
@@ -152,7 +149,7 @@ export default function OptionsManager({
       {/* Status message - UPDATED: Only shows when there are validation issues */}
       {getStatusMessage() && (
         <div className="mt-3">
-          <p className={`text-sm ${getStatusColor()}`}>
+          <p className={`text-xs ${getStatusColor()}`}>
             💡 {getStatusMessage()}
           </p>
         </div>

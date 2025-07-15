@@ -50,7 +50,6 @@ export default function DurationSelector({ duration, onChange, error }: Duration
         <label className="block text-sm font-medium text-gray-300">
           Betting Duration
         </label>
-        {/* Removed "Good duration" text - visual feedback is sufficient */}
       </div>
       
       {/* Manual input - reverted to two fields for better UX */}
