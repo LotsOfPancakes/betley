@@ -102,7 +102,7 @@ export default function HomePage() {
       {/* CTA Section */}
       <div className="py-20 border-t border-gray-800">
         <div className="max-w-4xl mx-auto text-center px-4">
-          <h2 className="text-3xl font-bold text-white mb-6">Ready to Start Betting?</h2>
+          <h2 className="text-3xl font-bold text-white mb-6">Got a Bet in mind?</h2>
           <p className="text-gray-300 mb-8">
             Connect your wallet and create your first bet in minutes.
           </p>
@@ -113,7 +113,7 @@ export default function HomePage() {
               onClick={() => router.push('/setup')}
               className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
-              Create Your First Bet
+              Create a Bet
             </button>
           )}
         </div>
@@ -122,9 +122,10 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-gray-800 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-gray-400">
-            Built on HyperEVM • Powered by HYPE
+          <p className="text-green-600">
+            <span className ="hover:text-green-400 transition-colors"><a href="https://app.hyperliquid.xyz/trade/PLSNODUMP">Support me using my ref</a></span>
           </p>
+          <p className="text-gray-400 text-sm">Get a 4% Fee Discount</p>
         </div>
       </footer>
     </div>

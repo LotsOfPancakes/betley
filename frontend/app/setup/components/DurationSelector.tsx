@@ -16,7 +16,7 @@ const quickPresets = [
   { label: '1h', hours: 1, minutes: 0, description: 'Quick decision' },
   { label: '6h', hours: 6, minutes: 0, description: 'Half day' },
   { label: '1d', hours: 24, minutes: 0, description: 'Full day' },
-  { label: '3d', hours: 72, minutes: 0, description: 'Weekend' }
+  { label: '3d', hours: 72, minutes: 0, description: 'Weekend bets' }
 ]
 
 export default function DurationSelector({ duration, onChange, error }: DurationSelectorProps) {
@@ -36,34 +36,6 @@ export default function DurationSelector({ duration, onChange, error }: Duration
   const isValid = totalMinutes > 0
   const isReasonable = totalMinutes >= 60 // At least 1 hour
   const isTooLong = totalMinutes > 7 * 24 * 60 // More than 1 week
-
-  // Get duration description
-  // const getDurationDescription = () => {
-  //   if (totalMinutes === 0) return 'Set a duration for your bet'
-  //   if (totalMinutes < 60) return `Very short - only ${totalMinutes} minutes`
-  //   if (totalMinutes < 24 * 60) return `${Math.floor(totalMinutes / 60)} hours`
-  //   const days = Math.floor(totalMinutes / (24 * 60))
-  //   const remainingHours = Math.floor((totalMinutes % (24 * 60)) / 60)
-  //   return `${days} day${days === 1 ? '' : 's'}${remainingHours > 0 ? ` and ${remainingHours} hour${remainingHours === 1 ? '' : 's'}` : ''}`
-  // }
-
-  // Get recommendation
-  // const getRecommendation = () => {
-  //   if (totalMinutes === 0) return 'Choose how long people can place bets'
-  //   if (totalMinutes < 30) return 'Very short - consider at least 1 hour for people to participate'
-  //   if (totalMinutes < 60) return 'Short duration - good for quick decisions'
-  //   if (totalMinutes <= 24 * 60) return 'Good duration for most bets'
-  //   if (totalMinutes <= 7 * 24 * 60) return 'Long duration - gives everyone time to participate'
-  //   return 'Very long duration - consider if this is necessary'
-  // }
-
-  // const getStatusColor = () => {
-  //   if (totalMinutes === 0) return 'text-gray-400'
-  //   if (totalMinutes < 30) return 'text-yellow-400'
-  //   if (isReasonable && !isTooLong) return 'text-green-400'
-  //   if (isTooLong) return 'text-yellow-400'
-  //   return 'text-blue-400'
-  // }
 
   const getBorderColor = () => {
     if (error) return 'border-red-500 focus:border-red-500'
@@ -123,7 +95,6 @@ export default function DurationSelector({ duration, onChange, error }: Duration
         </div>
       </div>
 
-      {/* Quick presets - removed "Popular choices:" label */}
       <div className="mb-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {quickPresets.map((preset) => {

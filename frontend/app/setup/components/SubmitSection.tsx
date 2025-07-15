@@ -72,8 +72,7 @@ export default function SubmitSection({
       {/* Privacy Info */}
       <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3">
         <p className="text-gray-300 text-xs">
-          💡 <strong>Privacy Note:</strong> Your bet will have a unique random ID that makes it impossible 
-          for others to discover by guessing. Only share the direct link with people you want to participate.
+          💡 <strong>Privacy Note:</strong> Your bet will have a unique random ID to maintain privacy. Only share the direct link with people you want to participate.
         </p>
       </div>
     </div>

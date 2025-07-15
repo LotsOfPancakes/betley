@@ -24,7 +24,6 @@ export default function BetNameInput({
   const getBorderColor = () => {
     if (error) return 'border-2 border-red-500 focus:border-red-500'
     if (isTooShort) return 'border-2 border-yellow-500 focus:border-yellow-500'
-    // Removed green border - will use green tick instead for consistency
     return 'border border-gray-600 focus:border-blue-500'
   }
 
@@ -41,7 +40,6 @@ export default function BetNameInput({
         <label className="block text-sm font-medium text-gray-300">
           Bet Title
         </label>
-        {/* Removed "Good title" text - green tick indicator is sufficient */}
       </div>
       
       <div className="relative">

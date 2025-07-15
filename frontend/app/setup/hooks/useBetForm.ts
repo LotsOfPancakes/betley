@@ -5,7 +5,7 @@ import { BetFormData } from '../types/setup.types'
 const initialFormData: BetFormData = {
   name: '',
   options: ['', ''],
-  duration: { hours: 6, minutes: 0 } // UPDATED: Changed from 24 hours to 6 hours
+  duration: { hours: 1, minutes: 0 } // UPDATED: Changed from 24 hours to 6 hours
 }
 
 export function useBetForm() {
