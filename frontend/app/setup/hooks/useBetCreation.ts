@@ -1,4 +1,4 @@
-// frontend/app/setup/hooks/useBetCreation.ts - PROPERLY FIXED: Wait for transaction receipt
+// frontend/app/setup/hooks/useBetCreation.ts - CLEANED VERSION: Debug logs removed
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -51,21 +51,11 @@ export function useBetCreation() {
     data: receipt 
   } = useWaitForTransactionReceipt({ hash: txHash })
 
-  // 🔧 FIXED: Handle successful transaction ONLY after receipt is confirmed
+  // Handle successful transaction ONLY after receipt is confirmed
   useEffect(() => {
     if (isSuccess && receipt && betCounterWhenStarted !== null && address && lastBetName) {
-      console.log('🎉 Transaction MINED and CONFIRMED! Creating mapping...')
-      
       // The bet ID is the counter value when we started
       const newBetId = betCounterWhenStarted
-      
-      console.log('🔢 Final mapping creation:', {
-        betCounterWhenStarted,
-        newBetId,
-        betName: lastBetName,
-        txHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber
-      })
       
       // Create the mapping AFTER transaction is confirmed
       const randomId = UnifiedBetMapper.createMapping(
@@ -73,8 +63,6 @@ export function useBetCreation() {
         lastBetName,
         address
       )
-      
-      console.log('✅ Mapping created successfully:', randomId)
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['betCounter'] })
@@ -87,11 +75,10 @@ export function useBetCreation() {
       setBetCounterWhenStarted(null)
       setLastBetName('')
 
-      // 🔧 FIXED: Shorter delay since transaction is already confirmed
+      // Redirect to the confirmed bet
       setTimeout(() => {
-        console.log('🔄 Redirecting to confirmed bet:', `/bets/${randomId}`)
         router.push(`/bets/${randomId}`)
-      }, 3000) // Reduced from 1000ms since bet definitely exists now
+      }, 3000)
     }
   }, [isSuccess, receipt, betCounterWhenStarted, address, router, lastBetName, showSuccess, queryClient])
 
@@ -120,7 +107,6 @@ export function useBetCreation() {
       // Store the current bet counter - this will be our bet's ID
       if (betCounter !== undefined) {
         setBetCounterWhenStarted(Number(betCounter))
-        console.log('📊 Starting bet creation - expected bet ID:', Number(betCounter))
       } else {
         throw new Error('Could not determine bet counter')
       }
@@ -132,22 +118,12 @@ export function useBetCreation() {
         ZERO_ADDRESS as `0x${string}` // Native HYPE token
       ]
       
-      console.log('📝 Submitting bet creation transaction:', {
-        name,
-        options,
-        duration: durationInSeconds,
-        token: 'Native HYPE',
-        expectedBetId: Number(betCounter)
-      })
-      
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'createBet',
         args: contractArgs,
       })
-
-      console.log('✅ Transaction submitted, waiting for confirmation...')
       
     } catch (err) {
       console.error('❌ createBet error:', err)
@@ -162,7 +138,6 @@ export function useBetCreation() {
           errorMessage.toLowerCase().includes('cancelled') ||
           errorMessage.toLowerCase().includes('denied') ||
           errorMessage.includes('4001')) {
-        console.log('🚫 User cancelled transaction')
         setState(prev => ({ ...prev, isLoading: false, error: null }))
         return
       }
@@ -185,14 +160,13 @@ export function useBetCreation() {
 
   return {
     isCreating: isWritePending,
-    isConfirming: isConfirming, // 🔧 NEW: Expose confirming state
+    isConfirming: isConfirming,
     isSuccess: isSuccess,
-    isLoading: state.isLoading || isWritePending || isConfirming, // Include confirming in loading
+    isLoading: state.isLoading || isWritePending || isConfirming,
     error: state.error,
     createBet,
     clearError,
     betCounter,
-    // 🔧 NEW: Expose transaction states for better UX
     txHash,
     isWaitingForConfirmation: isWritePending === false && isConfirming === true
   }

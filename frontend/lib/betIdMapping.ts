@@ -1,4 +1,4 @@
-// frontend/lib/betIdMapping.ts - UNIFIED SYSTEM (replaces all others)
+// frontend/lib/betIdMapping.ts - CLEANED VERSION: Debug logs removed
 'use client'
 
 export interface BetMapping {
@@ -93,7 +93,6 @@ export class UnifiedBetMapper {
     mappings.push(newMapping)
     this.saveMappings(mappings)
     
-    console.log('📝 Created bet mapping:', { randomId, numericId, name })
     return randomId
   }
 
@@ -112,7 +111,7 @@ export class UnifiedBetMapper {
   static getRandomId(numericId: number): string | undefined {
     const mappings = this.getAllMappings()
     const mapping = mappings.find(m => m.numericId === numericId)
-    return mapping ? mapping.randomId : undefined  // Return undefined instead of null
+    return mapping ? mapping.randomId : undefined
   }
 
   /**
@@ -155,10 +154,6 @@ export class UnifiedBetMapper {
       }
     }
 
-    if (discovered > 0) {
-      console.log(`🔍 Auto-discovered ${discovered} missing bet mappings`)
-    }
-
     return discovered
   }
 
@@ -168,7 +163,6 @@ export class UnifiedBetMapper {
   static clearAllMappings(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(this.STORAGE_KEY)
-      console.log('🗑️ Cleared all bet mappings')
     }
   }
 

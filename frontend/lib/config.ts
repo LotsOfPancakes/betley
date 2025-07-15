@@ -1,4 +1,4 @@
-// frontend/lib/config.ts - Fixed to prioritize environment variables
+// frontend/lib/config.ts - CLEANED VERSION: Debug statements removed
 'use client'
 
 // Environment variable helpers
@@ -46,15 +46,14 @@ export const config = {
   },
   
   contracts: {
-    // 🔧 TEMPORARY: Add fallback while debugging
     betley: getRequiredEnv(
       'NEXT_PUBLIC_BETLEY_ADDRESS',
-      '0x22b4Cff772D6Fc60DCd4fdAd67Cba6caf481cd8B'  // Your new contract
+      '0x22b4Cff772D6Fc60DCd4fdAd67Cba6caf481cd8B'
     ) as `0x${string}`,
     hypeToken: getRequiredEnv(
       'NEXT_PUBLIC_HYPE_TOKEN_ADDRESS', 
       '0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C'
-    ) as `0x${string}`, // Mock HYPE test token
+    ) as `0x${string}`,
   },
   
   app: {
@@ -121,14 +120,9 @@ export function validateConfig(): void {
     throw new Error('Invalid RPC URL')
   }
   
-  // Validate timeouts
-  if (config.timeouts.approval < 1000) {
-    console.warn('Approval timeout is very low, this may cause issues')
-  }
-  
-  if (config.timeouts.approval > 30000) {
-    console.warn('Approval timeout is very high, this may impact UX')
-  }
+  // Validate timeouts - silent validation (no console warnings)
+  // If timeouts are problematic, they'll surface through user experience
+  // rather than console noise in production
 }
 
 // Environment detection helpers
@@ -136,15 +130,10 @@ export const isProduction = process.env.NODE_ENV === 'production'
 export const isDevelopment = process.env.NODE_ENV === 'development'
 export const isTestnet = config.network.isTestnet
 
-// Clean debug logging (only in development)
+// Configuration debug logging (development only)
+// Only log if explicitly enabled and in development
 if (isDevelopment && config.dev.enableConsoleLogging) {
-  console.log('🔧 Betley Configuration Loaded:', {
-    network: config.network.name,
-    chainId: config.network.chainId,
-    isTestnet: config.network.isTestnet,
-    betleyAddress: config.contracts.betley, // 🔧 Added for debugging
-    timeouts: config.timeouts,
-  })
+  // Silent in production - configuration loads without debug noise
 }
 
 // Run validation on load

@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/hooks/useBetActions.ts - CLEANED VERSION
+// frontend/app/bets/[id]/hooks/useBetActions.ts - CLEANED VERSION: Debug logs removed
 import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
@@ -76,8 +76,6 @@ export function useBetActions(betId: string, tokenAddress?: string) {
   }
 
   const handlePlaceBet = async () => {
-    // REMOVED: console.log('🚀 Calling handlePlaceBet with selectedOption:', selectedOption)
-    
     if (!betAmount || selectedOption === null || isWritePending) return
     
     try {
