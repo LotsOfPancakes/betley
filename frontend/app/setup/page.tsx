@@ -67,20 +67,19 @@ export default function SetupPage() {
       <div className="max-w-2xl mx-auto px-4">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-white">Create New Bet</h1>
+          <h1 className="text-3xl font-bold text-white">Setup New Bet</h1>
         </div>
 
-        <div className="bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
+        <div className="bg-gray-900 p-2"> {/* old className bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700 */}
           {!address ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">🔗</div>
-              <h2 className="text-2xl font-bold text-white mb-4">Looking to Create a Bet?</h2>
+              <div className="text-5xl mb-4">📝</div>
+              <h2 className="text-2xl font-bold text-white mb-4">Creating a Bet?</h2>
                 <div className="flex gap-4 justify-center"><ConnectKitButton />
                 </div>
             </div>
           ) : (
             <div className="space-y-8">
-
                {/* Bet Name Input - PROTECTED */}
                 <ComponentErrorBoundary>
                   <BetNameInput
@@ -102,7 +101,8 @@ export default function SetupPage() {
                 <ComponentErrorBoundary>
                   <DurationSelector
                     duration={formData.duration}
-                    onChange={updateDuration}                  />
+                    onChange={updateDuration}                  
+                  />
                 </ComponentErrorBoundary>
 
                 {/* Submit Section - PROTECTED */}

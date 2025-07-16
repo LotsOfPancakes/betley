@@ -25,9 +25,11 @@ export default function MyBetsPage() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white mb-4">Connect Your Wallet</h1>
-          <p className="text-gray-300 mb-6">Connect your wallet to view your bets</p>
-          <ConnectKitButton />
+          <div className="text-5xl mb-4">🎲</div>
+            <h1 className="text-2xl font-bold text-white mb-4">Looking for your Bets?</h1>
+              <div className="flex justify-center mb-4"> 
+                <ConnectKitButton />
+              </div>
         </div>
       </div>
     )
