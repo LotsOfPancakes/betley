@@ -116,6 +116,7 @@ export default function SetupPage() {
                   />
                 </ComponentErrorBoundary>
             </div>
+            
           )}
         </div>
       </div>

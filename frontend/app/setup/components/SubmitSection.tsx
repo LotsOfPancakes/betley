@@ -69,6 +69,11 @@ export default function SubmitSection({
         {getButtonText()}
       </button>
 
+     {/* Fee Notice text */}
+      <div className="text-sm text-gray-400">
+        <p>• As creator, you earn <span className="text-green-300">2%</span> of the losing option upon resolution</p>
+      </div>
+
       {/* Privacy Info */}
       <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3">
         <p className="text-gray-300 text-xs">

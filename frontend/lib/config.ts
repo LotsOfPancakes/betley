@@ -48,7 +48,7 @@ export const config = {
   contracts: {
     betley: getRequiredEnv(
       'NEXT_PUBLIC_BETLEY_ADDRESS',
-      '0x22b4Cff772D6Fc60DCd4fdAd67Cba6caf481cd8B'
+      '0xd2cEc1C39Df0c686d21957485fFAF696c07CC385'
     ) as `0x${string}`,
     hypeToken: getRequiredEnv(
       'NEXT_PUBLIC_HYPE_TOKEN_ADDRESS', 

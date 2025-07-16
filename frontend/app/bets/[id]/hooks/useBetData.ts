@@ -1,23 +1,15 @@
-// frontend/app/bets/[id]/hooks/useBetData.ts - Fixed with native balance support
+// frontend/app/bets/[id]/hooks/useBetData.ts - V2 Compatible
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useReadContract, useBalance } from 'wagmi'
-import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
+import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
 import { isNativeHype } from '@/lib/tokenUtils'
-// Optional: Use React Query hooks if available
-import { 
-  useBetDetailsQuery, 
-  useUserBetsQuery, 
-  useUserBalanceQuery, 
-  useUserAllowanceQuery,
-  useUserClaimedQuery 
-} from '@/lib/queries/betQueries'
 
 interface UseBetDataOptions {
-  useReactQuery?: boolean // Flag to enable/disable React Query features
+  useReactQuery?: boolean
 }
 
 export function useBetData(betId: string, options: UseBetDataOptions = {}) {
-  const { useReactQuery = true } = options // Default to using React Query
+  const { useReactQuery = true } = options
   const { address } = useAccount()
   const [timeLeft, setTimeLeft] = useState(0)
   const [resolutionTimeLeft, setResolutionTimeLeft] = useState(0)
@@ -33,31 +25,29 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     setRefreshTrigger(prev => prev + 1)
   }, [])
 
-  // === REACT QUERY HOOKS (Enhanced) ===
-  const reactQueryBetDetails = useBetDetailsQuery(numericBetId || -1)
-  const reactQueryUserBets = useUserBetsQuery(numericBetId || -1, address)
-  const reactQueryBalance = useUserBalanceQuery(address)
-  const reactQueryAllowance = useUserAllowanceQuery(address)
-  const reactQueryClaimed = useUserClaimedQuery(numericBetId || -1, address)
-
-  // === FALLBACK HOOKS (Your existing logic) ===
-  const fallbackBetDetails = useReadContract({
+  // === V2 CONTRACT CALLS ===
+  
+  // Main bet details (same function name as V1, but V2 contract)
+  const { 
+    data: betDetails, 
+    isLoading: isBetLoading, 
+    error: betError 
+  } = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'getBetDetails',
     args: numericBetId !== null ? [BigInt(numericBetId)] : undefined,
     query: {
       refetchInterval: 4000,
-      enabled: numericBetId !== null && !useReactQuery // Only use if React Query disabled
+      enabled: numericBetId !== null
     }
   })
 
-  // 🔧 FIX: Get token address from raw data BEFORE using it
-  const rawBetDetails = useReactQuery ? reactQueryBetDetails.data : fallbackBetDetails.data
-  const tokenAddress = rawBetDetails?.[7] as string
+  // Extract token address from bet details (index 7 in V2)
+  const tokenAddress = betDetails?.[7] as string
   const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : false
 
-  // 🔧 NEW: Native balance query (for native HYPE)
+  // Native balance query
   const { data: nativeBalance } = useBalance({
     address: address,
     query: {
@@ -66,81 +56,55 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     }
   })
 
-  const fallbackUserBets = useReadContract({
+  // User bets
+  const { data: userBets } = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'getUserBets',
     args: address && numericBetId !== null ? [BigInt(numericBetId), address] : undefined,
     query: {
       refetchInterval: 5000,
-      enabled: numericBetId !== null && !!address && !useReactQuery
+      enabled: numericBetId !== null && !!address
     }
   })
 
-  // 🔧 UPDATED: ERC20 balance query (only for ERC20 tokens)
-  const fallbackERC20Balance = useReadContract({
-    address: HYPE_TOKEN_ADDRESS,
+  // ERC20 balance (for non-native tokens)
+  const { data: erc20Balance } = useReadContract({
+    address: tokenAddress as `0x${string}`,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
+      enabled: !!address && !!tokenAddress && !isNativeBet,
       refetchInterval: 8000,
-      enabled: !!address && !useReactQuery && !isNativeBet // Only for ERC20 tokens
     }
   })
 
-  const fallbackAllowance = useReadContract({
-    address: HYPE_TOKEN_ADDRESS,
+  // ERC20 allowance
+  const { data: allowance } = useReadContract({
+    address: tokenAddress as `0x${string}`,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: address ? [address, BETLEY_ADDRESS] : undefined,
     query: {
-      refetchInterval: 7000,
-      enabled: !!address && !useReactQuery
+      enabled: !!address && !!tokenAddress && !isNativeBet,
+      refetchInterval: 8000,
     }
   })
 
-  const fallbackClaimed = useReadContract({
+  // Has user claimed
+  const { data: hasClaimed } = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'hasUserClaimed',
     args: address && numericBetId !== null ? [BigInt(numericBetId), address] : undefined,
     query: {
-      refetchInterval: 6000,
-      enabled: numericBetId !== null && !!address && !useReactQuery
+      enabled: numericBetId !== null && !!address,
+      refetchInterval: 10000,
     }
   })
 
-  // === CHOOSE DATA SOURCE ===
-  const betDetails = rawBetDetails // Use the data we already fetched
-  const userBets = useReactQuery ? reactQueryUserBets.data : fallbackUserBets.data  
-  
-  // 🔧 NEW: Smart balance selection based on token type
-  const hypeBalance = isNativeBet 
-    ? nativeBalance?.value // Use native balance for native HYPE
-    : (useReactQuery ? reactQueryBalance.data : fallbackERC20Balance.data) // Use ERC20 balance for ERC20 tokens
-    
-  const allowance = useReactQuery ? reactQueryAllowance.data : fallbackAllowance.data
-  const hasClaimed = useReactQuery ? reactQueryClaimed.data : fallbackClaimed.data
-
-  const isBetLoading = useReactQuery ? 
-    reactQueryBetDetails.isLoading : 
-    fallbackBetDetails.isLoading
-
-  const betError = useReactQuery ? 
-    reactQueryBetDetails.error : 
-    fallbackBetDetails.error
-
-  // === STATIC DATA (Same for both approaches) ===
-  const { data: decimals } = useReadContract({
-    address: HYPE_TOKEN_ADDRESS,
-    abi: ERC20_ABI,
-    functionName: 'decimals',
-    query: {
-      staleTime: Infinity, // Decimals never change
-    }
-  })
-
+  // Resolution deadline
   const { data: resolutionDeadline } = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
@@ -152,9 +116,24 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     }
   })
 
+  // Choose correct balance based on token type
+  const hypeBalance = isNativeBet ? nativeBalance?.value : erc20Balance
+
+  // Decimals
+  const { data: decimals } = useReadContract({
+    address: tokenAddress as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: 'decimals',
+    query: {
+      enabled: !!tokenAddress && !isNativeBet,
+      staleTime: Infinity, // Decimals never change
+    }
+  })
+
   // === TIME CALCULATIONS ===
   useEffect(() => {
     if (betDetails && betDetails[3]) {
+      // V2: endTime is at index 3 (same as V1)
       const endTime = Number(betDetails[3]) * 1000
       const now = Date.now()
       setTimeLeft(Math.max(0, Math.floor((endTime - now) / 1000)))
@@ -182,7 +161,6 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
   // Manual refresh all data
   const refreshAllData = useCallback(() => {
     setRefreshTrigger(prev => prev + 1)
-    // Could also manually refetch specific queries here if needed
   }, [])
 
   // Validation error for invalid bet IDs
@@ -190,15 +168,15 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     new Error(`Invalid bet ID: "${betId}". Bet IDs must be numbers.`) : null
 
   return {
-    // Data
+    // Data (same structure as V1)
     betDetails,
     userBets,
-    hypeBalance, // Now correctly shows native or ERC20 balance
-    decimals,
+    hypeBalance,
+    decimals: isNativeBet ? 18 : decimals, // Native HYPE has 18 decimals
     hasClaimed,
-    resolutionDeadline,
+    resolutionDeadline: resolutionDeadline ? Number(resolutionDeadline) : undefined,
     allowance,
-    isNativeBet, // 🔧 NEW: Export this so components know token type
+    isNativeBet, // Export this so components know token type
     
     // Loading states
     isBetLoading: numericBetId === null ? false : isBetLoading,

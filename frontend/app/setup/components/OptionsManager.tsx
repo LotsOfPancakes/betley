@@ -160,7 +160,7 @@ export default function OptionsManager({
         <button
           type="button"
           onClick={addOption}
-          className="mt-3 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors text-sm flex items-center gap-2"
+          className="mt-3 px-4 py-2 border border-dashed text-gray-300 rounded-lg hover:bg-gray-600 transition-colors text-sm text-gray-400 flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />

@@ -1,15 +1,15 @@
-// frontend/lib/contractABI.ts - Updated for BetleyNativeV2 (with claimCreatorFees)
+// frontend/lib/contractABI.ts - Updated for BetleyNative
 import { config } from './config'
 
 // Contract addresses from config
 export const BETLEY_ADDRESS = config.contracts.betley as `0x${string}`
 export const HYPE_TOKEN_ADDRESS = config.contracts.hypeToken as `0x${string}`
 
-// BetleyNativeV2 ABI - Existing functions + new fee functions
+// BetleyNative ABI - Multi-token support
 export const BETLEY_ABI = [
-  // ========== EXISTING V1 FUNCTIONS (UNCHANGED) ==========
+  // ========== WRITE FUNCTIONS ==========
   
-  // Create Bet
+  // Create Bet - Updated with token parameter
   {
     "inputs": [
       {
@@ -45,7 +45,7 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
-  // Place Bet
+  // Place Bet - Updated with amount parameter and payable
   {
     "inputs": [
       {
@@ -105,7 +105,7 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
-  // Claim Refund
+  // Claim Refund - New function
   {
     "inputs": [
       {
@@ -120,7 +120,9 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
-  // Get Bet Details (SAME AS V1)
+  // ========== READ FUNCTIONS ==========
+  
+  // Get Bet Details - Updated with token return
   {
     "inputs": [
       {
@@ -176,7 +178,7 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
-  // Get User Bets (SAME AS V1)
+  // Get User Bets
   {
     "inputs": [
       {
@@ -194,7 +196,7 @@ export const BETLEY_ABI = [
     "outputs": [
       {
         "internalType": "uint256[]",
-        "name": "userBets",
+        "name": "",
         "type": "uint256[]"
       }
     ],
@@ -202,7 +204,7 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
-  // Has User Claimed (SAME AS V1)
+  // Has User Claimed
   {
     "inputs": [
       {
@@ -220,7 +222,7 @@ export const BETLEY_ABI = [
     "outputs": [
       {
         "internalType": "bool",
-        "name": "claimed",
+        "name": "",
         "type": "bool"
       }
     ],
@@ -228,7 +230,49 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
-  // Get Resolution Deadline (SAME AS V1)
+  // Get Time Left
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getTimeLeft",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  
+  // Get Resolution Time Left
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getResolutionTimeLeft",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  
+  // Get Resolution Deadline
   {
     "inputs": [
       {
@@ -241,7 +285,7 @@ export const BETLEY_ABI = [
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "deadline",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -249,7 +293,7 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
-  // Bet Counter (SAME AS V1)
+  // Bet Counter
   {
     "inputs": [],
     "name": "betCounter",
@@ -264,224 +308,9 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
-  // ========== NEW V2 FEE FUNCTIONS ==========
-  
-  // Claim Creator Fees (NEW)
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_betId",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimCreatorFees",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  
-  // Claim Platform Fees
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "claimPlatformFees",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  
-  // Calculate Potential Winnings (with fees)
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_betId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
-      }
-    ],
-    "name": "calculatePotentialWinnings",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "winnings",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  
-  // Get Fee Parameters
-  {
-    "inputs": [],
-    "name": "getFeeParameters",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "creatorEnabled",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint256",
-        "name": "creatorAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "platformEnabled",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint256",
-        "name": "platformAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "recipient",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  
-  // Pending Platform Fees
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "recipient",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "pendingPlatformFees",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  
-  // Platform Fee Recipient
-  {
-    "inputs": [],
-    "name": "platformFeeRecipient",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  
-  // ========== ADMIN FUNCTIONS (onlyOwner) ==========
-  
-  // Update Creator Fee
-  {
-    "inputs": [
-      {
-        "internalType": "bool",
-        "name": "enabled",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "updateFeeCreator",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  
-  // Update Platform Fee
-  {
-    "inputs": [
-      {
-        "internalType": "bool",
-        "name": "enabled",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "updateFeePlatform",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  
-  // Update Platform Fee Recipient
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newRecipient",
-        "type": "address"
-      }
-    ],
-    "name": "updatePlatformFeeRecipient",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  
-  // Emergency Disable Fees
-  {
-    "inputs": [],
-    "name": "emergencyDisableFees",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  
-  // Owner (from Ownable)
-  {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  
   // ========== EVENTS ==========
   
-  // Existing Events
+  // Bet Created Event
   {
     "anonymous": false,
     "inputs": [
@@ -514,6 +343,7 @@ export const BETLEY_ABI = [
     "type": "event"
   },
   
+  // Bet Placed Event
   {
     "anonymous": false,
     "inputs": [
@@ -546,6 +376,7 @@ export const BETLEY_ABI = [
     "type": "event"
   },
   
+  // Bet Resolved Event
   {
     "anonymous": false,
     "inputs": [
@@ -566,6 +397,7 @@ export const BETLEY_ABI = [
     "type": "event"
   },
   
+  // Winnings Claimed Event
   {
     "anonymous": false,
     "inputs": [
@@ -592,6 +424,7 @@ export const BETLEY_ABI = [
     "type": "event"
   },
   
+  // Refund Claimed Event
   {
     "anonymous": false,
     "inputs": [
@@ -618,91 +451,13 @@ export const BETLEY_ABI = [
     "type": "event"
   },
   
-  // New Fee Events
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "betId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "PlatformFeeAccumulated",
-    "type": "event"
-  },
-  
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "betId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "creator",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "CreatorFeeCollected",
-    "type": "event"
-  },
-  
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "creatorEnabled",
-        "type": "bool"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "creatorAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "platformEnabled",
-        "type": "bool"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "platformAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "FeeParametersUpdated",
-    "type": "event"
-  },
-  
-  // Special functions
+  // Receive function
   {
     "stateMutability": "payable",
     "type": "receive"
   },
   
+  // Fallback function
   {
     "stateMutability": "payable",
     "type": "fallback"
