@@ -5,20 +5,21 @@ import { Providers } from './providers'
 import { NotificationToast } from './components/ui/NotificationToast'
 import { Navigation } from '../components/Navigation'
 import { CriticalErrorBoundary } from '@/components/ErrorBoundary'
+import { Footer } from '../components/Footer'  // Add this line
 
 export const metadata: Metadata = {
-  title: "Betley - Decentralized Betting",
-  description: "Pari-mutuel betting platform on HyperEVM",
+  title: "Betley - Bet Anything",
+  description: "Decentralized, impromptu betting platform on HyperEVM",
   openGraph: {
-    title: "Betley - Decentralized Betting",
-    description: "Pari-mutuel betting platform on HyperEVM", 
+    title: "Betley - Bet Anything",
+    description: "Decentralized, impromptu betting platform on HyperEVM", 
     type: "website",
     url: "https://betley.app",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Betley - Decentralized Betting",
-    description: "Pari-mutuel betting platform on HyperEVM",
+    title: "Betley - Bet Anything",
+    description: "Decentralized, impromptu betting platform on HyperEVM",
   },
 };
 
@@ -34,6 +35,7 @@ export default function RootLayout({
           <Providers>
             <Navigation />
             {children}
+            <Footer />
             {/* Toast notifications - positioned globally */}
             <NotificationToast />
           </Providers>

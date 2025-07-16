@@ -3,6 +3,8 @@
 
 import { formatUnits } from 'viem'
 import { useEffect, useState } from 'react'
+import { ConnectKitButton } from 'connectkit'
+
 
 interface UnifiedBettingInterfaceProps {
   // Bet Info props
@@ -245,8 +247,8 @@ export function UnifiedBettingInterface({
           
           {/* Show wallet connection prompt if not connected */}
           {!address && (
-            <div className="bg-gray-700/50 rounded-lg p-4 text-center mb-4">
-              <p className="text-gray-400">Connect your wallet to place bets</p>
+            <div className="flex justify-center mb-4"> 
+              <ConnectKitButton />
             </div>
           )}
 

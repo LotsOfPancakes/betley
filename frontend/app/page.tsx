@@ -33,7 +33,7 @@ export default function HomePage() {
         </div>
       </div>
       {/* Features Section */}
-      <div className="py-20 border-t border-gray-800">
+      <div className="py-20"> {/* temp remove border-t border-gray-800*/}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center text-white mb-12">How It Works</h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -80,7 +80,7 @@ export default function HomePage() {
       </div>
 
       {/* Stats Section */}
-      <div className="py-20 border-t border-gray-800">
+      <div className="py-20"> {/* temp remove border-t border-gray-800*/}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8 text-center">
             <div>
@@ -100,14 +100,16 @@ export default function HomePage() {
       </div>
 
       {/* CTA Section */}
-      <div className="py-20 border-t border-gray-800">
+      <div className="py-20"> {/* temp remove border-t border-gray-800*/}
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold text-white mb-6">Got a Bet in mind?</h2>
           <p className="text-gray-300 mb-8">
             Connect your wallet and create your first bet in minutes.
           </p>
           {!address ? (
-            <ConnectKitButton />
+            <div className="flex justify-center"> 
+              <ConnectKitButton />
+            </div>
           ) : (
             <button
               onClick={() => router.push('/setup')}
@@ -118,16 +120,6 @@ export default function HomePage() {
           )}
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-800 py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-green-600">
-            <span className ="hover:text-green-400 transition-colors"><a href="https://app.hyperliquid.xyz/trade/PLSNODUMP">Support me using my ref</a></span>
-          </p>
-          <p className="text-gray-400 text-sm">Get a 4% Fee Discount</p>
-        </div>
-      </footer>
     </div>
   )
 }

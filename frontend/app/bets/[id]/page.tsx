@@ -223,15 +223,6 @@ export default function BetPage() {
               />
             </ComponentErrorBoundary>
           </div>
-        {/* Footer */}
-        <footer>
-          <div className="max-w-7xl mx-auto px-4 text-center">
-            <p className="text-green-600">
-            <span className ="hover:text-green-400 transition-colors"><a href="https://app.hyperliquid.xyz/trade/PLSNODUMP">Support me using my ref</a></span>
-            </p>
-            <p className="text-gray-400 text-sm">Get a 4% Fee Discount</p>
-          </div>
-        </footer>
       </div>
     </PageErrorBoundary>
   )
