@@ -1,4 +1,4 @@
-// frontend/app/setup/components/BetNameInput.tsx
+// app/setup/components/BetNameInput.tsx
 'use client'
 
 interface BetNameInputProps {
@@ -7,13 +7,15 @@ interface BetNameInputProps {
   maxLength?: number
   error?: string
   isValid?: boolean
+  isPreFilled?: boolean
 }
 
 export default function BetNameInput({ 
   value, 
   onChange, 
   maxLength = 100,
-  error
+  error,
+  isPreFilled = false
 }: BetNameInputProps) {
   // Calculate validation state
   const isTooShort = value.length > 0 && value.length < 5
@@ -24,13 +26,15 @@ export default function BetNameInput({
   const getBorderColor = () => {
     if (error) return 'border-2 border-red-500 focus:border-red-500'
     if (isTooShort) return 'border-2 border-yellow-500 focus:border-yellow-500'
+    if (isPreFilled && isGoodLength) return 'border-2 border-green-500 focus:border-green-500'
     return 'border border-gray-600 focus:border-blue-500'
   }
 
   // Get helpful suggestions
   const getSuggestion = () => {
+    if (isPreFilled && isGoodLength) return `Title imported from landing page`
     if (isTooShort) return `Add ${5 - value.length} more characters to make it descriptive`
-    return '' //empty at start
+    return ''
   }
 
   return (
@@ -39,6 +43,11 @@ export default function BetNameInput({
         <label className="block text-sm font-medium text-gray-300">
           Bet Title
         </label>
+        {isPreFilled && (
+          <span className="text-xs bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-600">
+            Pre-filled ✓
+          </span>
+        )}
       </div>
       
       <div className="relative">
@@ -51,10 +60,12 @@ export default function BetNameInput({
           maxLength={maxLength}
         />
         
-        {/* Status indicator - restored green tick for consistency */}
+        {/* Status indicator */}
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           {isGoodLength && (
-            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              isPreFilled ? 'bg-green-500' : 'bg-green-500'
+            }`}>
               <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
@@ -75,6 +86,7 @@ export default function BetNameInput({
             <p className={`${
               error ? 'text-red-400' : 
               isTooShort ? 'text-yellow-400' : 
+              isPreFilled && isGoodLength ? 'text-green-400' :
               'text-gray-400'
             }`}>
               💡 {getSuggestion()}

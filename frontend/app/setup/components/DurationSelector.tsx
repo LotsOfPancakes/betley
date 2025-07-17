@@ -14,9 +14,9 @@ interface DurationSelectorProps {
 
 const quickPresets = [
   { label: '1h', hours: 1, minutes: 0, description: 'Quick decision' },
-  { label: '6h', hours: 6, minutes: 0, description: 'Half day' },
+  { label: '3h', hours: 6, minutes: 0, description: 'Lunch bet' },
   { label: '1d', hours: 24, minutes: 0, description: 'Full day' },
-  { label: '3d', hours: 72, minutes: 0, description: 'Weekend bets' }
+  { label: '3d', hours: 72, minutes: 0, description: 'Weekend bet' }
 ]
 
 export default function DurationSelector({ duration, onChange, error }: DurationSelectorProps) {
@@ -34,13 +34,13 @@ export default function DurationSelector({ duration, onChange, error }: Duration
 
   const totalMinutes = duration.hours * 60 + duration.minutes
   const isValid = totalMinutes > 0
-  const isReasonable = totalMinutes >= 60 // At least 1 hour
+  const isReasonable = totalMinutes >= 10 // At least 10 min
   const isTooLong = totalMinutes > 7 * 24 * 60 // More than 1 week
 
   const getBorderColor = () => {
     if (error) return 'border-red-500 focus:border-red-500'
     if (isValid && isReasonable && !isTooLong) return 'border-green-500 focus:border-green-500'
-    if (totalMinutes > 0 && totalMinutes < 30) return 'border-yellow-500 focus:border-yellow-500'
+    if (totalMinutes > 0 && totalMinutes < 10) return 'border-yellow-500 focus:border-yellow-500'
     return 'border-gray-600 focus:border-blue-500'
   }
 
@@ -86,7 +86,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
               </svg>
             </div>
           )}
-          {totalMinutes > 0 && (totalMinutes < 30 || isTooLong) && (
+          {totalMinutes > 0 && (totalMinutes < 10 || isTooLong) && (
             <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
               <span className="text-white text-xs font-bold">!</span>
             </div>

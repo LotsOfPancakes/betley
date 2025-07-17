@@ -1,12 +1,24 @@
+// app/page.tsx
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ConnectKitButton } from 'connectkit'
 import { useAccount } from 'wagmi'
+import BetTitleInput from './components/BetTitleInput'
 
 export default function HomePage() {
   const router = useRouter()
   const { address } = useAccount()
+  const [betTitle, setBetTitle] = useState('')
+
+  const handleCreateBet = () => {
+    if (!betTitle.trim()) return
+    
+    // Navigate to setup page with title as URL parameter
+    const encodedTitle = encodeURIComponent(betTitle.trim())
+    router.push(`/setup?title=${encodedTitle}`)
+  }
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -19,21 +31,24 @@ export default function HomePage() {
               <span className="text-blue-500"> Simplified</span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Bet anything.
+              Bet on anything. Share with friends. Win together.
             </p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => router.push('/setup')}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Create a Bet
-              </button>
+            
+            {/* New Bet Title Input */}
+            <div className="mb-8">
+              <BetTitleInput
+                value={betTitle}
+                onChange={setBetTitle}
+                onSubmit={handleCreateBet}
+                isConnected={!!address}
+              />
             </div>
           </div>
         </div>
       </div>
+      
       {/* Features Section */}
-      <div className="py-20"> {/* temp remove border-t border-gray-800*/}
+      <div className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center text-white mb-12">How It Works</h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -80,7 +95,7 @@ export default function HomePage() {
       </div>
 
       {/* Stats Section */}
-      <div className="py-20"> {/* temp remove border-t border-gray-800*/}
+      <div className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8 text-center">
             <div>
@@ -100,7 +115,7 @@ export default function HomePage() {
       </div>
 
       {/* CTA Section */}
-      <div className="py-20"> {/* temp remove border-t border-gray-800*/}
+      <div className="py-20">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold text-white mb-6">Got a Bet in mind?</h2>
           <p className="text-gray-300 mb-8">

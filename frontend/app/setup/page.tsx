@@ -1,6 +1,8 @@
 // frontend/app/setup/page.tsx
 'use client'
 
+import { useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { ConnectKitButton } from 'connectkit'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -19,7 +21,12 @@ import { useBetCreation } from './hooks/useBetCreation'
 export default function SetupPage() {
   const { address } = useAccount()
   const { showWarning } = useNotification()
+  const searchParams = useSearchParams()
+
   
+// Get title from URL parameters
+const titleFromUrl = searchParams?.get('title') || ''
+
   // Use our custom hooks
   const {
     formData,
@@ -41,6 +48,14 @@ export default function SetupPage() {
     createBet,
     clearError,
   } = useBetCreation()
+
+    // Pre-fill bet name if coming from landing page
+    useEffect(() => {
+    if (titleFromUrl && !formData.name) {
+      updateName(titleFromUrl)
+    }
+  }, [titleFromUrl, formData.name, updateName])
+
 
   const handleSubmit = () => {
     if (!isValid) {
