@@ -1,4 +1,3 @@
-// frontend/app/setup/components/SubmitSection.tsx
 'use client'
 
 import { BetCreationState } from '../types/setup.types'
@@ -30,11 +29,9 @@ export default function SubmitSection({
 
   return (
     <div className="space-y-4">
-
-
       {/* Error Message */}
       {state.error && (
-        <div className="p-4 bg-red-900/20 border border-red-600 rounded-lg">
+        <div className="p-4 bg-red-900/20 border border-red-600 rounded-xl">
           <div className="flex justify-between items-start">
             <p className="text-red-300 text-sm">{state.error}</p>
             <button
@@ -49,13 +46,13 @@ export default function SubmitSection({
 
       {/* Status Messages - Remove success message since it's now in button */}
       {state.isCreating && (
-        <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+        <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-xl">
           <p className="text-yellow-300 text-sm">⏳ Waiting for wallet confirmation...</p>
         </div>
       )}
 
       {state.isConfirming && (
-        <div className="p-4 bg-blue-900/20 border border-blue-600 rounded-lg">
+        <div className="p-4 bg-blue-900/20 border border-blue-600 rounded-xl">
           <p className="text-blue-300 text-sm">⏳ Creating bet... Please wait.</p>
         </div>
       )}
@@ -64,18 +61,22 @@ export default function SubmitSection({
       <button
         onClick={onSubmit}
         disabled={isDisabled}
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+        className={`w-full py-3 rounded-2xl font-semibold transition-all duration-300 ${
+          isDisabled
+            ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+            : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white hover:scale-105 shadow-lg shadow-green-500/20'
+        }`}
       >
         {getButtonText()}
       </button>
 
-     {/* Fee Notice text */}
+      {/* Fee Notice text */}
       <div className="text-sm text-gray-400">
         <p>• As creator, you earn <span className="text-green-300">2%</span> of the losing option upon resolution</p>
       </div>
 
       {/* Privacy Info */}
-      <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3">
+      <div className="bg-gray-700/50 border border-gray-600 rounded-xl p-3">
         <p className="text-gray-300 text-xs">
           💡 <strong>Privacy Note:</strong> Your bet will have a unique random ID. Only share the direct link with people you want to participate.
         </p>

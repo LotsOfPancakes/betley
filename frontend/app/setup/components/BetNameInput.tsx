@@ -1,4 +1,3 @@
-// app/setup/components/BetNameInput.tsx
 'use client'
 
 interface BetNameInputProps {
@@ -20,34 +19,22 @@ export default function BetNameInput({
   // Calculate validation state
   const isTooShort = value.length > 0 && value.length < 5
   const isGoodLength = value.length >= 5 && value.length <= maxLength
-  const isNearLimit = value.length > maxLength * 0.8
+  // const isNearLimit = value.length > maxLength * 0.8 //no need for this anymore
   
   // Determine border color based on state
   const getBorderColor = () => {
-    if (error) return 'border-2 border-red-500 focus:border-red-500'
-    if (isTooShort) return 'border-2 border-yellow-500 focus:border-yellow-500'
-    if (isPreFilled && isGoodLength) return 'border-2 border-green-500 focus:border-green-500'
-    return 'border border-gray-600 focus:border-blue-500'
-  }
-
-  // Get helpful suggestions
-  const getSuggestion = () => {
-    if (isPreFilled && isGoodLength) return `Title imported from landing page`
-    if (isTooShort) return `Add ${5 - value.length} more characters to make it descriptive`
-    return ''
+    if (error) return 'border-1 border-red-500 focus:border-red-500'
+    if (isTooShort) return 'border-1 border-yellow-500 focus:border-yellow-500'
+    if (isPreFilled && isGoodLength) return 'border-1 border-green-500 focus:border-green-500'
+    return 'border-1 border-green-500/30 focus:border-green-400'
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <label className="block text-sm font-medium text-gray-300">
+      <div className="flex items-center justify-between mb-4">
+        <label className="block text-lg font-semibold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
           Bet Title
         </label>
-        {isPreFilled && (
-          <span className="text-xs bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-600">
-            Pre-filled ✓
-          </span>
-        )}
       </div>
       
       <div className="relative">
@@ -56,52 +43,32 @@ export default function BetNameInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Will it rain tomorrow?"
-          className={`w-full px-4 py-3 pr-12 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-0 transition-all duration-200 ${getBorderColor()}`}
+          className={`w-full px-6 py-4 pr-16 rounded-2xl bg-gray-800/60 text-white placeholder-gray-400 focus:outline-none focus:ring-0 transition-all duration-300 text-lg backdrop-blur-sm ${getBorderColor()}`}
           maxLength={maxLength}
         />
         
         {/* Status indicator */}
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
           {isGoodLength && (
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
               isPreFilled ? 'bg-green-500' : 'bg-green-500'
             }`}>
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Character count */}
+      <div className="mt-2 flex justify-between items-center text-sm">
+        <div className="flex items-center gap-2">
           {isTooShort && (
-            <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">!</span>
-            </div>
+            <span className="text-yellow-400">⚠️ Add {5 - value.length} more characters to make it descriptive</span>
           )}
         </div>
       </div>
-
-      {/* Character count and status */}
-      <div className="flex justify-between items-center mt-1">
-        <div className="text-xs">
-          {getSuggestion() && (
-            <p className={`${
-              error ? 'text-red-400' : 
-              isTooShort ? 'text-yellow-400' : 
-              isPreFilled && isGoodLength ? 'text-green-400' :
-              'text-gray-400'
-            }`}>
-              💡 {getSuggestion()}
-            </p>
-          )}
-        </div>
-        <p className={`text-xs ${isNearLimit ? 'text-yellow-400' : 'text-gray-400'}`}>
-          {value.length}/{maxLength}
-        </p>
-      </div>
-
-      {/* Error message */}
-      {error && (
-        <p className="text-red-400 text-sm mt-1">{error}</p>
-      )}
     </div>
   )
 }

@@ -1,4 +1,3 @@
-// components/BetTitleInput.tsx
 'use client'
 
 import { useState } from 'react'
@@ -46,12 +45,17 @@ export default function BetTitleInput({
           onKeyPress={handleKeyPress}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="Will it rain in an hour?"
-          className={`w-full px-6 py-4 pr-20 text-lg rounded-lg bg-gray-800 text-white placeholder-gray-400 border-2 transition-all duration-300 focus:outline-none ${
+          placeholder={isFocused ? "Will Elvis arrive on time for Townhall?" : "What are you betting on today?"}
+          className={`w-full px-6 py-4 pr-20 text-lg rounded-2xl bg-gray-800/65 text-white transition-all duration-300 focus:outline-none backdrop-blur-sm ${
             isFocused || hasValue 
-              ? 'border-blue-500 bg-gray-700' 
-              : 'border-gray-600 hover:border-gray-500'
+              ? 'bg-gray-800/80 placeholder-gray-500' 
+              : 'hover:border-green-500/50 placeholder-gray-400'
           }`}
+          style={{
+            boxShadow: isFocused || hasValue 
+              ? '0 0 30px rgba(34, 197, 94, 0.3), 0 0 60px rgba(34, 197, 94, 0.2), 0 0 100px rgba(34, 197, 94, 0.1)' 
+              : 'none'
+          }}
           maxLength={maxLength}
         />
         
@@ -60,12 +64,12 @@ export default function BetTitleInput({
           <button
             onClick={onSubmit}
             disabled={!hasValue}
-            className={`flex items-center justify-center rounded-lg font-semibold transition-all duration-300 ${
+            className={`flex items-center justify-center rounded-xl font-semibold transition-all duration-300 transform ${
               hasValue
-                ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white cursor-pointer hover:scale-105 shadow-lg shadow-green-500/25'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             } ${
-              hasValue ? 'w-12 h-12' : 'w-24 h-12 px-4'
+              hasValue ? 'w-18 h-12' : 'w-30 h-12 px-4'
             }`}
           >
             {hasValue ? (
@@ -89,20 +93,7 @@ export default function BetTitleInput({
             )}
           </button>
         </div>
-      </div>
-      
-      {/* Helper text */}
-      {/* <div className="mt-3 flex justify-between items-center text-sm">
-        <p className="text-gray-400">
-          {hasValue 
-            ? `${isConnected ? 'Continue to options' : 'Connect wallet to continue'}`
-            : 'Enter your bet title to get started'
-          }
-        </p>
-        <p className="text-gray-500">
-          {value.length}/{maxLength}
-        </p>
-      </div> */}
+      </div>      
     </div>
   )
 }
