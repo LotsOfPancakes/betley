@@ -196,7 +196,7 @@ export default function BetPage() {
             </div>
           )}
 
-          {/* ✅ UPDATED: User Actions with betId and isNativeBet props */}
+          {/* User Actions props */}
           <ComponentErrorBoundary>
             <UserActions
               address={address}
@@ -209,8 +209,10 @@ export default function BetPage() {
               decimals={decimals}
               isPending={isPending}
               handleClaimWinnings={handleClaimWinnings}
-              betId={numericBetId ? numericBetId.toString() : ''} // ✅ Pass numeric bet ID as string
-              isNativeBet={isNativeBet} // ✅ Pass native bet flag
+              betId={numericBetId ? numericBetId.toString() : ''} // Pass numeric bet ID as string
+              isNativeBet={isNativeBet} // Pass native bet flag
+              creator={creator}
+
             />
           </ComponentErrorBoundary>
           {/* Resolve Modal */}

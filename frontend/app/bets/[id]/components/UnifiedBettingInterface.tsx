@@ -221,7 +221,7 @@ export function UnifiedBettingInterface({
 
           {/* Your Bet Card */}
           {hasExistingBet && userBets && options && (
-            <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-4">
+            <div className="bg-blue-800/40 border border-gray-600 rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-400 mb-2">Your Bet</h3>
               {userBets.map((amount, index) => {
                 if (amount === BigInt(0)) return null

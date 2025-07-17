@@ -1,10 +1,11 @@
-// frontend/app/bets/[id]/components/UserActions.tsx - V2 Fee-Adjusted
+// frontend/app/bets/[id]/components/UserActions.tsx - V2 with Creator Fee Claiming
 'use client'
 
 import { formatUnits } from 'viem'
-import { useReadContract } from 'wagmi'
-import { useState } from 'react'
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useState, useMemo, useEffect } from 'react'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
+import { useNotification } from '@/lib/hooks/useNotification'
 
 interface UserActionsProps {
   address?: string
@@ -19,6 +20,7 @@ interface UserActionsProps {
   handleClaimWinnings: () => void
   betId: string
   isNativeBet?: boolean
+  creator?: string // Add creator prop to check if user is creator
 }
 
 interface WinningsBreakdown {
@@ -85,6 +87,85 @@ function CollapsibleBreakdown({ breakdown, decimals, isNativeBet }: CollapsibleB
   )
 }
 
+function CreatorFeesCollapsible({ 
+  decimals, 
+  isNativeBet, 
+  totalAmounts, 
+  winningOption 
+}: {
+  betId: string
+  decimals: number
+  isNativeBet: boolean
+  totalAmounts?: readonly bigint[]
+  winningOption?: number
+}) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  
+  // Calculate losing pool
+  const losingPool = useMemo(() => {
+    if (!totalAmounts || winningOption === undefined) return BigInt(0)
+    
+    let total = BigInt(0)
+    for (let i = 0; i < totalAmounts.length; i++) {
+      if (i !== winningOption) {
+        total += totalAmounts[i]
+      }
+    }
+    return total
+  }, [totalAmounts, winningOption])
+
+  // Get fee parameters to calculate creator fee
+  const { data: feeParams } = useReadContract({
+    address: BETLEY_ADDRESS,
+    abi: BETLEY_ABI,
+    functionName: 'getFeeParameters',
+    query: {
+      staleTime: 30000, // Cache for 30 seconds
+    }
+  })
+
+  const creatorFeeAmount = useMemo(() => {
+    if (!feeParams || !losingPool) return BigInt(0)
+    const [creatorEnabled, creatorRate] = feeParams
+    if (!creatorEnabled || !creatorRate) return BigInt(0)
+    return (losingPool * BigInt(creatorRate)) / BigInt(10000)
+  }, [feeParams, losingPool])
+  
+  return (
+    <div className="border-t border-yellow-600/30 pt-3">
+      {/* Toggle Button */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between text-yellow-300 hover:text-yellow-200 transition-colors text-sm"
+      >
+        <span>View breakdown</span>
+        <svg
+          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Collapsible Content */}
+      {isExpanded && (
+        <div className="mt-3 text-sm space-y-2 animate-in slide-in-from-top-2 duration-200">
+          <div className="space-y-1">
+            <p className="text-yellow-200">
+              Losing Pool: {formatUnits(losingPool, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+            </p>
+            <p className="text-yellow-200">
+              Creator Fees: {formatUnits(creatorFeeAmount, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function UserActions({
   address,
   resolved,
@@ -97,7 +178,8 @@ export function UserActions({
   isPending,
   handleClaimWinnings,
   betId,
-  isNativeBet = false
+  isNativeBet = false,
+  creator
 }: UserActionsProps) {
   // V2: Use contract's calculatePotentialWinnings for fee-adjusted amounts
   // MUST be called before any early returns to satisfy React Hook rules
@@ -111,6 +193,72 @@ export function UserActions({
       refetchInterval: 5000,
     }
   })
+
+  // Check if user is creator
+  const isCreator = address && creator && address.toLowerCase() === creator.toLowerCase()
+  const { showError, showSuccess } = useNotification()
+
+  // Creator fee claiming functionality
+  const { 
+    writeContract: writeCreatorClaim, 
+    isPending: isCreatorClaimPending,
+    data: creatorClaimTxHash
+  } = useWriteContract()
+
+  const { isSuccess: isCreatorClaimSuccess } = useWaitForTransactionReceipt({ 
+    hash: creatorClaimTxHash 
+  })
+
+  // Get creator fee amount for creators
+  const { data: feeParams } = useReadContract({
+    address: BETLEY_ADDRESS,
+    abi: BETLEY_ABI,
+    functionName: 'getFeeParameters',
+    query: {
+      staleTime: 30000,
+    }
+  })
+
+  // Calculate creator fee amount
+  const creatorFeeAmount = useMemo(() => {
+    if (!feeParams || !totalAmounts || winningOption === undefined || !isCreator) return BigInt(0)
+    
+    const [creatorEnabled, creatorRate] = feeParams
+    if (!creatorEnabled || !creatorRate) return BigInt(0)
+    
+    // Calculate losing pool
+    let losingPool = BigInt(0)
+    for (let i = 0; i < totalAmounts.length; i++) {
+      if (i !== winningOption) {
+        losingPool += totalAmounts[i]
+      }
+    }
+    
+    return (losingPool * BigInt(creatorRate)) / BigInt(10000)
+  }, [feeParams, totalAmounts, winningOption, isCreator])
+
+  // Handle creator fee claiming success
+  useEffect(() => {
+    if (isCreatorClaimSuccess) {
+      showSuccess('Creator fees claimed successfully!')
+    }
+  }, [isCreatorClaimSuccess, showSuccess])
+
+  const handleClaimCreatorFees = async () => {
+    if (!betId || isCreatorClaimPending) return
+    
+    try {
+      await writeCreatorClaim({
+        address: BETLEY_ADDRESS,
+        abi: BETLEY_ABI,
+        functionName: 'claimCreatorFees',
+        args: [BigInt(betId)],
+      })
+    } catch (error) {
+      console.error('Error claiming creator fees:', error)
+      showError('Failed to claim creator fees. Please try again.')
+    }
+  }
 
   // Early return AFTER all hooks
   if (!address || !userBets) return null
@@ -193,41 +341,69 @@ export function UserActions({
     return userBets[winningOption] === BigInt(0)
   }
 
-  // Check hasClaimed FIRST
+  // Check hasClaimed FIRST - but differentiate between winnings and creator fees
   if (hasClaimed) {
     const breakdown = getWinningsBreakdown()
+    const userWon = resolved && winningOption !== undefined && userBets && userBets[winningOption] > BigInt(0)
+    
+    // If user won, they claimed winnings. If creator lost, they claimed creator fees.
+    const claimType = userWon ? 'winnings' : (isCreator ? 'Creator Fees' : 'refund')
     
     return (
       <div className="mt-6 p-4 bg-gray-700 border border-gray-600 rounded-lg">
         <p className="text-gray-300 mb-2">
-          ✅ You have already claimed your {resolved ? 'winnings' : 'refund'}.
+          ✅ You have already claimed your {claimType}.
         </p>
-        {breakdown && decimals && (
-          <div className="text-sm text-gray-400 mt-3 space-y-1">
-            <p>Original bet: {formatUnits(breakdown.originalBet, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}</p>
-            {breakdown.rawWinningsFromLosers > BigInt(0) && (
-              <p>Winnings from other bets: +{formatUnits(breakdown.rawWinningsFromLosers, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}</p>
-            )}
-            {breakdown.showFees && (
-              <p>Creator & Platform Fees: -{formatUnits(breakdown.fees, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}</p>
-            )}
-            <div className="border-t border-gray-600 pt-1 mt-2">
-              <p className="font-medium text-gray-300">Total claimed: {formatUnits(breakdown.totalWinnings, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}</p>
+        {breakdown && decimals && userWon && (
+            <div>
+              <p className="font-medium text-gray-300 text-sm">Winnings: {formatUnits(breakdown.totalWinnings, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}</p>
             </div>
+        )}
+        {/* Show creator fee amount for creators who claimed fees */}
+        {isCreator && !userWon && resolved && creatorFeeAmount > BigInt(0) && (
+          <div className="text-sm text-gray-400 mt-3">
+            <p>Creator fees claimed: {formatUnits(creatorFeeAmount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}</p>
           </div>
         )}
       </div>
     )
   }
 
-  // Show losing state
+  // Show losing state (enhanced for creators with fee claiming)
   if (userHasLost()) {
     return (
-      <div className="mt-6 p-4 bg-red-900/20 border border-red-600 rounded-lg">
-        <p className="text-red-300 mb-2">You lost this bet. Better luck next time!</p>
-        <p className="text-sm text-red-200">
-          Your bet: {decimals ? formatUnits(getUserTotalBet(), decimals) : '0'} {isNativeBet ? 'HYPE' : 'mHYPE'}
-        </p>
+      <div className="space-y-4">
+        {/* Regular losing message */}
+        <div className="mt-6 p-4 bg-red-900/20 border border-red-600 rounded-lg">
+          <p className="text-red-300">You lost {decimals ? formatUnits(getUserTotalBet(), decimals) : '0'} {isNativeBet ? 'HYPE' : 'mHYPE'} this bet. Better luck next time!</p>
+        </div>
+
+        {/* Creator fee claiming section */}
+        {isCreator && resolved && creatorFeeAmount && creatorFeeAmount > BigInt(0) && !hasClaimed && (
+          <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+            <p className="text-yellow-300 mb-4">
+              Creator fees available: {formatUnits(creatorFeeAmount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}!
+            </p>
+            
+            {/* Creator Fee Claim Button */}
+            <button
+              onClick={handleClaimCreatorFees}
+              disabled={isPending || isCreatorClaimPending}
+              className="w-full bg-yellow-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-yellow-700 disabled:bg-gray-600 transition-colors mb-4"
+            >
+              {isCreatorClaimPending ? 'Claiming...' : `Claim ${formatUnits(creatorFeeAmount, decimals || 18)} ${isNativeBet ? 'HYPE' : 'mHYPE'} in Creator Fees`}
+            </button>
+
+            {/* Creator Fee Breakdown */}
+            <CreatorFeesCollapsible
+              betId={betId}
+              decimals={decimals || 18}
+              isNativeBet={isNativeBet}
+              totalAmounts={totalAmounts}
+              winningOption={winningOption}
+            />
+          </div>
+        )}
       </div>
     )
   }
@@ -261,7 +437,7 @@ export function UserActions({
     
     return (
       <div className="mt-6 p-4 bg-green-900/20 border border-green-600 rounded-lg">
-        <p className="text-green-300 mb-4 text-lg">
+        <p className="text-green-300 mb-4">
           Congratulations - You won {formatUnits(breakdown.totalWinnings, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}!
         </p>
         
@@ -269,7 +445,7 @@ export function UserActions({
         <button
           onClick={handleClaimWinnings}
           disabled={isPending}
-          className="w-full bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700 disabled:bg-gray-600 transition-colors mb-4"
+          className="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700 disabled:bg-gray-600 transition-colors mb-4"
         >
           {isPending ? 'Claiming...' : `Claim ${formatUnits(breakdown.totalWinnings, decimals)} ${isNativeBet ? 'HYPE' : 'mHYPE'}`}
         </button>
