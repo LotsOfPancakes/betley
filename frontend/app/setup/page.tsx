@@ -73,92 +73,57 @@ function SetupPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 opacity-[0.02]">
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }}
-        />
-      </div>
+    <div className="min-h-screen bg-gray-900 py-12">
+      <div className="max-w-2xl mx-auto px-4">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-white">Setup New Bet</h1>
+        </div>
 
-      {/* Floating gradient orbs */}
-      <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/15 to-lime-400/15 rounded-full blur-3xl animate-pulse delay-1000" />
-
-      <div className="relative z-10 py-12">
-        <div className="max-w-2xl mx-auto px-4">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2">
-              <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                Setup New Bet
-              </span>
-            </h1>
-            <p className="text-gray-400">Configure your bet parameters and share with friends</p>
-          </div>
-
+        <div className="bg-gray-900 p-2">
           {!address ? (
-            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-12 hover:border-green-400/40 transition-all duration-500 text-center">
-              <div className="text-6xl mb-6">📝</div>
+            <div className="text-center py-12">
+              <div className="text-5xl mb-4">📝</div>
               <h2 className="text-2xl font-bold text-white mb-4">Creating a Bet?</h2>
-              <p className="text-gray-300 mb-6">Connect your wallet to start creating custom bets</p>
-              <div className="flex justify-center">
-                <div className="transform hover:scale-105 transition-transform">
-                  <ConnectKitButton />
-                </div>
+              <div className="flex gap-4 justify-center">
+                <ConnectKitButton />
               </div>
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Bet Name Input - Bento Card */}
+              {/* Bet Name Input - PROTECTED */}
               <ComponentErrorBoundary>
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
-                  <BetNameInput
-                    value={formData.name}
-                    onChange={updateName}
-                    isPreFilled={!!titleFromUrl && !!formData.name}
-                  />
-                </div>
+                <BetNameInput
+                  value={formData.name}
+                  onChange={updateName}
+                />
               </ComponentErrorBoundary>
 
-              {/* Options Manager - Bento Card */}
+              {/* Options Manager - PROTECTED */}
               <ComponentErrorBoundary>
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
-                  <OptionsManager
-                    options={formData.options}
-                    onChange={updateOptions}
-                  />
-                </div>
+                <OptionsManager
+                  options={formData.options}
+                  onChange={updateOptions}
+                />
               </ComponentErrorBoundary>
 
-              {/* Duration Selector - Bento Card */}
+              {/* Duration Selector - PROTECTED */}
               <ComponentErrorBoundary>
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
-                  <DurationSelector
-                    duration={formData.duration}
-                    onChange={updateDuration}                  
-                  />
-                </div>
+                <DurationSelector
+                  duration={formData.duration}
+                  onChange={updateDuration}                  
+                />
               </ComponentErrorBoundary>
 
-              {/* Submit Section - Enhanced Bento Card */}
+              {/* Submit Section - PROTECTED */}
               <ComponentErrorBoundary>
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
-                  <SubmitSection
-                    isValid={isValid}
-                    isConnected={!!address}
-                    state={creationState}
-                    onSubmit={handleSubmit}
-                    onClearError={clearError}
-                  />
-                </div>
+                <SubmitSection
+                  isValid={isValid}
+                  isConnected={!!address}
+                  state={creationState}
+                  onSubmit={handleSubmit}
+                  onClearError={clearError}
+                />
               </ComponentErrorBoundary>
             </div>
           )}
@@ -172,10 +137,10 @@ export default function SetupPage() {
   return (
     <PageErrorBoundary>
       <Suspense fallback={
-        <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-300">Loading...</p>
+            <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white">Loading...</p>
           </div>
         </div>
       }>
