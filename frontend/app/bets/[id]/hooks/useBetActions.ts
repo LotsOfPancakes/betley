@@ -21,7 +21,8 @@ export function useBetActions(betId: string, tokenAddress?: string) {
   const { showError, showSuccess } = useNotification()
 
   // Determine if this bet uses native HYPE
-  const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : false
+  const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : true // Default to native if no token address yet
+
 
   // Contract interactions
   const { 
@@ -75,52 +76,54 @@ export function useBetActions(betId: string, tokenAddress?: string) {
     }
   }
 
-  const handlePlaceBet = async () => {
-    if (!betAmount || selectedOption === null || isWritePending) return
+
+// REPLACE THE DEBUG handlePlaceBet WITH THIS CLEAN VERSION:
+const handlePlaceBet = async () => {
+  if (!betAmount || selectedOption === null || isWritePending) return
+  
+  try {
+    setIsSubmitting(true)
+    setCurrentTxType('placeBet')
     
-    try {
-      setIsSubmitting(true)
-      setCurrentTxType('placeBet')
-      
-      const decimals = 18
-      const amountWei = parseUnits(betAmount, decimals)
-      
-      const txArgs = {
-        address: BETLEY_ADDRESS,
-        abi: BETLEY_ABI,
-        functionName: 'placeBet' as const,
-        args: [BigInt(numericBetId), selectedOption, amountWei] as const,
-        ...(isNativeBet && { value: amountWei })
-      }
-      
-      await writeContract(txArgs)
-      
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      
-      if (errorMessage.toLowerCase().includes('user rejected') || 
-          errorMessage.toLowerCase().includes('cancelled') ||
-          errorMessage.toLowerCase().includes('denied') ||
-          errorMessage.includes('4001')) {
-        setIsSubmitting(false)
-        setCurrentTxType(null)
-        return
-      }
-      
-      if (errorMessage.toLowerCase().includes('already placed bet on different option')) {
-        showError('You can only bet on one option per bet. To add more funds, select the same option you previously chose.')
-      } else {
-        showError(
-          isNativeBet 
-            ? 'Failed to place bet. Please check your HYPE balance and try again.'
-            : 'Failed to place bet. Please make sure you have approved the token transfer.'
-        )
-      }
-      
+    const decimals = 18
+    const amountWei = parseUnits(betAmount, decimals)
+    
+    const txArgs = {
+      address: BETLEY_ADDRESS,
+      abi: BETLEY_ABI,
+      functionName: 'placeBet' as const,
+      args: [BigInt(numericBetId), selectedOption, amountWei] as const,
+      ...(isNativeBet && { value: amountWei })
+    }
+    
+    await writeContract(txArgs)
+    
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    
+    if (errorMessage.toLowerCase().includes('user rejected') || 
+        errorMessage.toLowerCase().includes('cancelled') ||
+        errorMessage.toLowerCase().includes('denied') ||
+        errorMessage.includes('4001')) {
       setIsSubmitting(false)
       setCurrentTxType(null)
+      return
     }
+    
+    if (errorMessage.toLowerCase().includes('already placed bet on different option')) {
+      showError('You can only bet on one option per bet. To add more funds, select the same option you previously chose.')
+    } else {
+      showError(
+        isNativeBet 
+          ? 'Failed to place bet. Please check your HYPE balance and try again.'
+          : 'Failed to place bet. Please make sure you have approved the token transfer.'
+      )
+    }
+    
+    setIsSubmitting(false)
+    setCurrentTxType(null)
   }
+}  
 
   const handleClaimWinnings = async () => {
     if (isWritePending) return

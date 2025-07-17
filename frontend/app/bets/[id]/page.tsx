@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/page.tsx - Cleaned up version
+// frontend/app/bets/[id]/page.tsx - Updated to pass betId and isNativeBet to UserActions
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
@@ -50,6 +50,7 @@ function InvalidBetError({ randomId }: { randomId: string }) {
   )
 }
 
+
 export default function BetPage() {
   const params = useParams()
   const { address } = useAccount()
@@ -71,38 +72,48 @@ export default function BetPage() {
     allowance,
     decimals,
     hasClaimed,
-    isBetLoading
+    isBetLoading,
+    isNativeBet, // ✅ Get this from useBetData
+    timeLeft,
+    resolutionTimeLeft,
+    resolutionDeadlinePassed
   } = useBetData(isValidBetId && numericBetId !== null ? numericBetId.toString() : '999999', { useReactQuery: true })
 
-  // Extract token address from bet details
+  // Extract bet data
+  const name = betDetails?.[0] as string
+  const options = betDetails?.[1] as readonly string[]
+  const creator = betDetails?.[2] as string
+  const endTime = betDetails?.[3] as bigint
+  const resolved = betDetails?.[4] as boolean
+  const winningOption = betDetails?.[5] as number
+  const totalAmounts = betDetails?.[6] as readonly bigint[]
   const tokenAddress = betDetails?.[7] as string
 
-  // Get bet actions
+  // Get bet actions (provide fallback string to avoid undefined)
   const {
     betAmount,
     setBetAmount,
     selectedOption,
     setSelectedOption,
-    isPending,
-    isApproving,
     justPlacedBet,
-    isNativeBet,
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
-    handleResolveBet
+    handleResolveBet,
+    isPending,
+    isApproving,
   } = useBetActions(
-    isValidBetId && numericBetId !== null ? numericBetId.toString() : '999999',
+    numericBetId ? numericBetId.toString() : '0',
     tokenAddress
   )
-
+  
   // Loading states
   if (isLoadingMappings || isBetLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-xl mb-4 text-white">Loading bet...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-300">Loading bet...</p>
         </div>
       </div>
     )
@@ -113,23 +124,15 @@ export default function BetPage() {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
-  // Destructure bet details
-  const [name, options, creator, endTime, resolved, winningOption, totalAmounts] = betDetails
+  // Check if user is creator
+  const isCreator = address && creator && address.toLowerCase() === creator.toLowerCase()
+
+  // Calculate time values
   const endTimeMs = Number(endTime) * 1000
   const isActive = Date.now() < endTimeMs
-  const isCreator = address?.toLowerCase() === creator.toLowerCase()
-  const timeLeft = isActive ? Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000)) : 0
-
-  // Calculate resolution time left (72 hours after betting ends)
-  const resolutionDeadlineMs = endTimeMs + (72 * 60 * 60 * 1000) // 72 hours after end time
-  const resolutionTimeLeft = !resolved && !isActive ? Math.max(0, Math.floor((resolutionDeadlineMs - Date.now()) / 1000)) : 0
-  const resolutionDeadlinePassed = !resolved && Date.now() > resolutionDeadlineMs
 
   // Check if user has existing bet
   const hasExistingBet = userBets?.some(amount => amount > BigInt(0)) || false
-
-  // Calculate user's total bet amount for claiming logic
-  const userTotalBet = userBets?.reduce((sum, amount) => sum + amount, BigInt(0)) || BigInt(0)
 
   // Smart approval logic - skip approval for native HYPE
   const needsApproval = !isNativeBet && 
@@ -175,6 +178,7 @@ export default function BetPage() {
               isNativeBet={isNativeBet}
             />
           </ComponentErrorBoundary>
+
           {/* Creator Actions - Only show if user is creator and bet needs resolution */}
           {isCreator && !isActive && !resolved && (
             <div className="mt-6">
@@ -192,37 +196,34 @@ export default function BetPage() {
             </div>
           )}
 
-          {/* User Actions - Only show if user won and can claim */}
-          {resolved && userTotalBet > BigInt(0) && !hasClaimed && (
-            <div className="mt-6">
-              <ComponentErrorBoundary>
-                <UserActions
-                  address={address}
-                  resolved={resolved}
-                  winningOption={winningOption}
-                  userBets={userBets}
-                  totalAmounts={totalAmounts}
-                  resolutionDeadlinePassed={resolutionDeadlinePassed}
-                  hasClaimed={hasClaimed}
-                  decimals={decimals}
-                  isPending={isPending}
-                  handleClaimWinnings={handleClaimWinnings}
-                />
-              </ComponentErrorBoundary>
-            </div>
-          )}
-
+          {/* ✅ UPDATED: User Actions with betId and isNativeBet props */}
+          <ComponentErrorBoundary>
+            <UserActions
+              address={address}
+              resolved={resolved}
+              winningOption={winningOption}
+              userBets={userBets}
+              totalAmounts={totalAmounts}
+              resolutionDeadlinePassed={resolutionDeadlinePassed}
+              hasClaimed={hasClaimed}
+              decimals={decimals}
+              isPending={isPending}
+              handleClaimWinnings={handleClaimWinnings}
+              betId={numericBetId ? numericBetId.toString() : ''} // ✅ Pass numeric bet ID as string
+              isNativeBet={isNativeBet} // ✅ Pass native bet flag
+            />
+          </ComponentErrorBoundary>
           {/* Resolve Modal */}
-            <ComponentErrorBoundary>
-              <ResolveModal
-                isOpen={showResolveModal}
-                onClose={() => setShowResolveModal(false)}
-                options={options}
-                onResolve={handleResolveBet}
-                betName={name}
-              />
-            </ComponentErrorBoundary>
-          </div>
+          {showResolveModal && options && (
+            <ResolveModal
+              isOpen={showResolveModal}
+              betName={name}
+              options={options}
+              onResolve={handleResolveBet}
+              onClose={() => setShowResolveModal(false)}
+            />
+          )}
+        </div>
       </div>
     </PageErrorBoundary>
   )
