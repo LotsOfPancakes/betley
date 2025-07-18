@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/components/UserActions.tsx - V2 with Creator Fee Claiming
+// frontend/app/bets/[id]/components/UserActions.tsx - Original functionality with minimal bento styling
 'use client'
 
 import { formatUnits } from 'viem'
@@ -20,7 +20,7 @@ interface UserActionsProps {
   handleClaimWinnings: () => void
   betId: string
   isNativeBet?: boolean
-  creator?: string // Add creator prop to check if user is creator
+  creator?: string
 }
 
 interface WinningsBreakdown {
@@ -120,7 +120,7 @@ function CreatorFeesCollapsible({
     abi: BETLEY_ABI,
     functionName: 'getFeeParameters',
     query: {
-      staleTime: 30000, // Cache for 30 seconds
+      staleTime: 30000,
     }
   })
 
@@ -303,7 +303,8 @@ export function UserActions({
     const rawTotal = originalBet + rawWinningsFromLosers
 
     // Use contract calculation for actual winnings (after fees)
-    const actualWinnings = contractWinnings !== undefined ? contractWinnings : rawTotal
+    const actualWinnings = contractWinnings !== undefined ? 
+      contractWinnings : rawTotal
     const fees = rawTotal - actualWinnings
 
     return {
@@ -350,7 +351,7 @@ export function UserActions({
     const claimType = userWon ? 'winnings' : (isCreator ? 'Creator Fees' : 'refund')
     
     return (
-      <div className="mt-6 p-4 bg-gray-700 border border-gray-600 rounded-lg">
+      <div className="mt-6 bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/30 rounded-3xl p-6">
         <p className="text-gray-300 mb-2">
           ✅ You have already claimed your {claimType}.
         </p>
@@ -374,13 +375,13 @@ export function UserActions({
     return (
       <div className="space-y-4">
         {/* Regular losing message */}
-        <div className="mt-6 p-4 bg-red-900/20 border border-red-600 rounded-lg">
+        <div className="mt-6 bg-gradient-to-br from-red-900/40 to-red-800/40 backdrop-blur-sm border border-red-500/40 rounded-3xl p-6">
           <p className="text-red-300">You lost {decimals ? formatUnits(getUserTotalBet(), decimals) : '0'} {isNativeBet ? 'HYPE' : 'mHYPE'} this bet. Better luck next time!</p>
         </div>
 
         {/* Creator fee claiming section */}
         {isCreator && resolved && creatorFeeAmount && creatorFeeAmount > BigInt(0) && !hasClaimed && (
-          <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+          <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm border border-yellow-500/40 rounded-3xl p-6">
             <p className="text-yellow-300 mb-4">
               Creator fees available: {formatUnits(creatorFeeAmount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}!
             </p>
@@ -389,7 +390,7 @@ export function UserActions({
             <button
               onClick={handleClaimCreatorFees}
               disabled={isPending || isCreatorClaimPending}
-              className="w-full bg-yellow-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-yellow-700 disabled:bg-gray-600 transition-colors mb-4"
+              className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-yellow-500/30 disabled:shadow-none mb-4"
             >
               {isCreatorClaimPending ? 'Claiming...' : `Claim ${formatUnits(creatorFeeAmount, decimals || 18)} ${isNativeBet ? 'HYPE' : 'mHYPE'} in Creator Fees`}
             </button>
@@ -411,7 +412,7 @@ export function UserActions({
   // Refund section when deadline passed
   if (resolutionDeadlinePassed && !resolved && userCanClaim()) {
     return (
-      <div className="mt-6 p-4 bg-orange-900/20 border border-orange-600 rounded-lg">
+      <div className="mt-6 bg-gradient-to-br from-orange-900/40 to-yellow-900/40 backdrop-blur-sm border border-orange-500/40 rounded-3xl p-6">
         <p className="text-orange-300 mb-3">
           The resolution deadline has passed. You can claim a refund of your original bet.
         </p>
@@ -421,7 +422,7 @@ export function UserActions({
         <button
           onClick={handleClaimWinnings}
           disabled={isPending}
-          className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 disabled:bg-gray-600 transition-colors"
+          className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-orange-500/30 disabled:shadow-none"
         >
           {isPending ? 'Claiming Refund...' : 'Claim Refund'}
         </button>
@@ -436,7 +437,7 @@ export function UserActions({
     if (!breakdown || !decimals) return null
     
     return (
-      <div className="mt-6 p-4 bg-green-900/20 border border-green-600 rounded-lg">
+      <div className="mt-6 bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm border border-green-500/40 rounded-3xl p-6">
         <p className="text-green-300 mb-4">
           Congratulations - You won {formatUnits(breakdown.totalWinnings, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}!
         </p>
@@ -445,7 +446,7 @@ export function UserActions({
         <button
           onClick={handleClaimWinnings}
           disabled={isPending}
-          className="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700 disabled:bg-gray-600 transition-colors mb-4"
+          className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-green-500/30 disabled:shadow-none mb-4"
         >
           {isPending ? 'Claiming...' : `Claim ${formatUnits(breakdown.totalWinnings, decimals)} ${isNativeBet ? 'HYPE' : 'mHYPE'}`}
         </button>

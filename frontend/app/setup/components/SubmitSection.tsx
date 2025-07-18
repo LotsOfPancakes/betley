@@ -44,7 +44,7 @@ export default function SubmitSection({
         </div>
       )}
 
-      {/* Status Messages - Remove success message since it's now in button */}
+      {/* Status Messages - Remove success message since it's now in button
       {state.isCreating && (
         <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-xl">
           <p className="text-yellow-300 text-sm">⏳ Waiting for wallet confirmation...</p>
@@ -55,7 +55,7 @@ export default function SubmitSection({
         <div className="p-4 bg-blue-900/20 border border-blue-600 rounded-xl">
           <p className="text-blue-300 text-sm">⏳ Creating bet... Please wait.</p>
         </div>
-      )}
+      )} */}
 
       {/* Submit Button */}
       <button

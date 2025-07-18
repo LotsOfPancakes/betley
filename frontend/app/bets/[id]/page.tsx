@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/page.tsx - Updated to pass betId and isNativeBet to UserActions
+// frontend/app/bets/[id]/page.tsx - Updated with bento-style design
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
@@ -18,28 +18,47 @@ import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBou
 import { useBetData } from './hooks/useBetData'
 import { useBetActions } from './hooks/useBetActions'
 
-// Error state for invalid IDs
+// Error state for invalid IDs with bento styling
 function InvalidBetError({ randomId }: { randomId: string }) {
   const router = useRouter()
   
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-center max-w-md mx-auto px-4">
-        <div className="bg-red-900/20 border border-red-600 rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-red-400 mb-4">🔍 Bet Not Found</h1>
-          <p className="text-gray-300 mb-4">
-            The bet ID &quot;<span className="font-mono">{randomId}</span>&quot; was not found.
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
+      {/* Animated background grid */}
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px'
+        }}
+      />
+      
+      {/* Floating gradient orbs */}
+      <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-emerald-400/10 to-green-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      
+      <div className="text-center max-w-md mx-auto px-4 relative z-10">
+        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-red-500/30 rounded-3xl p-8 hover:border-red-400/50 transition-all duration-500">
+          <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+            <span className="text-3xl">🔍</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-4">Bet Not Found</h1>
+          <p className="text-gray-300 mb-6 leading-relaxed">
+            The bet ID &quot;<span className="font-mono text-green-400">{randomId}</span>&quot; was not found.
           </p>
           <div className="space-y-3">
             <button
               onClick={() => window.location.reload()}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-2xl hover:from-blue-400 hover:to-blue-500 hover:scale-105 transition-all duration-300 shadow-xl shadow-blue-500/30"
             >
               🔄 Refresh Page
             </button>
             <button
               onClick={() => router.push('/bets')}
-              className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="w-full bg-gradient-to-r from-gray-700 to-gray-800 text-white px-6 py-3 rounded-2xl hover:from-gray-600 hover:to-gray-700 hover:scale-105 transition-all duration-300"
             >
               ← Back to All Bets
             </button>
@@ -49,7 +68,6 @@ function InvalidBetError({ randomId }: { randomId: string }) {
     </div>
   )
 }
-
 
 export default function BetPage() {
   const params = useParams()
@@ -73,7 +91,7 @@ export default function BetPage() {
     decimals,
     hasClaimed,
     isBetLoading,
-    isNativeBet, // ✅ Get this from useBetData
+    isNativeBet,
     timeLeft,
     resolutionTimeLeft,
     resolutionDeadlinePassed
@@ -89,7 +107,7 @@ export default function BetPage() {
   const totalAmounts = betDetails?.[6] as readonly bigint[]
   const tokenAddress = betDetails?.[7] as string
 
-  // Get bet actions (provide fallback string to avoid undefined)
+  // Get bet actions
   const {
     betAmount,
     setBetAmount,
@@ -107,13 +125,31 @@ export default function BetPage() {
     tokenAddress
   )
   
-  // Loading states
+  // Loading states with bento styling
   if (isLoadingMappings || isBetLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-300">Loading bet...</p>
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
+        {/* Animated background grid */}
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px'
+          }}
+        />
+        
+        {/* Floating gradient orbs */}
+        <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-emerald-400/10 to-green-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        
+        <div className="text-center relative z-10">
+          <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8">
+            <div className="w-16 h-16 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-6"></div>
+            <p className="text-gray-300 text-lg">Loading bet...</p>
+          </div>
         </div>
       </div>
     )
@@ -142,8 +178,24 @@ export default function BetPage() {
 
   return (
     <PageErrorBoundary>
-      <div className="min-h-screen bg-gray-900 text-white">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
+        {/* Animated background grid */}
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px'
+          }}
+        />
+        
+        {/* Floating gradient orbs */}
+        <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-emerald-400/10 to-green-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        
+        <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
           
           {/* Main Unified Betting Interface */}
           <ComponentErrorBoundary>
@@ -196,7 +248,7 @@ export default function BetPage() {
             </div>
           )}
 
-          {/* User Actions props */}
+          {/* User Actions */}
           <ComponentErrorBoundary>
             <UserActions
               address={address}
@@ -209,12 +261,12 @@ export default function BetPage() {
               decimals={decimals}
               isPending={isPending}
               handleClaimWinnings={handleClaimWinnings}
-              betId={numericBetId ? numericBetId.toString() : ''} // Pass numeric bet ID as string
-              isNativeBet={isNativeBet} // Pass native bet flag
+              betId={numericBetId ? numericBetId.toString() : ''}
+              isNativeBet={isNativeBet}
               creator={creator}
-
             />
           </ComponentErrorBoundary>
+          
           {/* Resolve Modal */}
           {showResolveModal && options && (
             <ResolveModal

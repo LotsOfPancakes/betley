@@ -1,3 +1,6 @@
+// frontend/app/bets/[id]/components/CreatorActions.tsx - Updated with bento-style design (minimal)
+'use client'
+
 interface CreatorActionsProps {
   address?: string
   creator: string
@@ -22,11 +25,11 @@ export function CreatorActions({
   if (!canResolve) return null
 
   return (
-    <div className="mt-6 p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+    <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm border border-yellow-500/40 rounded-3xl p-6">
       <p className="text-yellow-300 mb-3">As the creator, you can now:</p>
       <button
         onClick={onShowResolveModal}
-        className="w-full bg-yellow-600 text-white py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors"
+        className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl shadow-yellow-500/30"
       >
         Resolve Bet
       </button>
