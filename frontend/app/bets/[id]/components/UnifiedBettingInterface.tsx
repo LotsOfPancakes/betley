@@ -108,7 +108,7 @@ export function UnifiedBettingInterface({
     if (!isActive) {
       return {
         text: 'Pending Resolution',
-        color: 'bg-gradient-to-r from-yellow-500 to-orange-500',
+        color: 'bg-gradient-to-r from-yellow-600 to-orange-600',
         textColor: 'text-white',
         timeInfo: resolutionTimeLeft > 0 ? formatTimeRemaining(resolutionTimeLeft) : null,
         icon: '⏳'
@@ -182,7 +182,7 @@ export function UnifiedBettingInterface({
           
           {/* Pool Total Pill */}
           {hasPool && (
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium bg-gradient-to-r from-green-400 to-emerald-400 text-black shadow-lg">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium bg-gradient-to-r from-gray-400 to-slate-500 text-black shadow-lg">
               <span>💰</span>
               Pool TVL: {formatDynamicDecimals(formatUnits(totalPool, decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'}
             </span>
@@ -208,7 +208,7 @@ export function UnifiedBettingInterface({
       </button>
     </div>
     
-    {/* Your Current Bet */}
+    {/* Your Current Bet
     {hasExistingBet && userBets && options && (
       <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm border border-green-500/20 rounded-2xl p-4 mb-6">
         <h3 className="text-xs font-medium text-gray-400 mb-2">Your Current Bet</h3>
@@ -225,7 +225,7 @@ export function UnifiedBettingInterface({
           )
         })}
       </div>
-    )}
+    )} */}
 
     {/* Just Placed Bet Success Message
     {justPlacedBet && (
@@ -298,8 +298,7 @@ export function UnifiedBettingInterface({
                     )}
                     {isUserCurrentOption && !isWinningOption && (
                       <span className="text-xs bg-green-500/80 text-white px-3 py-1 rounded-full font-medium">
-                        Your Bet
-                        
+                        You Bet: {formatDynamicDecimals(formatUnits(userBets?.[index] || BigInt(0), decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'}
                       </span>
                     )}
                   </div>

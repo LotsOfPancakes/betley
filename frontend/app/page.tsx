@@ -47,12 +47,12 @@ export default function HomePage() {
                 <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-lime-400 bg-clip-text text-transparent">
                   Betting,
                 </span>
-                <br />
+                <br/>
                 <span className="text-white"> Simplified</span>
               </h1>
-              <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-                Bet on anything. Share with friends. Win together.
-              </p>
+              {/* <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+                Bet on anything. Share with friends.
+              </p> */}
               
               {/* Bet Title Input*/}             
                   <BetTitleInput
@@ -82,7 +82,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-4">Create a Bet</h3>
                   <p className="text-gray-300 leading-relaxed">
-                    Define your bet terms & betting duration.
+                    Define your bet terms & duration.
                     <br /><br />
                     Anyone can create a bet on any topic.
                   </p>
@@ -96,7 +96,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-4">Place Bets</h3>
                   <p className="text-gray-300 leading-relaxed">
-                    Bet with HYPE on your preferred outcome.
+                    Bet on your preferred outcome.
                     <br /><br />
                     Betley&apos;s contracts ensure all funds are held securely until resolution.
                   </p>
@@ -111,8 +111,6 @@ export default function HomePage() {
                   <h3 className="text-xl font-semibold text-white mb-4">Win & Claim</h3>
                   <p className="text-gray-300 leading-relaxed">
                     Winners share the losing pool proportionally to their stake.
-                    <br /><br />
-                    Claim winnings directly to your wallet.
                   </p>
                 </div>
               </div>
@@ -143,7 +141,7 @@ export default function HomePage() {
                   <div className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-3">
                     Flexible
                   </div>
-                  <p className="text-gray-300">Custom resolution deadline</p>
+                  <p className="text-gray-300">Custom options & bet duration</p>
                 </div>
               </div>
               
@@ -170,7 +168,7 @@ export default function HomePage() {
                 </span>
               </h2>
               <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-                Connect your wallet and create your first bet in minutes.
+                Connect your wallet and create your first bet in less than a minute.
               </p>
               
               {!address ? (
