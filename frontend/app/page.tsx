@@ -38,7 +38,6 @@ export default function HomePage() {
       {/* Floating gradient orbs */}
       <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/15 to-lime-400/15 rounded-full blur-3xl animate-pulse delay-1000" />
-
       <div className="relative z-10">
         {/* Hero Section */}
         <div className="relative overflow-hidden">
@@ -67,7 +66,7 @@ export default function HomePage() {
         </div>
         
         {/* How It Works Section - Bento Grid */}
-        <div className="py-20">
+        <div className="py-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-4xl font-bold text-center mb-12">
               <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
@@ -124,6 +123,11 @@ export default function HomePage() {
         {/* Stats Section - Bento Style */}
         <div className="py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-4xl font-bold text-center mb-12">
+                <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                Key Features
+                </span>
+              </h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="group">
                 <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
@@ -158,7 +162,8 @@ export default function HomePage() {
         {/* CTA Section - Enhanced Bento Style */}
         <div className="py-20">
           <div className="max-w-4xl mx-auto px-4">
-            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-12 hover:border-green-400/40 transition-all duration-500 text-center">
+            {/* <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-12 hover:border-green-400/40 transition-all duration-500 text-center"> */}
+           <div className="text-center">
               <h2 className="text-4xl font-bold mb-6">
                 <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
                   Got a Bet in mind?
