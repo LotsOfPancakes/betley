@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ConnectKitButton } from 'connectkit'
+// import { ConnectKitButton } from 'connectkit'
 import { useAccount } from 'wagmi'
 import BetTitleInput from './components/BetTitleInput'
 
@@ -50,9 +50,6 @@ export default function HomePage() {
                 <br/>
                 <span className="text-white"> Simplified</span>
               </h1>
-              {/* <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-                Bet on anything. Share with friends.
-              </p> */}
               
               {/* Bet Title Input*/}             
                   <BetTitleInput
@@ -76,7 +73,7 @@ export default function HomePage() {
             
             <div className="grid md:grid-cols-3 gap-8">
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <span className="text-2xl font-bold text-black">1</span>
                   </div>
@@ -90,7 +87,7 @@ export default function HomePage() {
               </div>
 
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <span className="text-2xl font-bold text-black">2</span>
                   </div>
@@ -104,7 +101,7 @@ export default function HomePage() {
               </div>
 
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <span className="text-2xl font-bold text-black">3</span>
                   </div>
@@ -128,7 +125,7 @@ export default function HomePage() {
               </h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
                   <div className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-3">
                     Trustless
                   </div>
@@ -137,7 +134,7 @@ export default function HomePage() {
               </div>
               
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
                   <div className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-3">
                     Flexible
                   </div>
@@ -146,7 +143,7 @@ export default function HomePage() {
               </div>
               
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
                   <div className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-3">
                     Pari-mutuel
                   </div>
@@ -167,27 +164,13 @@ export default function HomePage() {
                   Got a Bet in mind?
                 </span>
               </h2>
-              <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-                Connect your wallet and create your first bet in less than a minute.
-              </p>
-              
-              {!address ? (
-                <div className="flex justify-center">
-                  <div className="transform hover:scale-105 transition-transform">
-                    <ConnectKitButton />
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => router.push('/setup')}
-                  className="group bg-gradient-to-r from-green-500 to-emerald-500 px-10 py-4 rounded-2xl font-bold text-lg hover:from-green-400 hover:to-emerald-400 transition-all duration-300 transform hover:scale-105 shadow-xl shadow-green-500/30 flex items-center gap-3 mx-auto"
-                >
-                  Create a Bet
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </button>
-              )}
+              {/* Bet Title Input*/}             
+                <BetTitleInput
+                  value={betTitle}
+                  onChange={setBetTitle}
+                  onSubmit={handleCreateBet}
+                  isConnected={!!address}
+                />
             </div>
           </div>
         </div>
@@ -195,3 +178,21 @@ export default function HomePage() {
     </div>
   )
 }
+
+// {!address ? (
+//                 <div className="flex justify-center">
+//                   <div className="transform hover:scale-105 transition-transform">
+//                     <ConnectKitButton />
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <button
+//                   onClick={() => router.push('/setup')}
+//                   className="group bg-gradient-to-r from-green-500 to-emerald-500 px-10 py-4 rounded-2xl font-bold text-lg hover:from-green-400 hover:to-emerald-400 transition-all duration-300 transform hover:scale-105 shadow-xl shadow-green-500/30 flex items-center gap-3 mx-auto"
+//                 >
+//                   Create a Bet
+//                   <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+//                   </svg>
+//                 </button>
+//               )}

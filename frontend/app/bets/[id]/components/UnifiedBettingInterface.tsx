@@ -251,9 +251,9 @@ export function UnifiedBettingInterface({
         
         {/* Show wallet connection prompt if not connected */}
         {!address && (
-          <div className="flex justify-center mb-6 p-6 bg-gray-800/40 rounded-2xl border border-gray-700/50"> 
+          <div className="flex justify-center mb-6 p-6 bg-gray-800/40 rounded-2xl"> 
             <div className="text-center">
-              <p className="text-gray-300 mb-4">Connect your wallet to s</p>
+              <p className="text-gray-300 mb-4">Connect your wallet to start Betting</p>
               <ConnectKitButton />
             </div>
           </div>
@@ -276,7 +276,7 @@ export function UnifiedBettingInterface({
                 key={index}
                 onClick={() => !isDisabled && setSelectedOption(index)}
                 disabled={isDisabled}
-                className={`p-4 rounded-2xl border text-left transition-all duration-300 ${
+                className={`p-4 rounded-2xl text-left transition-all duration-300 ${
                   isWinningOption
                     ? 'border-green-500/60 bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-green-300 shadow-xl shadow-green-500/20'
                     : isSelected

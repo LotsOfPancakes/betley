@@ -182,7 +182,6 @@ export function UserActions({
   creator
 }: UserActionsProps) {
   // V2: Use contract's calculatePotentialWinnings for fee-adjusted amounts
-  // MUST be called before any early returns to satisfy React Hook rules
   const { data: contractWinnings } = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
@@ -375,15 +374,15 @@ export function UserActions({
     return (
       <div className="space-y-4">
         {/* Regular losing message */}
-        <div className="mt-6 bg-gradient-to-br from-red-900/40 to-red-800/40 backdrop-blur-sm border border-red-500/40 rounded-3xl p-6">
+        <div className="mt-6 bg-gradient-to-br from-red-900/40 to-red-800/40 backdrop-blur-sm rounded-3xl p-6">
           <p className="text-red-300">You lost {decimals ? formatUnits(getUserTotalBet(), decimals) : '0'} {isNativeBet ? 'HYPE' : 'mHYPE'} this bet. Better luck next time!</p>
         </div>
 
         {/* Creator fee claiming section */}
         {isCreator && resolved && creatorFeeAmount && creatorFeeAmount > BigInt(0) && !hasClaimed && (
-          <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm border border-yellow-500/40 rounded-3xl p-6">
+          <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm rounded-3xl p-6">
             <p className="text-yellow-300 mb-4">
-              Creator fees available: {formatUnits(creatorFeeAmount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}!
+              Creator Fees available: {formatUnits(creatorFeeAmount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}!
             </p>
             
             {/* Creator Fee Claim Button */}
