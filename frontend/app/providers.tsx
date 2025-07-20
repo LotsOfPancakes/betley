@@ -1,4 +1,4 @@
-// frontend/app/providers.tsx - Final fix for WalletConnect initialization
+// frontend/app/providers.tsx - ACTUAL fix for WalletConnect initialization
 'use client'
 
 import { WagmiProvider, createConfig, http } from 'wagmi'
@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import { hyperevm } from '@/lib/chains'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
 import { 
   networkConfig, 
@@ -16,25 +16,22 @@ import {
   devConfig 
 } from '@/lib/config'
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  // ✅ FINAL FIX: Use useRef to ensure config is only created once per component instance
-  const configRef = useRef<ReturnType<typeof createConfig> | null>(null)
-  
-  if (!configRef.current) {
-    configRef.current = createConfig(
-      getDefaultConfig({
-        chains: [hyperevm],
-        transports: {
-          [hyperevm.id]: http(networkConfig.rpcUrl),
-        },
-        walletConnectProjectId: walletConnectConfig.projectId,
-        appName: appConfig.name,
-        appDescription: appConfig.description,
-        appUrl: appConfig.url,
-      })
-    )
-  }
+// ✅ MOVE CONFIG CREATION OUTSIDE COMPONENT
+// This ensures it only runs once when the module is loaded
+const wagmiConfig = createConfig(
+  getDefaultConfig({
+    chains: [hyperevm],
+    transports: {
+      [hyperevm.id]: http(networkConfig.rpcUrl),
+    },
+    walletConnectProjectId: walletConnectConfig.projectId,
+    appName: appConfig.name,
+    appDescription: appConfig.description,
+    appUrl: appConfig.url,
+  })
+)
 
+export function Providers({ children }: { children: React.ReactNode }) {
   // Create optimized QueryClient with configurable timeouts
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -59,7 +56,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }))
 
   return (
-    <WagmiProvider config={configRef.current}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <NotificationProvider>
           <ConnectKitProvider 
