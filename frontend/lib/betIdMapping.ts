@@ -76,6 +76,7 @@ export class UnifiedBetMapper {
   /**
    * @deprecated Use async methods instead  
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static getRandomId(_numericId: number): string | undefined {
     console.warn('getRandomId is deprecated - mappings are now one-way only')
     return undefined
@@ -84,6 +85,7 @@ export class UnifiedBetMapper {
   /**
    * @deprecated Use async methods instead
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static getMapping(_randomId: string): BetMapping | null {
     console.warn('getMapping is deprecated - use database methods')
     return null
