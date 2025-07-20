@@ -2,12 +2,17 @@
 import { NextRequest } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+interface RouteParams {
+  params: Promise<{ randomId: string }>
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { randomId: string } }
+  context: RouteParams
 ) {
   try {
-    const { randomId } = params
+    // Await the params in Next.js 15
+    const { randomId } = await context.params
 
     // ✅ Essential input validation
     if (!randomId || !randomId.match(/^[A-Za-z0-9]{8}$/)) {
