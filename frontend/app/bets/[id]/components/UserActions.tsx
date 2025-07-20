@@ -75,10 +75,10 @@ function CollapsibleBreakdown({ breakdown, decimals, isNativeBet }: CollapsibleB
             {breakdown.showFees && (
               <>
                 <p className="text-red-400">
-                  Creator Fee (2%): -{formatUnits(breakdown.creatorFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+                  Creator Fee (1%): -{formatUnits(breakdown.creatorFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
                 </p>
                 <p className="text-red-400">
-                  Platform Fee (1%): -{formatUnits(breakdown.platformFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+                  Platform Fee (0.5%): -{formatUnits(breakdown.platformFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
                 </p>
               </>
             )}
@@ -130,14 +130,14 @@ function CreatorFeesCollapsible({
       {isExpanded && (
         <div className="mt-3 text-sm space-y-2 animate-in slide-in-from-top-2 duration-200">
           <div className="space-y-1">
-            <p className="text-yellow-200">
+            <p className="text-gray-300">
               Losing Pool: {formatUnits(feeBreakdown.losingPool, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
             </p>
-            <p className="text-yellow-200">
-              Creator Fees: {formatUnits(feeBreakdown.creatorFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+             <p className="text-yellow-400">
+               Creator Fee (1%): -{formatUnits(feeBreakdown.creatorFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
             </p>
             <p className="text-gray-300">
-              Platform Fees: {formatUnits(feeBreakdown.platformFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+              Platform Fee (0.5%): -{formatUnits(feeBreakdown.platformFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
             </p>
           </div>
         </div>
@@ -330,7 +330,7 @@ export function UserActions({
         {userHasBet && userWon && !isCreator ? (
           <div className="mt-6 bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm border border-green-500/40 rounded-3xl p-6">
             <p className="text-green-300 mb-4">
-              Congratulations - You won {breakdown && decimals ? formatUnits(breakdown.totalWinnings, decimals) : '0'} {isNativeBet ? 'HYPE' : 'mHYPE'}!
+              Congratulations - You won!
             </p>
             
             {/* Claim Winnings Button */}
@@ -339,7 +339,7 @@ export function UserActions({
               disabled={isPending}
               className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-green-500/30 disabled:shadow-none mb-4"
             >
-              {isPending ? 'Claiming...' : `Claim ${breakdown && decimals ? formatUnits(breakdown.totalWinnings, decimals) : '0'} ${isNativeBet ? 'HYPE' : 'mHYPE'} Winnings`}
+              {isPending ? 'Claiming...' : `Claim ${breakdown && decimals ? formatUnits(breakdown.totalWinnings, decimals) : '0'} ${isNativeBet ? 'HYPE' : 'mHYPE'}`}
             </button>
 
             {/* Winnings Breakdown */}
@@ -370,7 +370,7 @@ export function UserActions({
               </p>
             )}
             <p className="text-yellow-300 mb-4">
-              Creator Fees available: {formatUnits(creatorFeeAmount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}!
+              Creator Fees available: {formatUnits(creatorFeeAmount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}
             </p>
             
             {/* Show both buttons if creator won, otherwise just creator fees button */}
