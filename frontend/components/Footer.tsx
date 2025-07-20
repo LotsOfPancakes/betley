@@ -9,7 +9,7 @@ export function Footer() {
                 className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-teal-400 to-cyan-400 text-black font-medium px-6 py-3 rounded-2xl hover:from-teal-300 hover:to-cyan-300 transition-all duration-300 shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 hover:scale-105 transform"
                 >
                 <span>Support me by trading on HyperLiquid</span>
-                    <div className="bg-white/15 p-0.5 rounded-full">
+                    <div className="bg-black/25 p-0.5 rounded-full">
                         <Image 
                         src="/images/hl-blob.gif" 
                         alt="Animated HL icon"
