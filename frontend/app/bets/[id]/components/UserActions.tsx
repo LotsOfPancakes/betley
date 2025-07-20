@@ -1,11 +1,12 @@
-// frontend/app/bets/[id]/components/UserActions.tsx - Original functionality with minimal bento styling
+// frontend/app/bets/[id]/components/UserActions.tsx - Refactored with custom hook
 'use client'
 
 import { formatUnits } from 'viem'
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { useState, useMemo, useEffect } from 'react'
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useState, useEffect } from 'react'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { useBetFeeData, type FeeBreakdown } from '../hooks/useBetFeeData'
 
 interface UserActionsProps {
   address?: string
@@ -26,7 +27,8 @@ interface UserActionsProps {
 interface WinningsBreakdown {
   originalBet: bigint
   rawWinningsFromLosers: bigint
-  fees: bigint
+  creatorFee: bigint
+  platformFee: bigint
   totalWinnings: bigint
   showFees: boolean
 }
@@ -71,9 +73,14 @@ function CollapsibleBreakdown({ breakdown, decimals, isNativeBet }: CollapsibleB
               </p>
             )}
             {breakdown.showFees && (
-              <p className="text-red-400">
-                Creator & Platform Fees: -{formatUnits(breakdown.fees, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-              </p>
+              <>
+                <p className="text-red-400">
+                  Creator Fee (2%): -{formatUnits(breakdown.creatorFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+                </p>
+                <p className="text-red-400">
+                  Platform Fee (1%): -{formatUnits(breakdown.platformFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+                </p>
+              </>
             )}
             <div className="border-t border-green-600/30 pt-2 mt-2">
               <p className="font-semibold text-green-100">
@@ -87,49 +94,19 @@ function CollapsibleBreakdown({ breakdown, decimals, isNativeBet }: CollapsibleB
   )
 }
 
-function CreatorFeesCollapsible({ 
-  decimals, 
-  isNativeBet, 
-  totalAmounts, 
-  winningOption 
-}: {
+interface CreatorFeesCollapsibleProps {
   betId: string
   decimals: number
   isNativeBet: boolean
-  totalAmounts?: readonly bigint[]
-  winningOption?: number
-}) {
+  feeBreakdown: FeeBreakdown
+}
+
+function CreatorFeesCollapsible({ 
+  feeBreakdown,
+  decimals, 
+  isNativeBet
+}: CreatorFeesCollapsibleProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  
-  // Calculate losing pool
-  const losingPool = useMemo(() => {
-    if (!totalAmounts || winningOption === undefined) return BigInt(0)
-    
-    let total = BigInt(0)
-    for (let i = 0; i < totalAmounts.length; i++) {
-      if (i !== winningOption) {
-        total += totalAmounts[i]
-      }
-    }
-    return total
-  }, [totalAmounts, winningOption])
-
-  // Get fee parameters to calculate creator fee
-  const { data: feeParams } = useReadContract({
-    address: BETLEY_ADDRESS,
-    abi: BETLEY_ABI,
-    functionName: 'getFeeParameters',
-    query: {
-      staleTime: 30000,
-    }
-  })
-
-  const creatorFeeAmount = useMemo(() => {
-    if (!feeParams || !losingPool) return BigInt(0)
-    const [creatorEnabled, creatorRate] = feeParams
-    if (!creatorEnabled || !creatorRate) return BigInt(0)
-    return (losingPool * BigInt(creatorRate)) / BigInt(10000)
-  }, [feeParams, losingPool])
   
   return (
     <div className="border-t border-yellow-600/30 pt-3">
@@ -154,10 +131,13 @@ function CreatorFeesCollapsible({
         <div className="mt-3 text-sm space-y-2 animate-in slide-in-from-top-2 duration-200">
           <div className="space-y-1">
             <p className="text-yellow-200">
-              Losing Pool: {formatUnits(losingPool, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+              Losing Pool: {formatUnits(feeBreakdown.losingPool, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
             </p>
             <p className="text-yellow-200">
-              Creator Fees: {formatUnits(creatorFeeAmount, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+              Creator Fees: {formatUnits(feeBreakdown.creatorFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
+            </p>
+            <p className="text-gray-300">
+              Platform Fees: {formatUnits(feeBreakdown.platformFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
             </p>
           </div>
         </div>
@@ -181,17 +161,16 @@ export function UserActions({
   isNativeBet = false,
   creator
 }: UserActionsProps) {
-  // V2: Use contract's calculatePotentialWinnings for fee-adjusted amounts
-  const { data: contractWinnings } = useReadContract({
-    address: BETLEY_ADDRESS,
-    abi: BETLEY_ABI,
-    functionName: 'calculatePotentialWinnings',
-    args: betId && address ? [BigInt(betId), address as `0x${string}`] : undefined,
-    query: {
-      enabled: !!address && !!betId && resolved, // Only call when resolved
-      refetchInterval: 5000,
-    }
-  })
+  
+  // Use our new custom hook for all fee-related data
+  const {
+    contractWinnings,
+    creatorFeeAmount,
+    feeBreakdown,
+    feesEnabled,
+    hasValidData,
+    error: feeDataError
+  } = useBetFeeData(betId, address, totalAmounts, winningOption, resolved)
 
   // Check if user is creator
   const isCreator = address && creator && address.toLowerCase() === creator.toLowerCase()
@@ -208,40 +187,20 @@ export function UserActions({
     hash: creatorClaimTxHash 
   })
 
-  // Get creator fee amount for creators
-  const { data: feeParams } = useReadContract({
-    address: BETLEY_ADDRESS,
-    abi: BETLEY_ABI,
-    functionName: 'getFeeParameters',
-    query: {
-      staleTime: 30000,
-    }
-  })
-
-  // Calculate creator fee amount
-  const creatorFeeAmount = useMemo(() => {
-    if (!feeParams || !totalAmounts || winningOption === undefined || !isCreator) return BigInt(0)
-    
-    const [creatorEnabled, creatorRate] = feeParams
-    if (!creatorEnabled || !creatorRate) return BigInt(0)
-    
-    // Calculate losing pool
-    let losingPool = BigInt(0)
-    for (let i = 0; i < totalAmounts.length; i++) {
-      if (i !== winningOption) {
-        losingPool += totalAmounts[i]
-      }
-    }
-    
-    return (losingPool * BigInt(creatorRate)) / BigInt(10000)
-  }, [feeParams, totalAmounts, winningOption, isCreator])
-
   // Handle creator fee claiming success
   useEffect(() => {
     if (isCreatorClaimSuccess) {
       showSuccess('Creator fees claimed successfully!')
     }
   }, [isCreatorClaimSuccess, showSuccess])
+
+  // Handle fee data errors
+  useEffect(() => {
+    if (feeDataError) {
+      console.error('Fee data error:', feeDataError)
+      // Don't show error to user as we can fall back to basic functionality
+    }
+  }, [feeDataError])
 
   const handleClaimCreatorFees = async () => {
     if (!betId || isCreatorClaimPending) return
@@ -266,9 +225,9 @@ export function UserActions({
     return userBets.reduce((total: bigint, amount: bigint) => total + amount, BigInt(0))
   }
 
-  // Calculate detailed winnings breakdown for display
-  const getWinningsBreakdown = () => {
-    if (!resolved || !userBets || winningOption === undefined || !totalAmounts) {
+  // Simplified winnings breakdown calculation using custom hook data
+  const getWinningsBreakdown = (): WinningsBreakdown | null => {
+    if (!resolved || !userBets || winningOption === undefined || !totalAmounts || !hasValidData) {
       return null
     }
 
@@ -291,7 +250,8 @@ export function UserActions({
       return {
         originalBet,
         rawWinningsFromLosers: BigInt(0),
-        fees: BigInt(0),
+        creatorFee: BigInt(0),
+        platformFee: BigInt(0),
         totalWinnings: originalBet,
         showFees: false
       }
@@ -299,19 +259,17 @@ export function UserActions({
 
     // Calculate raw winnings (before fees)
     const rawWinningsFromLosers = (userWinningBet * totalLosingPool) / totalWinningPool
-    const rawTotal = originalBet + rawWinningsFromLosers
 
     // Use contract calculation for actual winnings (after fees)
-    const actualWinnings = contractWinnings !== undefined ? 
-      contractWinnings : rawTotal
-    const fees = rawTotal - actualWinnings
+    const actualWinnings = contractWinnings !== undefined ? contractWinnings : originalBet + rawWinningsFromLosers
 
     return {
       originalBet,
       rawWinningsFromLosers,
-      fees,
+      creatorFee: feeBreakdown.creatorFee,
+      platformFee: feeBreakdown.platformFee,
       totalWinnings: actualWinnings,
-      showFees: contractWinnings !== undefined && fees > BigInt(0)
+      showFees: feesEnabled && feeBreakdown.totalFees > BigInt(0)
     }
   }
 
@@ -399,8 +357,7 @@ export function UserActions({
               betId={betId}
               decimals={decimals || 18}
               isNativeBet={isNativeBet}
-              totalAmounts={totalAmounts}
-              winningOption={winningOption}
+              feeBreakdown={feeBreakdown}
             />
           </div>
         )}
