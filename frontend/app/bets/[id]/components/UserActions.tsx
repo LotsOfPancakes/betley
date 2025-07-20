@@ -1,12 +1,23 @@
-// frontend/app/bets/[id]/components/UserActions.tsx - Complete file with combined win/loss logic
+// frontend/app/bets/[id]/components/UserActions.tsx - BEST PRACTICES REFACTORING
 'use client'
 
 import { formatUnits } from 'viem'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useBetFeeData, type FeeBreakdown } from '../hooks/useBetFeeData'
+import { getTokenConfig, ZERO_ADDRESS } from '@/lib/tokenUtils'
+import { 
+  calculateWinningsBreakdown, 
+  calculateUserTotalBet,
+  hasUserWon,
+  type WinningsBreakdown,
+} from '@/lib/utils'
+
+// ============================================================================
+// TYPES & INTERFACES - Clear separation of concerns
+// ============================================================================
 
 interface UserActionsProps {
   address?: string
@@ -24,127 +35,279 @@ interface UserActionsProps {
   creator?: string
 }
 
-interface WinningsBreakdown {
-  originalBet: bigint
-  rawWinningsFromLosers: bigint
-  creatorFee: bigint
-  platformFee: bigint
-  totalWinnings: bigint
-  showFees: boolean
+interface CollapsibleDetailsProps {
+  data: WinningsBreakdown | FeeBreakdown
+  type: 'winnings' | 'fees'
+  decimals: number
+  isNativeBet: boolean
 }
 
-interface CollapsibleBreakdownProps {
+type ClaimStatus = 
+  | { type: 'none' }
+  | { type: 'already-claimed'; claimType: string; amount?: bigint }
+  | { type: 'can-claim-winnings'; breakdown: WinningsBreakdown }
+  | { type: 'can-claim-refund'; amount: bigint }
+  | { type: 'user-lost'; amount: bigint }
+
+// ============================================================================
+// UTILITY FUNCTIONS - Pure functions, easily testable
+// ============================================================================
+
+/**
+ * Get token symbol using existing utility
+ * @param isNativeBet - Whether this is a native HYPE bet
+ * @returns Token symbol string
+ */
+const getTokenSymbol = (isNativeBet: boolean): string => 
+  getTokenConfig(isNativeBet ? ZERO_ADDRESS : '').symbol
+
+/**
+ * Format amount with token symbol consistently
+ * @param amount - Amount in wei
+ * @param decimals - Token decimals
+ * @param isNativeBet - Whether this is native HYPE
+ * @returns Formatted string with amount and symbol
+ */
+const formatTokenAmount = (amount: bigint, decimals: number, isNativeBet: boolean): string => 
+  `${formatUnits(amount, decimals)} ${getTokenSymbol(isNativeBet)}`
+
+/**
+ * Determine user's claim status based on bet state
+ * @param userBets - User's bet amounts
+ * @param resolved - Whether bet is resolved
+ * @param winningOption - Winning option index
+ * @param resolutionDeadlinePassed - Whether deadline passed
+ * @param hasClaimed - Whether user already claimed
+ * @param isCreator - Whether user is the bet creator
+ * @param breakdown - Winnings breakdown if available
+ * @returns Structured claim status
+ */
+const determineClaimStatus = (
+  userBets: readonly bigint[],
+  resolved: boolean,
+  winningOption: number | undefined,
+  resolutionDeadlinePassed: boolean,
+  hasClaimed: boolean,
+  isCreator: boolean,
+  breakdown: WinningsBreakdown | null
+): ClaimStatus => {
+  const totalBet = calculateUserTotalBet(userBets)
+  
+  if (totalBet === BigInt(0)) {
+    return { type: 'none' }
+  }
+
+  if (hasClaimed) {
+    const userWon = resolved && winningOption !== undefined && hasUserWon(userBets, winningOption)
+    const claimType = userWon ? 'winnings' : (isCreator ? 'creator fees' : 'refund')
+    return { 
+      type: 'already-claimed', 
+      claimType,
+      amount: breakdown?.totalWinnings 
+    }
+  }
+
+  if (resolved && winningOption !== undefined) {
+    if (hasUserWon(userBets, winningOption) && breakdown) {
+      return { type: 'can-claim-winnings', breakdown }
+    }
+    return { type: 'user-lost', amount: totalBet }
+  }
+
+  if (resolutionDeadlinePassed && !resolved) {
+    return { type: 'can-claim-refund', amount: totalBet }
+  }
+
+  return { type: 'none' }
+}
+
+// ============================================================================
+// UI COMPONENTS - Single responsibility, reusable
+// ============================================================================
+
+/**
+ * Reusable collapsible details component
+ * Handles both winnings and fee breakdowns with proper theming
+ */
+function CollapsibleDetails({ data, type, decimals, isNativeBet }: CollapsibleDetailsProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  
+  // Theme configuration based on type
+  const theme = type === 'winnings' 
+    ? {
+        borderColor: 'border-green-600/30',
+        textColor: 'text-green-300 hover:text-green-200',
+        contentColor: 'text-green-200',
+        accentColor: 'text-green-100'
+      }
+    : {
+        borderColor: 'border-yellow-600/30', 
+        textColor: 'text-yellow-300 hover:text-yellow-200',
+        contentColor: 'text-gray-300',
+        accentColor: 'text-yellow-400'
+      }
+
+  return (
+    <div className={`border-t ${theme.borderColor} pt-3`}>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`w-full flex items-center justify-between ${theme.textColor} transition-colors text-sm`}
+        aria-expanded={isExpanded}
+        aria-controls={`breakdown-${type}`}
+      >
+        <span>View breakdown</span>
+        <svg
+          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isExpanded && (
+        <div 
+          id={`breakdown-${type}`}
+          className="mt-3 text-sm space-y-2 animate-in slide-in-from-top-2 duration-200"
+        >
+          <div className="space-y-1">
+            {type === 'winnings' ? (
+              <WinningsBreakdownContent 
+                breakdown={data as WinningsBreakdown}
+                decimals={decimals}
+                tokenSymbol={getTokenSymbol(isNativeBet)}
+                theme={theme}
+              />
+            ) : (
+              <FeeBreakdownContent 
+                feeBreakdown={data as FeeBreakdown}
+                decimals={decimals}
+                tokenSymbol={getTokenSymbol(isNativeBet)}
+                theme={theme}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Winnings breakdown content component
+ */
+function WinningsBreakdownContent({ 
+  breakdown, 
+  decimals, 
+  tokenSymbol, 
+  theme 
+}: {
   breakdown: WinningsBreakdown
   decimals: number
-  isNativeBet: boolean
-}
-
-function CollapsibleBreakdown({ breakdown, decimals, isNativeBet }: CollapsibleBreakdownProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  
+  tokenSymbol: string
+  theme: {
+    borderColor: string
+    contentColor: string
+    accentColor: string
+  }
+}) {
   return (
-    <div className="border-t border-green-600/30 pt-3">
-      {/* Toggle Button */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between text-green-300 hover:text-green-200 transition-colors text-sm"
-      >
-        <span>View breakdown</span>
-        <svg
-          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {/* Collapsible Content */}
-      {isExpanded && (
-        <div className="mt-3 text-sm space-y-2 animate-in slide-in-from-top-2 duration-200">
-          <div className="space-y-1">
-            <p className="text-green-200">
-              Your original bet: {formatUnits(breakdown.originalBet, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-            </p>
-            {breakdown.rawWinningsFromLosers > BigInt(0) && (
-              <p className="text-green-200">
-                Winnings from other bets: +{formatUnits(breakdown.rawWinningsFromLosers, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-              </p>
-            )}
-            {breakdown.showFees && (
-              <>
-                <p className="text-red-400">
-                  Creator Fee (1%): -{formatUnits(breakdown.creatorFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-                </p>
-                <p className="text-red-400">
-                  Platform Fee (0.5%): -{formatUnits(breakdown.platformFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-                </p>
-              </>
-            )}
-            <div className="border-t border-green-600/30 pt-2 mt-2">
-              <p className="font-semibold text-green-100">
-                Total winnings: {formatUnits(breakdown.totalWinnings, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-              </p>
-            </div>
-          </div>
-        </div>
+    <>
+      <p className={theme.contentColor}>
+        Your original bet: {formatUnits(breakdown.originalBet, decimals)} {tokenSymbol}
+      </p>
+      {breakdown.rawWinningsFromLosers > BigInt(0) && (
+        <p className={theme.contentColor}>
+          Winnings from other bets: +{formatUnits(breakdown.rawWinningsFromLosers, decimals)} {tokenSymbol}
+        </p>
       )}
-    </div>
+      {breakdown.showFees && (
+        <>
+          <p className="text-red-400">
+            Creator Fee (1%): -{formatUnits(breakdown.creatorFee, decimals)} {tokenSymbol}
+          </p>
+          <p className="text-red-400">
+            Platform Fee (0.5%): -{formatUnits(breakdown.platformFee, decimals)} {tokenSymbol}
+          </p>
+        </>
+      )}
+      <div className={`border-t ${theme.borderColor} pt-2 mt-2`}>
+        <p className={`font-semibold ${theme.accentColor}`}>
+          Total winnings: {formatUnits(breakdown.totalWinnings, decimals)} {tokenSymbol}
+        </p>
+      </div>
+    </>
   )
 }
 
-interface CreatorFeesCollapsibleProps {
-  betId: string
-  decimals: number
-  isNativeBet: boolean
-  feeBreakdown: FeeBreakdown
-}
-
-function CreatorFeesCollapsible({ 
-  feeBreakdown,
+/**
+ * Fee breakdown content component
+ */
+function FeeBreakdownContent({ 
+  feeBreakdown, 
   decimals, 
-  isNativeBet
-}: CreatorFeesCollapsibleProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  
+  tokenSymbol, 
+  theme 
+}: {
+  feeBreakdown: FeeBreakdown
+  decimals: number
+  tokenSymbol: string
+  theme: {
+    contentColor: string
+    accentColor: string
+  }
+}) {
   return (
-    <div className="border-t border-yellow-600/30 pt-3">
-      {/* Toggle Button */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between text-yellow-300 hover:text-yellow-200 transition-colors text-sm"
-      >
-        <span>View breakdown</span>
-        <svg
-          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {/* Collapsible Content */}
-      {isExpanded && (
-        <div className="mt-3 text-sm space-y-2 animate-in slide-in-from-top-2 duration-200">
-          <div className="space-y-1">
-            <p className="text-gray-300">
-              Losing Pool: {formatUnits(feeBreakdown.losingPool, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-            </p>
-             <p className="text-yellow-400">
-               Creator Fee (1%): -{formatUnits(feeBreakdown.creatorFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-            </p>
-            <p className="text-gray-300">
-              Platform Fee (0.5%): -{formatUnits(feeBreakdown.platformFee, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
+    <>
+      <p className={theme.contentColor}>
+        Losing Pool: {formatUnits(feeBreakdown.losingPool, decimals)} {tokenSymbol}
+      </p>
+      <p className={theme.accentColor}>
+        Creator Fee (1%): -{formatUnits(feeBreakdown.creatorFee, decimals)} {tokenSymbol}
+      </p>
+      <p className={theme.contentColor}>
+        Platform Fee (0.5%): -{formatUnits(feeBreakdown.platformFee, decimals)} {tokenSymbol}
+      </p>
+    </>
   )
 }
+
+/**
+ * Standardized claim button component
+ */
+function ClaimButton({
+  onClick,
+  disabled,
+  variant = 'success',
+  children
+}: {
+  onClick: () => void
+  disabled: boolean
+  variant?: 'success' | 'warning' | 'info'
+  children: React.ReactNode
+}) {
+  const variantStyles = {
+    success: 'from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 shadow-green-500/30',
+    warning: 'from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 shadow-yellow-500/30',
+    info: 'from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 shadow-orange-500/30'
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full bg-gradient-to-r ${variantStyles[variant]} disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl disabled:shadow-none`}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ============================================================================
+// MAIN COMPONENT - Clean, focused on orchestration
+// ============================================================================
 
 export function UserActions({
   address,
@@ -154,7 +317,7 @@ export function UserActions({
   totalAmounts,
   resolutionDeadlinePassed,
   hasClaimed,
-  decimals,
+  decimals = 18,
   isPending,
   handleClaimWinnings,
   betId,
@@ -162,21 +325,20 @@ export function UserActions({
   creator
 }: UserActionsProps) {
   
-  // Use our new custom hook for all fee-related data
+  // ============================================================================
+  // HOOKS & STATE - Grouped logically
+  // ============================================================================
+  
   const {
     contractWinnings,
     creatorFeeAmount,
     feeBreakdown,
-    feesEnabled,
-    hasValidData,
+    feeParams,
     error: feeDataError
   } = useBetFeeData(betId, address, totalAmounts, winningOption, resolved)
 
-  // Check if user is creator
-  const isCreator = address && creator && address.toLowerCase() === creator.toLowerCase()
   const { showError, showSuccess } = useNotification()
-
-  // Creator fee claiming functionality
+  
   const { 
     writeContract: writeCreatorClaim, 
     isPending: isCreatorClaimPending,
@@ -187,22 +349,63 @@ export function UserActions({
     hash: creatorClaimTxHash 
   })
 
-  // Handle creator fee claiming success
+  // ============================================================================
+  // COMPUTED VALUES - Derived state, well-named
+  // ============================================================================
+  
+  const isCreator = Boolean(address && creator && address.toLowerCase() === creator.toLowerCase())
+  
+  const winningsBreakdown = useMemo((): WinningsBreakdown | null => {
+    if (!resolved || !userBets || winningOption === undefined || !totalAmounts || !feeParams) {
+      return null
+    }
+
+    return calculateWinningsBreakdown({
+      userBets,
+      totalAmounts,
+      winningOption,
+      feeParams,
+      contractWinnings,
+      resolved
+    })
+  }, [resolved, userBets, winningOption, totalAmounts, feeParams, contractWinnings])
+
+  const claimStatus = useMemo(() => 
+    determineClaimStatus(
+      userBets || [],
+      resolved,
+      winningOption,
+      resolutionDeadlinePassed,
+      hasClaimed || false,
+      isCreator,
+      winningsBreakdown
+    ),
+    [userBets, resolved, winningOption, resolutionDeadlinePassed, hasClaimed, isCreator, winningsBreakdown]
+  )
+
+  const hasCreatorFees = isCreator && creatorFeeAmount && creatorFeeAmount > BigInt(0)
+
+  // ============================================================================
+  // EFFECTS - Properly isolated side effects
+  // ============================================================================
+  
   useEffect(() => {
     if (isCreatorClaimSuccess) {
       showSuccess('Creator fees claimed successfully!')
     }
   }, [isCreatorClaimSuccess, showSuccess])
 
-  // Handle fee data errors
   useEffect(() => {
     if (feeDataError) {
       console.error('Fee data error:', feeDataError)
-      // Don't show error to user as we can fall back to basic functionality
     }
   }, [feeDataError])
 
-  const handleClaimCreatorFees = async () => {
+  // ============================================================================
+  // EVENT HANDLERS - Clear, single responsibility
+  // ============================================================================
+  
+  const handleClaimCreatorFees = useCallback(async () => {
     if (!betId || isCreatorClaimPending) return
     
     try {
@@ -216,228 +419,121 @@ export function UserActions({
       console.error('Error claiming creator fees:', error)
       showError('Failed to claim creator fees. Please try again.')
     }
+  }, [betId, isCreatorClaimPending, writeCreatorClaim, showError])
+
+  // ============================================================================
+  // EARLY RETURNS - Guard clauses for cleaner flow
+  // ============================================================================
+  
+  if (!address || !userBets) {
+    return null
   }
 
-  // Early return AFTER all hooks
-  if (!address || !userBets) return null
+  // ============================================================================
+  // RENDER LOGIC - Clean, declarative UI based on state
+  // ============================================================================
+  
+  return (
+    <div className="space-y-6">
+      {/* Main Claim Status */}
+      {(() => {
+        switch (claimStatus.type) {
+          case 'already-claimed':
+            return (
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/30 rounded-3xl p-6">
+                <p className="text-gray-300 mb-2">
+                  ✅ You have already claimed your {claimStatus.claimType}.
+                </p>
+                {claimStatus.amount && (
+                  <p className="text-sm text-green-200">
+                    Amount claimed: {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
+                  </p>
+                )}
+              </div>
+            )
 
-  const getUserTotalBet = () => {
-    return userBets.reduce((total: bigint, amount: bigint) => total + amount, BigInt(0))
-  }
-
-  // Simplified winnings breakdown calculation using custom hook data
-  const getWinningsBreakdown = (): WinningsBreakdown | null => {
-    if (!resolved || !userBets || winningOption === undefined || !totalAmounts || !hasValidData) {
-      return null
-    }
-
-    const originalBet = getUserTotalBet()
-    const userWinningBet = userBets[winningOption]
-    
-    if (userWinningBet === BigInt(0)) return null
-
-    const totalWinningPool = totalAmounts[winningOption]
-    let totalLosingPool = BigInt(0)
-    
-    // Calculate total losing pool
-    for (let i = 0; i < totalAmounts.length; i++) {
-      if (i !== winningOption) {
-        totalLosingPool += totalAmounts[i]
-      }
-    }
-
-    if (totalLosingPool === BigInt(0)) {
-      return {
-        originalBet,
-        rawWinningsFromLosers: BigInt(0),
-        creatorFee: BigInt(0),
-        platformFee: BigInt(0),
-        totalWinnings: originalBet,
-        showFees: false
-      }
-    }
-
-    // Calculate raw winnings (before fees)
-    const rawWinningsFromLosers = (userWinningBet * totalLosingPool) / totalWinningPool
-
-    // Use contract calculation for actual winnings (after fees)
-    const actualWinnings = contractWinnings !== undefined ? contractWinnings : originalBet + rawWinningsFromLosers
-
-    return {
-      originalBet,
-      rawWinningsFromLosers,
-      creatorFee: feeBreakdown.creatorFee,
-      platformFee: feeBreakdown.platformFee,
-      totalWinnings: actualWinnings,
-      showFees: feesEnabled && feeBreakdown.totalFees > BigInt(0)
-    }
-  }
-
-  const userCanClaim = () => {
-    const totalBet = getUserTotalBet()
-    if (totalBet === BigInt(0)) return false
-    
-    if (resolved && winningOption !== undefined) {
-      // Check if user won
-      return userBets[winningOption] > BigInt(0)
-    }
-    
-    if (resolutionDeadlinePassed && !resolved) {
-      // Can claim refund
-      return true
-    }
-    
-    return false
-  }
-
-  // Check hasClaimed FIRST - but differentiate between winnings and creator fees
-  if (hasClaimed) {
-    const breakdown = getWinningsBreakdown()
-    const userWon = resolved && winningOption !== undefined && userBets && userBets[winningOption] > BigInt(0)
-    
-    // If user won, they claimed winnings. If creator lost, they claimed creator fees.
-    const claimType = userWon ? 'winnings' : (isCreator ? 'Creator Fees' : 'refund')
-    
-    return (
-      <div className="mt-6 bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/30 rounded-3xl p-6">
-        <p className="text-gray-300 mb-2">
-          ✅ You have already claimed your {claimType}.
-        </p>
-        {breakdown && decimals && userWon && (
-            <div>
-              <p className="font-medium text-gray-300 text-sm">Winnings: {formatUnits(breakdown.totalWinnings, decimals)} {isNativeBet ? 'HYPE' : 'mHYPE'}</p>
-            </div>
-        )}
-        {/* Show creator fee amount for creators who claimed fees */}
-        {isCreator && !userWon && resolved && creatorFeeAmount > BigInt(0) && (
-          <div className="text-sm text-gray-400 mt-3">
-            <p>Creator fees claimed: {formatUnits(creatorFeeAmount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}</p>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // Combined winning/losing state with creator fees
-  if (resolved) {
-    const userWon = winningOption !== undefined && userBets && userBets[winningOption] > BigInt(0)
-    const userHasBet = getUserTotalBet() > BigInt(0)
-    const breakdown = getWinningsBreakdown()
-    
-    return (
-      <div className="space-y-4">
-        {/* User Result Message - Only show if user actually bet AND not a creator */}
-        {userHasBet && userWon && !isCreator ? (
-          <div className="mt-6 bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm border border-green-500/40 rounded-3xl p-6">
-            <p className="text-green-300 mb-4">
-              Congratulations - You won!
-            </p>
-            
-            {/* Claim Winnings Button */}
-            <button
-              onClick={handleClaimWinnings}
-              disabled={isPending}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-green-500/30 disabled:shadow-none mb-4"
-            >
-              {isPending ? 'Claiming...' : `Claim ${breakdown && decimals ? formatUnits(breakdown.totalWinnings, decimals) : '0'} ${isNativeBet ? 'HYPE' : 'mHYPE'}`}
-            </button>
-
-            {/* Winnings Breakdown */}
-            {breakdown?.showFees && (
-              <CollapsibleBreakdown
-                breakdown={breakdown}
-                decimals={decimals || 18}
-                isNativeBet={isNativeBet}
-              />
-            )}
-          </div>
-        ) : userHasBet && !isCreator ? (
-          /* Show loss message only if user bet but didn't win AND is not creator */
-          <div className="mt-6 bg-gradient-to-br from-red-900/40 to-red-800/40 backdrop-blur-sm rounded-3xl p-6">
-            <p className="text-red-300">You lost {decimals ? formatUnits(getUserTotalBet(), decimals) : '0'} {isNativeBet ? 'HYPE' : 'mHYPE'} this bet. Better luck next time!</p>
-          </div>
-        ) : null}
-
-        {/* Creator Fee Section - Show for all creators with combined messaging */}
-        {isCreator && creatorFeeAmount && creatorFeeAmount > BigInt(0) && !hasClaimed && (
-          <div className="mt-8 bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm rounded-3xl p-6">
-            {userHasBet && (
-              <p className="text-yellow-200 mb-2">
-                {userWon 
-                  ? `You won ${breakdown && decimals ? formatUnits(breakdown.totalWinnings, decimals) : '0'} ${isNativeBet ? 'HYPE' : 'mHYPE'} from your personal bet.`
-                  : `You lost ${decimals ? formatUnits(getUserTotalBet(), decimals) : '0'} ${isNativeBet ? 'HYPE' : 'mHYPE'} this bet. Better luck next time!`
-                }
-              </p>
-            )}
-            <p className="text-yellow-300 mb-4">
-              Creator Fees available: {formatUnits(creatorFeeAmount, decimals || 18)} {isNativeBet ? 'HYPE' : 'mHYPE'}
-            </p>
-            
-            {/* Show both buttons if creator won, otherwise just creator fees button */}
-            {userWon ? (
-              <div className="space-y-3">
-                {/* Claim Personal Winnings Button */}
-                <button
+          case 'can-claim-winnings':
+            return (
+              <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm rounded-3xl p-6">
+                <p className="text-green-300 mb-3">🎉 Congratulations! You won this bet.</p>
+                <p className="text-sm text-green-200 mb-4">
+                  Total winnings: {formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)}
+                </p>
+                <ClaimButton
                   onClick={handleClaimWinnings}
                   disabled={isPending}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-green-500/30 disabled:shadow-none"
+                  variant="success"
                 >
-                  {isPending ? 'Claiming...' : `Claim ${breakdown && decimals ? formatUnits(breakdown.totalWinnings, decimals) : '0'} ${isNativeBet ? 'HYPE' : 'mHYPE'} Personal Winnings`}
-                </button>
-                
-                {/* Creator Fee Claim Button */}
-                <button
-                  onClick={handleClaimCreatorFees}
-                  disabled={isPending || isCreatorClaimPending}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-yellow-500/30 disabled:shadow-none"
-                >
-                  {isCreatorClaimPending ? 'Claiming...' : `Claim ${formatUnits(creatorFeeAmount, decimals || 18)} ${isNativeBet ? 'HYPE' : 'mHYPE'} Creator Fees`}
-                </button>
+                  {isPending ? 'Claiming...' : `Claim ${formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)}`}
+                </ClaimButton>
+
+                {claimStatus.breakdown.showFees && (
+                  <CollapsibleDetails
+                    data={claimStatus.breakdown}
+                    type="winnings"
+                    decimals={decimals}
+                    isNativeBet={isNativeBet}
+                  />
+                )}
               </div>
-            ) : (
-              /* Creator Fee Claim Button - Only show this if creator didn't win */
-              <button
-                onClick={handleClaimCreatorFees}
-                disabled={isPending || isCreatorClaimPending}
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-yellow-500/30 disabled:shadow-none mb-4"
-              >
-                {isCreatorClaimPending ? 'Claiming...' : `Claim ${formatUnits(creatorFeeAmount, decimals || 18)} ${isNativeBet ? 'HYPE' : 'mHYPE'} Creator Fees`}
-              </button>
-            )}
+            )
 
-            {/* Creator Fee Breakdown */}
-            <CreatorFeesCollapsible
-              betId={betId}
-              decimals={decimals || 18}
-              isNativeBet={isNativeBet}
-              feeBreakdown={feeBreakdown}
-            />
-          </div>
-        )}
-      </div>
-    )
-  }
+          case 'can-claim-refund':
+            return (
+              <div className="bg-gradient-to-br from-orange-900/40 to-yellow-900/40 backdrop-blur-sm rounded-3xl p-6">
+                <p className="text-orange-300 mb-2">
+                  This bet was not resolved within 72 hours. You can claim a refund.
+                </p>
+                <p className="text-sm text-orange-200 mb-3">
+                  Your total bet: {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
+                </p>
+                <ClaimButton
+                  onClick={handleClaimWinnings}
+                  disabled={isPending}
+                  variant="info"
+                >
+                  {isPending ? 'Claiming Refund...' : 'Claim Refund'}
+                </ClaimButton>
+              </div>
+            )
 
-  // Refund section when deadline passed
-  if (resolutionDeadlinePassed && !resolved && userCanClaim()) {
-    return (
-      <div className="mt-6 bg-gradient-to-br from-orange-900/40 to-yellow-900/40 backdrop-blur-sm border border-orange-500/40 rounded-3xl p-6">
-        <p className="text-orange-300 mb-3">
-          The resolution deadline has passed. You can claim a refund of your original bet.
-        </p>
-        <p className="text-sm text-orange-200 mb-3">
-          Your total bet: {decimals ? formatUnits(getUserTotalBet(), decimals) : '0'} {isNativeBet ? 'HYPE' : 'mHYPE'}
-        </p>
-        <button
-          onClick={handleClaimWinnings}
-          disabled={isPending}
-          className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-orange-500/30 disabled:shadow-none"
-        >
-          {isPending ? 'Claiming Refund...' : 'Claim Refund'}
-        </button>
-      </div>
-    )
-  }
+          case 'user-lost':
+            return !isCreator ? (
+              <div className="bg-gradient-to-br from-red-900/40 to-red-800/40 backdrop-blur-sm rounded-3xl p-6">
+                <p className="text-red-300">
+                  You lost {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)} this bet. Better luck next time!
+                </p>
+              </div>
+            ) : null
 
-  return null
+          default:
+            return null
+        }
+      })()}
+
+      {/* Creator Fee Section */}
+      {hasCreatorFees && !hasClaimed ? (
+        <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm rounded-3xl p-6">
+          <p className="text-yellow-300 mb-4">
+            Creator Fees available: {formatTokenAmount(creatorFeeAmount, decimals, isNativeBet)}
+          </p>
+          
+          <ClaimButton
+            onClick={handleClaimCreatorFees}
+            disabled={isCreatorClaimPending}
+            variant="warning"
+          >
+            {isCreatorClaimPending ? 'Claiming...' : `Claim ${formatTokenAmount(creatorFeeAmount, decimals, isNativeBet)} Creator Fees`}
+          </ClaimButton>
+
+          <CollapsibleDetails
+            data={feeBreakdown}
+            type="fees"
+            decimals={decimals}
+            isNativeBet={isNativeBet}
+          />
+        </div>
+      ) : null}
+    </div>
+  )
 }
