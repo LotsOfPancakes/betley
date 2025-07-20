@@ -1,9 +1,8 @@
-// frontend/app/bets/hooks/useBetsList.ts - Fixed with unified mapping
+// frontend/app/bets/hooks/useBetsList.ts - Updated for database-based mappings
 import { useState, useEffect } from 'react'
 import { useReadContract, useConfig, useAccount } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI, HYPE_TOKEN_ADDRESS } from '@/lib/contractABI'
-import { UnifiedBetMapper } from '@/lib/betIdMapping'  // Use unified system
 import { BetDetails } from '../types/bet.types'
 
 export function useBetsList() {
@@ -73,22 +72,35 @@ export function useBetsList() {
               else if (isCreator) userRole = 'creator'
               else userRole = 'bettor'
 
-              // Get random ID using unified system (returns string | undefined)
-              const randomId = UnifiedBetMapper.getRandomId(i)
+              // ✅ Try to get random ID from database for this bet
+              let randomId: string | undefined = undefined
+              try {
+                const response = await fetch(`/api/bets/lookup-by-numeric/${i}`)
+                if (response.ok) {
+                  const data = await response.json()
+                  randomId = data.randomId
+                }
+              } catch (error) {
+                console.error(`Failed to get random ID for bet ${i}:`, error)
+              }
 
-              fetchedBets.push({
-                id: i,
-                randomId, // ✅ Now correctly typed as string | undefined
-                name: betData[0],
-                options: betData[1],
-                creator: betData[2],
-                endTime: betData[3],
-                resolved: betData[4],
-                winningOption: betData[5],
-                totalAmounts: betData[6],
-                userRole,
-                userTotalBet
-              })
+              // ✅ Only include bets that have random ID mappings
+              if (randomId) {
+                fetchedBets.push({
+                  id: i,
+                  randomId, // Only bets with mappings will appear in the list
+                  name: betData[0],
+                  options: betData[1],
+                  creator: betData[2],
+                  endTime: betData[3],
+                  resolved: betData[4],
+                  winningOption: betData[5],
+                  totalAmounts: betData[6],
+                  userRole,
+                  userTotalBet
+                })
+              }
+              // ✅ Bets without random IDs are intentionally excluded (not accessible)
             }
           } catch (err) {
             console.error(`Error fetching bet ${i}:`, err)

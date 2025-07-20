@@ -1,105 +1,111 @@
-// frontend/app/bets/components/BetCard.tsx
+// frontend/app/bets/components/BetCard.tsx - Only support random IDs
 'use client'
 
+import Link from 'next/link'
 import { formatUnits } from 'viem'
-import { useRouter } from 'next/navigation'
-import { memo } from 'react'
-
-interface BetDetails {
-  id: number
-  randomId?: string // Add optional random ID
-  name: string
-  options: readonly string[]
-  creator: string
-  endTime: bigint
-  resolved: boolean
-  winningOption: number
-  totalAmounts: readonly bigint[]
-  userRole: 'creator' | 'bettor' | 'both'
-  userTotalBet: bigint
-}
+import { BetDetails } from '../types/bet.types'
 
 interface BetCardProps {
   bet: BetDetails
   decimals: number
 }
 
-function BetCard({ bet, decimals }: BetCardProps) {
-  const router = useRouter()
-  const now = Math.floor(Date.now() / 1000)
-  const timeLeft = Number(bet.endTime) - now
-  const hasEnded = timeLeft <= 0
-
-  const getStatus = () => {
-    if (bet.resolved) return { text: 'Resolved', color: 'text-green-400' }
-    if (hasEnded) return { text: 'Pending Resolution', color: 'text-yellow-400' }
-    return { text: 'Active', color: 'text-blue-400' }
+export default function BetCard({ bet, decimals }: BetCardProps) {
+  // ✅ Only use random ID - no fallback to numeric ID
+  if (!bet.randomId) {
+    // This shouldn't happen if useBetsList is filtering correctly
+    console.warn(`Bet ${bet.id} has no random ID mapping`)
+    return null
   }
+  
+  const betUrl = `/bets/${bet.randomId}`
+  
+  const totalPool = bet.totalAmounts.reduce((sum, amount) => sum + amount, BigInt(0))
+  const userBetFormatted = formatUnits(bet.userTotalBet, decimals)
+  const totalPoolFormatted = formatUnits(totalPool, decimals)
 
-  const getRoleBadge = () => {
+  const isActive = Date.now() < Number(bet.endTime) * 1000
+  const status = bet.resolved ? 'Resolved' : (isActive ? 'Active' : 'Pending Resolution')
+  
+  const statusColor = bet.resolved ? 'bg-green-500' : (isActive ? 'bg-blue-500' : 'bg-yellow-500')
+  
+  const timeLeft = isActive ? Number(bet.endTime) * 1000 - Date.now() : 0
+  const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60))
+  const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
+
+  const getRoleDisplay = () => {
     switch (bet.userRole) {
-      case 'creator':
-        return <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">Creator</span>
-      case 'bettor':
-        return <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">Bettor</span>
-      case 'both':
-        return <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded">Creator & Bettor</span>
+      case 'creator': return '👑 Creator'
+      case 'bettor': return '🎯 Bettor'  
+      case 'both': return '👑🎯 Creator & Bettor'
+      default: return ''
     }
   }
 
-  const status = getStatus()
-  const totalPool = bet.totalAmounts.reduce((a, b) => a + b, BigInt(0))
-
   return (
-    <div 
-      onClick={() => router.push(`/bets/${bet.randomId || bet.id}`)}
-      className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-blue-500 transition-all cursor-pointer"
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-xl font-semibold text-white mb-2">{bet.name}</h3>
-          {getRoleBadge()}
-        </div>
-        <span className={`text-sm font-medium ${status.color}`}>{status.text}</span>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-300">Total Pool:</span>
-          <span className="font-semibold text-white">{formatUnits(totalPool, decimals)} HYPE</span>
-        </div>
+    <Link href={betUrl} className="block group">
+      <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
         
-        {bet.userTotalBet > BigInt(0) && (
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-300">Your Bet:</span>
-            <span className="font-semibold text-blue-400">{formatUnits(bet.userTotalBet, decimals)} HYPE</span>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          {bet.options.map((option, index) => (
-            <div key={index} className="flex justify-between items-center text-sm">
-              <span className="text-gray-300">{option}</span>
-              <span className="text-white">{formatUnits(bet.totalAmounts[index], decimals)} HYPE</span>
-            </div>
-          ))}
+        {/* Header */}
+        <div className="flex justify-between items-start mb-4">
+          <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${statusColor}`}>
+            {status}
+          </span>
+          <span className="text-sm text-green-400 font-medium">
+            {getRoleDisplay()}
+          </span>
         </div>
 
-        {!hasEnded && (
-          <div className="text-sm text-gray-400">
-            Time left: {Math.floor(timeLeft / 3600)}h {Math.floor((timeLeft % 3600) / 60)}m
-          </div>
-        )}
+        {/* Bet Name */}
+        <h3 className="text-xl font-semibold text-white mb-3 line-clamp-2 group-hover:text-green-400 transition-colors">
+          {bet.name}
+        </h3>
 
-        {bet.resolved && (
-          <div className="text-sm text-green-400">
-            Winner: {bet.options[bet.winningOption]}
+        {/* Options Preview */}
+        <div className="mb-4">
+          <div className="text-sm text-gray-400 mb-2">Options:</div>
+          <div className="space-y-1">
+            {bet.options.slice(0, 2).map((option, index) => (
+              <div key={index} className="text-sm text-gray-300 truncate">
+                • {option}
+              </div>
+            ))}
+            {bet.options.length > 2 && (
+              <div className="text-sm text-gray-400">
+                +{bet.options.length - 2} more options
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Stats */}
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-400">Your Bet:</span>
+            <span className="text-green-400 font-medium">{userBetFormatted} HYPE</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Total Pool:</span>
+            <span className="text-white font-medium">{totalPoolFormatted} HYPE</span>
+          </div>
+          {isActive && (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Time Left:</span>
+              <span className="text-blue-400 font-medium">
+                {hoursLeft > 0 ? `${hoursLeft}h ${minutesLeft}m` : `${minutesLeft}m`}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-4 pt-4 border-t border-gray-700/50">
+          <div className="text-xs text-gray-500">
+            {bet.options.length} options • Created by {bet.creator.slice(0, 6)}...{bet.creator.slice(-4)}
+          </div>
+        </div>
+
       </div>
-    </div>
+    </Link>
   )
 }
-
-// Export with memo for performance
-export default memo(BetCard)

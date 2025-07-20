@@ -1,25 +1,36 @@
-// frontend/lib/hooks/useBetIdMapping.ts - Updated for async database calls
+// frontend/lib/hooks/useBetIdMapping.ts - Only accept random IDs
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { UnifiedBetMapper } from '@/lib/betIdMapping'
 
-// Hook for single ID mapping with React Query caching
+// Hook for single ID mapping with React Query caching - RANDOM IDs ONLY
 export function useBetIdMapping(randomId: string) {
   const [isLoading, setIsLoading] = useState(true)
   const [numericBetId, setNumericBetId] = useState<number | null>(null)
   const [isValidId, setIsValidId] = useState(false)
 
+  // ✅ Reject numeric IDs immediately
+  const isNumericId = /^\d+$/.test(randomId)
+  
   // ✅ Add React Query for caching (reduces API calls by 80%)
   const { data: numericId, isLoading: isQueryLoading } = useQuery({
     queryKey: ['bet-mapping', randomId],
     queryFn: () => UnifiedBetMapper.getNumericId(randomId),
-    enabled: !!randomId && randomId.length === 8,
+    enabled: !!randomId && randomId.length === 8 && !isNumericId, // Don't query numeric IDs
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     retry: 2
   })
 
   useEffect(() => {
     if (!randomId) {
+      setIsLoading(false)
+      setNumericBetId(null)
+      setIsValidId(false)
+      return
+    }
+
+    // ✅ Immediately reject numeric IDs
+    if (isNumericId) {
       setIsLoading(false)
       setNumericBetId(null)
       setIsValidId(false)
@@ -33,7 +44,7 @@ export function useBetIdMapping(randomId: string) {
     } else {
       setIsLoading(true)
     }
-  }, [randomId, numericId, isQueryLoading])
+  }, [randomId, numericId, isQueryLoading, isNumericId])
 
   return {
     numericBetId,
