@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { ConnectKitButton } from 'connectkit'
 import { useState } from 'react'
@@ -17,9 +18,28 @@ export function Navigation() {
           <div className="flex items-center">
             <Link 
               href="/" 
-              className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent hover:from-green-300 hover:to-emerald-300 transition-all duration-300"
+              className="flex items-center gap-3 group"
             >
-              Betley
+              {/* Logo Image */}
+              <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-emerald-200/20 rounded-xl blur-sm group-hover:blur-md transition-all duration-300" />
+                <div className="relative w-full h-full rounded-xl transition-all duration-300 sm:p-1">
+                  <Image 
+                    src="/images/betley2.png" 
+                    alt="Betley Logo"
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-contain"
+                    unoptimized={true}
+                    priority
+                  />
+                </div>
+              </div>
+              
+              {/* Logo Text */}
+              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent group-hover:from-green-300 group-hover:to-emerald-300 transition-all duration-300">
+                Betley
+              </span>
             </Link>
           </div>
 
