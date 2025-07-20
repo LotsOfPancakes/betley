@@ -107,7 +107,7 @@ export function useBetsList() {
             // Continue with other bets even if one fails
           }
         }
-
+  
         setBets(fetchedBets)
       } catch (err) {
         console.error('Error fetching bets:', err)

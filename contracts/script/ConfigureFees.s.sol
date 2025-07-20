@@ -2,11 +2,11 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
-import "../src/BetleyNativeV2.sol";
+import "../src/Betley.sol";
 
 /**
  * @title ConfigureFees
- * @dev Scripts for managing fee parameters after V2 deployment
+ * @dev Scripts for managing fee parameters after Betley deployment
  * 
  * Usage examples:
  * 
@@ -21,14 +21,17 @@ import "../src/BetleyNativeV2.sol";
  * 
  * 4. Claim platform fees:
  *    forge script script/ConfigureFees.s.sol:ClaimFees --rpc-url <RPC> --broadcast
+ * 
+ * 5. Enable test fees (minimal):
+ *    forge script script/ConfigureFees.s.sol:TestFees --rpc-url <RPC> --broadcast
  */
 
 contract ViewFees is Script {
     function run() external view {
-        address contractAddress = vm.envAddress("BETLEY_V2_ADDRESS");
-        BetleyNativeV2 betley = BetleyNativeV2(payable(contractAddress));
+        address contractAddress = vm.envAddress("BETLEY_ADDRESS");
+        Betley betley = Betley(payable(contractAddress));
         
-        console.log("=== BetleyNativeV2 Fee Status ===");
+        console.log("=== Betley Fee Status ===");
         console.log("Contract:", contractAddress);
         console.log("Owner:", betley.owner());
         console.log("");
@@ -84,11 +87,11 @@ contract ViewFees is Script {
 contract EnableFees is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address  contractAddress = vm.envAddress("BETLEY_V2_ADDRESS");
+        address contractAddress = vm.envAddress("BETLEY_ADDRESS");
         
         vm.startBroadcast(deployerPrivateKey);
         
-        BetleyNativeV2 betley = BetleyNativeV2(payable(contractAddress));
+        Betley betley = Betley(payable(contractAddress));
         
         // Enable creator fees: 2% (200 basis points)
         betley.updateFeeCreator(true, 200);
@@ -111,11 +114,11 @@ contract EnableFees is Script {
 contract DisableFees is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address contractAddress = vm.envAddress("BETLEY_V2_ADDRESS");
+        address contractAddress = vm.envAddress("BETLEY_ADDRESS");
         
         vm.startBroadcast(deployerPrivateKey);
         
-        BetleyNativeV2 betley = BetleyNativeV2(payable(contractAddress));
+        Betley betley = Betley(payable(contractAddress));
         
         // Use emergency disable function
         betley.emergencyDisableFees();
@@ -133,11 +136,11 @@ contract DisableFees is Script {
 contract ClaimFees is Script {
     function run() external {
         uint256 recipientPrivateKey = vm.envUint("PLATFORM_RECIPIENT_PRIVATE_KEY");
-        address contractAddress = vm.envAddress("BETLEY_V2_ADDRESS");
+        address contractAddress = vm.envAddress("BETLEY_ADDRESS");
         
         vm.startBroadcast(recipientPrivateKey);
         
-        BetleyNativeV2 betley = BetleyNativeV2(payable(contractAddress));
+        Betley betley = Betley(payable(contractAddress));
         address recipient = vm.addr(recipientPrivateKey);
         
         // Check pending fees before claiming
@@ -158,12 +161,12 @@ contract ClaimFees is Script {
 contract UpdateRecipient is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address contractAddress = vm.envAddress("BETLEY_V2_ADDRESS");
+        address contractAddress = vm.envAddress("BETLEY_ADDRESS");
         address newRecipient = vm.envAddress("NEW_PLATFORM_RECIPIENT");
         
         vm.startBroadcast(deployerPrivateKey);
         
-        BetleyNativeV2 betley = BetleyNativeV2(payable(contractAddress));
+        Betley betley = Betley(payable(contractAddress));
         
         address oldRecipient = betley.platformFeeRecipient();
         betley.updatePlatformFeeRecipient(newRecipient);
@@ -179,11 +182,11 @@ contract UpdateRecipient is Script {
 contract TestFees is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address contractAddress = vm.envAddress("BETLEY_V2_ADDRESS");
+        address contractAddress = vm.envAddress("BETLEY_ADDRESS");
         
         vm.startBroadcast(deployerPrivateKey);
         
-        BetleyNativeV2 betley = BetleyNativeV2(payable(contractAddress));
+        Betley betley = Betley(payable(contractAddress));
         
         // Enable minimal fees for testing
         betley.updateFeeCreator(true, 200);  // 2%
