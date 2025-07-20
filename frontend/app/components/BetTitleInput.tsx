@@ -1,3 +1,4 @@
+// frontend/app/components/BetTitleInput.tsx - Updated with loading spinner
 'use client'
 
 import { useState } from 'react'
@@ -7,12 +8,14 @@ interface BetTitleInputProps {
   onChange: (value: string) => void
   onSubmit: () => void
   isConnected: boolean
+  isLoading?: boolean // Add loading prop
 }
 
 export default function BetTitleInput({ 
   value, 
   onChange, 
-  onSubmit, 
+  onSubmit,
+  isLoading = false // Default to false
 }: BetTitleInputProps) {
   const [isFocused, setIsFocused] = useState(false)
   
@@ -29,7 +32,13 @@ export default function BetTitleInput({
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && hasValue) {
+    if (e.key === 'Enter' && hasValue && !isLoading) {
+      onSubmit()
+    }
+  }
+
+  const handleSubmit = () => {
+    if (hasValue && !isLoading) {
       onSubmit()
     }
   }
@@ -46,11 +55,12 @@ export default function BetTitleInput({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder={isFocused ? "Will Elvis be late?" : "What are you betting on today?"}
+          disabled={isLoading}
           className={`w-full px-6 py-4 pr-20 text-lg rounded-2xl bg-gray-800/65 text-white transition-all duration-300 focus:outline-none backdrop-blur-sm ${
             isFocused || hasValue 
               ? 'bg-gray-800/80 placeholder-gray-500' 
               : 'hover:border-green-500/50 placeholder-gray-400'
-          }`}
+          } ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
           style={{
             boxShadow: isFocused || hasValue 
               ? '0 0 30px rgba(34, 197, 94, 0.3), 0 0 60px rgba(34, 197, 94, 0.2), 0 0 100px rgba(34, 197, 94, 0.1)' 
@@ -62,17 +72,20 @@ export default function BetTitleInput({
         {/* Animated Button/Arrow */}
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
           <button
-            onClick={onSubmit}
-            disabled={!hasValue}
+            onClick={handleSubmit}
+            disabled={!hasValue || isLoading}
             className={`flex items-center justify-center rounded-xl font-semibold transition-all duration-300 transform ${
-              hasValue
+              hasValue && !isLoading
                 ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white cursor-pointer hover:scale-105 shadow-lg shadow-green-500/25'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             } ${
               hasValue ? 'w-18 h-12' : 'w-30 h-12 px-4'
             }`}
           >
-            {hasValue ? (
+            {isLoading ? (
+              // Loading spinner
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : hasValue ? (
               // Arrow icon
               <svg 
                 className="w-6 h-6 transform transition-transform duration-300" 

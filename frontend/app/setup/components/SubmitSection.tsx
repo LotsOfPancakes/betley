@@ -44,19 +44,6 @@ export default function SubmitSection({
         </div>
       )}
 
-      {/* Status Messages - Remove success message since it's now in button
-      {state.isCreating && (
-        <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-xl">
-          <p className="text-yellow-300 text-sm">⏳ Waiting for wallet confirmation...</p>
-        </div>
-      )}
-
-      {state.isConfirming && (
-        <div className="p-4 bg-blue-900/20 border border-blue-600 rounded-xl">
-          <p className="text-blue-300 text-sm">⏳ Creating bet... Please wait.</p>
-        </div>
-      )} */}
-
       {/* Submit Button */}
       <button
         onClick={onSubmit}
@@ -70,16 +57,10 @@ export default function SubmitSection({
         {getButtonText()}
       </button>
 
-      {/* Fee Notice text */}
+      {/* Misc. Bet info text */}
       <div className="text-sm text-gray-400">
-        <p>• As creator, you earn <span className="text-green-300">2%</span> of the losing option upon resolution</p>
-      </div>
-
-      {/* Privacy Info */}
-      <div className="bg-gray-700/50 border border-gray-600 rounded-xl p-3">
-        <p className="text-gray-300 text-xs">
-          💡 <strong>Privacy Note:</strong> Your bet will have a unique random ID. Only share the direct link with people you want to participate.
-        </p>
+        <p>• 🧙🏼 As creator, you earn <span className="text-green-300">1%</span> of the losing option upon resolution</p>
+        <p>• 🔐 Privacy Note: Your bet will have a unique random ID. Only share the direct link with people you want to participate.</p>
       </div>
     </div>
   )

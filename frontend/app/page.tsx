@@ -1,8 +1,8 @@
+// frontend/app/page.tsx - Complete HomePage with loading state
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-// import { ConnectKitButton } from 'connectkit'
 import { useAccount } from 'wagmi'
 import BetTitleInput from './components/BetTitleInput'
 
@@ -10,13 +10,21 @@ export default function HomePage() {
   const router = useRouter()
   const { address } = useAccount()
   const [betTitle, setBetTitle] = useState('')
+  const [isNavigating, setIsNavigating] = useState(false)
 
-  const handleCreateBet = () => {
-    if (!betTitle.trim()) return
+  const handleCreateBet = async () => {
+    if (!betTitle.trim() || isNavigating) return
     
-    // Navigate to setup page with title as URL parameter
-    const encodedTitle = encodeURIComponent(betTitle.trim())
-    router.push(`/setup?title=${encodedTitle}`)
+    setIsNavigating(true)
+    
+    try {
+      // Navigate to setup page with title as URL parameter
+      const encodedTitle = encodeURIComponent(betTitle.trim())
+      await router.push(`/setup?title=${encodedTitle}`)
+    } catch (error) {
+      // Handle navigation error
+      setIsNavigating(false)
+    }
   }
 
   return (
@@ -51,19 +59,20 @@ export default function HomePage() {
                 <span className="text-white"> Simplified</span>
               </h1>
               
-              {/* Bet Title Input*/}             
-                  <BetTitleInput
-                    value={betTitle}
-                    onChange={setBetTitle}
-                    onSubmit={handleCreateBet}
-                    isConnected={!!address}
-                  />
+              {/* Bet Title Input with loading state */}             
+              <BetTitleInput
+                value={betTitle}
+                onChange={setBetTitle}
+                onSubmit={handleCreateBet}
+                isConnected={!!address}
+                isLoading={isNavigating}
+              />
             </div>
           </div>
         </div>
         
         {/* How It Works Section - Bento Grid */}
-        <div className="py-1">
+        <div className="py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-4xl font-bold text-center mb-12">
               <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
@@ -73,13 +82,13 @@ export default function HomePage() {
             
             <div className="grid md:grid-cols-3 gap-8">
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <span className="text-2xl font-bold text-black">1</span>
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-4">Create a Bet</h3>
                   <p className="text-gray-300 leading-relaxed">
-                    Define your bet terms & duration.
+                    Define your bet terms & betting duration.
                     <br /><br />
                     Anyone can create a bet on any topic.
                   </p>
@@ -87,13 +96,13 @@ export default function HomePage() {
               </div>
 
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <span className="text-2xl font-bold text-black">2</span>
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-4">Place Bets</h3>
                   <p className="text-gray-300 leading-relaxed">
-                    Bet on your preferred outcome.
+                    Bet with HYPE on your preferred outcome.
                     <br /><br />
                     Betley&apos;s contracts ensure all funds are held securely until resolution.
                   </p>
@@ -101,7 +110,7 @@ export default function HomePage() {
               </div>
 
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <span className="text-2xl font-bold text-black">3</span>
                   </div>
@@ -125,7 +134,7 @@ export default function HomePage() {
               </h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
                   <div className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-3">
                     Trustless
                   </div>
@@ -134,7 +143,7 @@ export default function HomePage() {
               </div>
               
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
                   <div className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-3">
                     Flexible
                   </div>
@@ -143,7 +152,7 @@ export default function HomePage() {
               </div>
               
               <div className="group">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 text-center">
                   <div className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-3">
                     Pari-mutuel
                   </div>
@@ -157,7 +166,6 @@ export default function HomePage() {
         {/* CTA Section - Enhanced Bento Style */}
         <div className="py-20">
           <div className="max-w-4xl mx-auto px-4">
-            {/* <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-12 hover:border-green-400/40 transition-all duration-500 text-center"> */}
            <div className="text-center">
               <h2 className="text-4xl font-bold mb-6">
                 <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
@@ -170,6 +178,7 @@ export default function HomePage() {
                   onChange={setBetTitle}
                   onSubmit={handleCreateBet}
                   isConnected={!!address}
+                  isLoading={isNavigating}
                 />
             </div>
           </div>
@@ -178,21 +187,3 @@ export default function HomePage() {
     </div>
   )
 }
-
-// {!address ? (
-//                 <div className="flex justify-center">
-//                   <div className="transform hover:scale-105 transition-transform">
-//                     <ConnectKitButton />
-//                   </div>
-//                 </div>
-//               ) : (
-//                 <button
-//                   onClick={() => router.push('/setup')}
-//                   className="group bg-gradient-to-r from-green-500 to-emerald-500 px-10 py-4 rounded-2xl font-bold text-lg hover:from-green-400 hover:to-emerald-400 transition-all duration-300 transform hover:scale-105 shadow-xl shadow-green-500/30 flex items-center gap-3 mx-auto"
-//                 >
-//                   Create a Bet
-//                   <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-//                   </svg>
-//                 </button>
-//               )}

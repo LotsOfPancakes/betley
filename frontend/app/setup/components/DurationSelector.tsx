@@ -33,13 +33,13 @@ export default function DurationSelector({ duration, onChange, error }: Duration
 
   const totalMinutes = duration.hours * 60 + duration.minutes
   const isValid = totalMinutes > 0
-  const isReasonable = totalMinutes >= 5 // At least 5 min
+  const isReasonable = totalMinutes >= 1 // At least 1 min
   const isTooLong = totalMinutes > 7 * 24 * 60 // More than 1 week
 
   const getBorderColor = () => {
     if (error) return 'border-red-500 focus:border-red-500'
     if (isValid && isReasonable && !isTooLong) return 'border-green-500/50 focus:border-green-400'
-    if (totalMinutes > 0 && totalMinutes < 5) return 'border-yellow-500 focus:border-yellow-500'
+    if (totalMinutes > 0 && totalMinutes < 1) return 'border-yellow-500 focus:border-yellow-500'
     if (totalMinutes === 0) return 'border-yellow-500 focus:border-yellow-500'
     return 'border-green-500/30 focus:border-green-400'
   }

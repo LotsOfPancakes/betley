@@ -1,3 +1,4 @@
+// frontend/app/setup/components/OptionsManager.tsx - Fixed icon collision
 'use client'
 
 interface OptionsManagerProps {
@@ -37,11 +38,8 @@ export default function OptionsManager({
     }
   }
 
-  // Calculate validation states - removed enough/dupes/toolong
+  // Calculate validation states
   const filledOptions = options.filter(opt => opt.trim().length > 0)
-  // const hasEnoughOptions = filledOptions.length >= minOptions
-  // const hasDuplicates = new Set(filledOptions.map(opt => opt.trim().toLowerCase())).size !== filledOptions.length
-  // const tooLongOptions = filledOptions.filter(opt => opt.length > maxLength)
   
   // Check for duplicate detection per option
   const getDuplicateStatus = (index: number, value: string) => {
@@ -79,18 +77,18 @@ export default function OptionsManager({
                 <span className="text-white font-bold text-sm">{index + 1}</span>
               </div>
               
-              <div className="flex-1">
+              <div className="flex-1 relative">
                 <input
                   type="text"
                   value={option}
                   onChange={(e) => handleOptionChange(index, e.target.value)}
                   placeholder={`Option ${index + 1} (e.g., "Yes", "No")`}
-                  className={`w-full px-4 py-3 pr-12 rounded-xl bg-gray-800/60 text-white placeholder-gray-400 focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getOptionBorderColor(index, option)}`}
+                  className={`w-full px-4 py-3 ${options.length > minOptions ? 'pr-20' : 'pr-12'} rounded-xl bg-gray-800/60 text-white placeholder-gray-400 focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getOptionBorderColor(index, option)}`}
                   maxLength={maxLength}
                 />
                 
-                {/* Status indicators */}
-                <div className="absolute right-4 top-3">
+                {/* Status indicators - positioned to avoid collision */}
+                <div className={`absolute ${options.length > minOptions ? 'right-12' : 'right-4'} top-3`}>
                   {option.trim().length > 0 && getDuplicateStatus(index, option) !== 'duplicate' && option.length <= maxLength && (
                     <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,19 +107,19 @@ export default function OptionsManager({
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Remove button */}
-              {options.length > minOptions && (
-                <button
-                  onClick={() => removeOption(index)}
-                  className="flex-shrink-0 w-8 h-8 mt-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+                {/* Remove button - positioned at the far right */}
+                {options.length > minOptions && (
+                  <button
+                    onClick={() => removeOption(index)}
+                    className="absolute right-2 top-2 w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Individual option validation messages */}
