@@ -34,6 +34,15 @@ export default function SubmitSection({
     return false
   }
 
+  const getButtonStyle = () => {
+    // Only show green when form is valid and ready to proceed
+    if (getButtonDisabled()) {
+      return 'bg-gray-600 cursor-not-allowed text-gray-400'
+    }
+    // Green only when form is valid
+    return 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white hover:scale-105 shadow-lg shadow-green-500/20'
+  }
+
   return (
     <div className="space-y-4">
       {/* Error Message */}
@@ -57,11 +66,7 @@ export default function SubmitSection({
           <button
             onClick={isConnected ? onSubmit : show}
             disabled={getButtonDisabled()}
-            className={`w-full py-3 rounded-2xl font-semibold transition-all duration-300 ${
-              getButtonDisabled()
-                ? 'bg-gray-600 cursor-not-allowed text-gray-400'
-                : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white hover:scale-105 shadow-lg shadow-green-500/20'
-            }`}
+            className={`w-full py-3 rounded-2xl font-semibold transition-all duration-300 ${getButtonStyle()}`}
           >
             {getButtonText()}
           </button>
