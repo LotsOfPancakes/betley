@@ -1,4 +1,4 @@
-// frontend/app/bets/page.tsx
+// frontend/app/bets/page.tsx - Updated with modern background
 'use client'
 
 import { useRouter } from 'next/navigation'
@@ -23,57 +23,99 @@ export default function MyBetsPage() {
   // Show wallet connection prompt if not connected
   if (!address) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-5xl mb-4">🎲</div>
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
+        {/* Animated background grid */}
+        <div className="absolute inset-0 opacity-[0.2]">
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '40px 40px'
+            }}
+          />
+        </div>
+
+        {/* Floating gradient orbs */}
+        <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/15 to-lime-400/15 rounded-full blur-3xl animate-pulse delay-1000" />
+        
+        <div className="text-center relative z-10">
+          <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
+            <div className="text-5xl mb-4">🎲</div>
             <h1 className="text-2xl font-bold text-white mb-4">Looking for your Bets?</h1>
-              <div className="flex justify-center mb-4"> 
-                <ConnectKitButton />
-              </div>
+            <div className="flex justify-center mb-4"> 
+              <ConnectKitButton />
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-white">My Bets</h1>
-          <button
-            onClick={() => router.push('/setup')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
-            Create New Bet
-          </button>
+    <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
+      {/* Animated background grid */}
+      <div className="absolute inset-0 opacity-[0.2]">
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px'
+          }}
+        />
+      </div>
+
+      {/* Floating gradient orbs */}
+      <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/15 to-lime-400/15 rounded-full blur-3xl animate-pulse delay-1000" />
+      
+      <div className="relative z-10 py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-white">My Bets</h1>
+            <button
+              onClick={() => router.push('/setup')}
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30"
+            >
+              Create New Bet
+            </button>
+          </div>
+
+          {/* Filter tabs */}
+          <BetFilters currentFilter={filter} onFilterChange={setFilter} />
+
+          {/* Error state */}
+          {error && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-red-900/20 to-red-800/20 border border-red-500/30 rounded-2xl backdrop-blur-sm">
+              <p className="text-red-300">{error}</p>
+            </div>
+          )}
+
+          {/* Loading state */}
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 max-w-md mx-auto">
+                <div className="w-8 h-8 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-white">Loading your bets...</p>
+              </div>
+            </div>
+          ) : filteredBets.length === 0 ? (
+            <EmptyState filter={filter} />
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredBets.map((bet) => (
+                <BetCard key={bet.id} bet={bet} decimals={decimals || 18} />
+              ))}
+            </div>
+          )}
         </div>
-
-        {/* Filter tabs */}
-        <BetFilters currentFilter={filter} onFilterChange={setFilter} />
-
-        {/* Error state */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-600 rounded-lg">
-            <p className="text-red-300">{error}</p>
-          </div>
-        )}
-
-        {/* Loading state */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-white">Loading your bets...</p>
-          </div>
-        ) : filteredBets.length === 0 ? (
-          <EmptyState filter={filter} />
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBets.map((bet) => (
-              <BetCard key={bet.id} bet={bet} decimals={decimals || 18} />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   )
