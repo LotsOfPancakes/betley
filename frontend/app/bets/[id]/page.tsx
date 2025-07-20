@@ -217,60 +217,6 @@ export default function BetPage() {
 
             {/* Main content */}
             <div className="space-y-6">
-              {/* Bet header with bento styling */}
-              <ComponentErrorBoundary>
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/30 transition-all duration-500">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                    <div className="flex-1">
-                      <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
-                        {name || 'Loading...'}
-                      </h1>
-                      
-                      <div className="flex flex-wrap gap-3 text-sm">
-                        <span className={`px-3 py-1 rounded-full font-medium ${
-                          resolved 
-                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                            : isActive 
-                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                              : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                        }`}>
-                          {resolved ? 'Resolved' : isActive ? 'Active' : 'Pending Resolution'}
-                        </span>
-                        
-                        {creator && (
-                          <span className="px-3 py-1 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
-                            Creator: {creator.slice(0, 6)}...{creator.slice(-4)}
-                          </span>
-                        )}
-                        
-                        {isCreator && (
-                          <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                            Your bet
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Time display */}
-                    {!resolved && (
-                      <div className="text-right">
-                        <p className="text-sm text-gray-400 mb-1">
-                          {isActive ? 'Time left' : 'Awaiting resolution'}
-                        </p>
-                        <p className="text-xl font-bold text-white">
-                          {isActive 
-                            ? `${Math.floor(timeLeft / 3600)}h ${Math.floor((timeLeft % 3600) / 60)}m`
-                            : resolutionDeadlinePassed 
-                              ? 'Deadline passed'
-                              : `${Math.floor(resolutionTimeLeft / 3600)}h ${Math.floor((resolutionTimeLeft % 3600) / 60)}m to resolve`
-                          }
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </ComponentErrorBoundary>
-
               {/* Main betting interface */}
               <ComponentErrorBoundary>
                 <UnifiedBettingInterface

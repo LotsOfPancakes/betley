@@ -308,7 +308,7 @@ export function UnifiedBettingInterface({
           {/* Amount Input */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-3">
-              {hasExistingBet ? 'Additional bet amount:' : 'Bet amount:'}
+              {hasExistingBet ? 'Additional bet:' : 'Bet amount:'}
             </label>
             <div className="relative">
               <input
