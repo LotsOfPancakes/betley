@@ -1,5 +1,6 @@
 'use client'
 
+import { ConnectKitButton } from 'connectkit'
 import { BetCreationState } from '../types/setup.types'
 
 interface SubmitSectionProps {
@@ -18,14 +19,20 @@ export default function SubmitSection({
   onClearError
 }: SubmitSectionProps) {
   const getButtonText = () => {
-    if (!isConnected) return 'Connect Wallet First'
     if (state.isCreating) return 'Confirming...'
     if (state.isConfirming) return 'Creating Private Bet...'
     if (state.isSuccess) return '✅ Bet Created Successfully! Redirecting...'
+    if (!isConnected) return 'Connect Wallet & Create Bet'
     return 'Create Private Bet'
   }
 
-  const isDisabled = !isConnected || !isValid || state.isCreating || state.isConfirming || state.isSuccess
+  const getButtonDisabled = () => {
+    // Form must be valid to proceed
+    if (!isValid) return true
+    // Disable during creation process
+    if (state.isCreating || state.isConfirming || state.isSuccess) return true
+    return false
+  }
 
   return (
     <div className="space-y-4">
@@ -44,23 +51,27 @@ export default function SubmitSection({
         </div>
       )}
 
-      {/* Submit Button */}
-      <button
-        onClick={onSubmit}
-        disabled={isDisabled}
-        className={`w-full py-3 rounded-2xl font-semibold transition-all duration-300 ${
-          isDisabled
-            ? 'bg-gray-600 cursor-not-allowed text-gray-400'
-            : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white hover:scale-105 shadow-lg shadow-green-500/20'
-        }`}
-      >
-        {getButtonText()}
-      </button>
+      {/* Submit Button - ConnectKit Integration */}
+      <ConnectKitButton.Custom>
+        {({ show }) => (
+          <button
+            onClick={isConnected ? onSubmit : show}
+            disabled={getButtonDisabled()}
+            className={`w-full py-3 rounded-2xl font-semibold transition-all duration-300 ${
+              getButtonDisabled()
+                ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+                : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white hover:scale-105 shadow-lg shadow-green-500/20'
+            }`}
+          >
+            {getButtonText()}
+          </button>
+        )}
+      </ConnectKitButton.Custom>
 
       {/* Misc. Bet info text */}
       <div className="text-sm text-gray-400">
         <p>• 🧙🏼 As creator, you earn <span className="text-green-300">1%</span> of the losing option upon resolution</p>
-        <p>• 🔐 Privacy Note: Your bet will have a unique random ID. Only share the direct link with people you want to participate.</p>
+        <p>• 🔐 Privacy: Your bet will have a unique random ID. Only share the direct link with people you want to participate.</p>
       </div>
     </div>
   )

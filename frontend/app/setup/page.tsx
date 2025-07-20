@@ -1,10 +1,9 @@
-// frontend/app/setup/page.tsx - Updated with modern background (corrected props)
+// frontend/app/setup/page.tsx - Updated with new user flow (form first, then connect)
 'use client'
 
 import { useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { ConnectKitButton } from 'connectkit'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBoundary'
 
@@ -100,63 +99,50 @@ function SetupPageContent() {
             <h1 className="text-3xl md:text-4xl font-bold text-white">Setup New Bet</h1>
           </div>
 
+          {/* Always show the form - no wallet check */}
           <div className="space-y-8">
-            {!address ? (
-              <div className="text-center py-12">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
-                  <div className="text-5xl mb-4">📝</div>
-                  <h2 className="text-2xl font-bold text-white mb-4">Creating a Bet?</h2>
-                  <div className="flex justify-center">
-                    <ConnectKitButton />
-                  </div>
-                </div>
+            {/* Bet Name Input */}
+            <ComponentErrorBoundary>
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+                <BetNameInput
+                  value={formData.name}
+                  onChange={updateName}
+                />
               </div>
-            ) : (
-              <>
-                {/* Bet Name Input - PROTECTED */}
-                <ComponentErrorBoundary>
-                  <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
-                    <BetNameInput
-                      value={formData.name}
-                      onChange={updateName}
-                    />
-                  </div>
-                </ComponentErrorBoundary>
+            </ComponentErrorBoundary>
 
-                {/* Options Manager - PROTECTED */}
-                <ComponentErrorBoundary>
-                  <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
-                    <OptionsManager
-                      options={formData.options}
-                      onChange={updateOptions}
-                    />
-                  </div>
-                </ComponentErrorBoundary>
+            {/* Options Manager */}
+            <ComponentErrorBoundary>
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+                <OptionsManager
+                  options={formData.options}
+                  onChange={updateOptions}
+                />
+              </div>
+            </ComponentErrorBoundary>
 
-                {/* Duration Selector - PROTECTED */}
-                <ComponentErrorBoundary>
-                  <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
-                    <DurationSelector
-                      duration={formData.duration}
-                      onChange={updateDuration}                  
-                    />
-                  </div>
-                </ComponentErrorBoundary>
+            {/* Duration Selector */}
+            <ComponentErrorBoundary>
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+                <DurationSelector
+                  duration={formData.duration}
+                  onChange={updateDuration}                  
+                />
+              </div>
+            </ComponentErrorBoundary>
 
-                {/* Submit Section - PROTECTED */}
-                <ComponentErrorBoundary>
-                  <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
-                    <SubmitSection
-                      isValid={isValid}
-                      isConnected={!!address}
-                      state={creationState}
-                      onSubmit={handleSubmit}
-                      onClearError={clearError}
-                    />
-                  </div>
-                </ComponentErrorBoundary>
-              </>
-            )}
+            {/* Submit Section - Updated to handle new flow */}
+            <ComponentErrorBoundary>
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+                <SubmitSection
+                  isValid={isValid}
+                  isConnected={!!address}
+                  state={creationState}
+                  onSubmit={handleSubmit}
+                  onClearError={clearError}
+                />
+              </div>
+            </ComponentErrorBoundary>
           </div>
         </div>
       </div>

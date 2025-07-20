@@ -246,7 +246,7 @@ export function UnifiedBettingInterface({
                   isWinningOption
                     ? 'bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-green-300 shadow-xl shadow-green-500/20'
                     : isSelected
-                    ? 'bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-gray-300 shadow-lg shadow-green-500/10 hover:scale-105'
+                    ? 'bg-gradient-to-br from-green-700/20 to-emerald-700/50 text-gray-300 shadow-lg shadow-green-500/10 hover:scale-105'
                     : isUserCurrentOption
                     ? 'bg-gradient-to-br from-green-900/25 to-emerald-900/25 text-green-300'
                     : isDisabled
@@ -290,7 +290,7 @@ export function UnifiedBettingInterface({
                       isWinningOption
                         ? 'bg-gradient-to-r from-green-500 to-emerald-500'
                         : isSelected || isUserCurrentOption
-                        ? 'bg-gradient-to-r from-gray-500/60 to-gray-500/60' 
+                        ? 'bg-gradient-to-r from-green-500/60 to-emerald-500/60' 
                         : 'bg-gradient-to-r from-gray-500/50 to-gray-600/50'
                     }`}
                     style={{ width: `${Math.max(percentage, 2)}%` }}
