@@ -1,4 +1,4 @@
-// frontend/lib/betIdMapping.ts - CLEANED VERSION: Debug logs removed
+// frontend/lib/betIdMapping.ts - Updated to use database instead of localStorage
 'use client'
 
 export interface BetMapping {
@@ -9,181 +9,93 @@ export interface BetMapping {
   createdAt: number
 }
 
-interface BetDetailsFromContract {
-  name: string
-  creator: string
-  [key: string]: unknown
-}
-
 export class UnifiedBetMapper {
-  private static STORAGE_KEY = 'betley_unified_mappings'
-
-  /**
-   * Generate collision-resistant random ID
-   */
-  static generateRandomId(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    let result = ''
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return result
-  }
-
-  /**
-   * Get all mappings from storage
-   */
-  static getAllMappings(): BetMapping[] {
-    if (typeof window === 'undefined') return []
-    
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY)
-      return stored ? JSON.parse(stored) : []
-    } catch (error) {
-      console.error('Error reading bet mappings:', error)
-      return []
-    }
-  }
-
-  /**
-   * Save mappings to storage
-   */
-  private static saveMappings(mappings: BetMapping[]): void {
-    if (typeof window === 'undefined') return
-    
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(mappings))
-    } catch (error) {
-      console.error('Error saving bet mappings:', error)
-    }
-  }
-
   /**
    * Create new mapping for a bet
    */
-  static createMapping(numericId: number, name: string, creator: string): string {
-    const mappings = this.getAllMappings()
-    
-    // Check if mapping already exists for this numeric ID
-    const existingMapping = mappings.find(m => m.numericId === numericId)
-    if (existingMapping) {
-      return existingMapping.randomId
-    }
-
-    // Generate unique random ID
-    let randomId: string
-    let attempts = 0
-    do {
-      randomId = this.generateRandomId()
-      attempts++
-      if (attempts > 100) {
-        throw new Error('Unable to generate unique bet ID after 100 attempts')
+  static async createMapping(numericId: number, name: string, creator: string): Promise<string> {
+    try {
+      const response = await fetch('/api/bets/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          numericId, 
+          creatorAddress: creator, 
+          betName: name 
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to create mapping: ${response.status}`)
       }
-    } while (mappings.some(m => m.randomId === randomId))
-
-    // Create new mapping
-    const newMapping: BetMapping = {
-      randomId,
-      numericId,
-      name,
-      creator,
-      createdAt: Date.now()
+      
+      const { randomId } = await response.json()
+      return randomId
+    } catch (error) {
+      console.error('Error creating bet mapping:', error)
+      throw error
     }
-
-    mappings.push(newMapping)
-    this.saveMappings(mappings)
-    
-    return randomId
   }
 
   /**
    * Get numeric ID from random ID
    */
-  static getNumericId(randomId: string): number | null {
-    const mappings = this.getAllMappings()
-    const mapping = mappings.find(m => m.randomId === randomId)
-    return mapping ? mapping.numericId : null
-  }
-
-  /**
-   * Get random ID from numeric ID
-   */
-  static getRandomId(numericId: number): string | undefined {
-    const mappings = this.getAllMappings()
-    const mapping = mappings.find(m => m.numericId === numericId)
-    return mapping ? mapping.randomId : undefined
-  }
-
-  /**
-   * Get full mapping details
-   */
-  static getMapping(randomId: string): BetMapping | null {
-    const mappings = this.getAllMappings()
-    return mappings.find(m => m.randomId === randomId) || null
+  static async getNumericId(randomId: string): Promise<number | null> {
+    try {
+      const response = await fetch(`/api/bets/${randomId}`)
+      
+      if (!response.ok) {
+        return null
+      }
+      
+      const { numericId } = await response.json()
+      return numericId
+    } catch (error) {
+      console.error('Error fetching bet mapping:', error)
+      return null
+    }
   }
 
   /**
    * Check if random ID exists
    */
-  static isValidRandomId(randomId: string): boolean {
-    return this.getNumericId(randomId) !== null
+  static async isValidRandomId(randomId: string): Promise<boolean> {
+    const numericId = await this.getNumericId(randomId)
+    return numericId !== null
   }
 
+  // Keep these legacy methods for backward compatibility during transition
   /**
-   * Auto-discover and create mappings for existing bets (useful for recovery)
+   * @deprecated Use async methods instead
    */
-  static async discoverMissingMappings(
-    betCounter: number, 
-    getBetDetails: (id: number) => Promise<BetDetailsFromContract | null>
-  ): Promise<number> {
-    const mappings = this.getAllMappings()
-    const existingNumericIds = mappings.map(m => m.numericId)
-    let discovered = 0
-
-    for (let i = 0; i < betCounter; i++) {
-      if (!existingNumericIds.includes(i)) {
-        try {
-          const details = await getBetDetails(i)
-          if (details && details.name && details.creator) {
-            this.createMapping(i, details.name, details.creator as string)
-            discovered++
-          }
-        } catch (error) {
-          console.error(`Error discovering bet ${i}:`, error)
-        }
-      }
-    }
-
-    return discovered
+  static getAllMappings(): BetMapping[] {
+    console.warn('getAllMappings is deprecated - use database methods')
+    return []
   }
 
   /**
-   * Clear all mappings (for fresh start)
+   * @deprecated Use async methods instead  
+   */
+  static getRandomId(_numericId: number): string | undefined {
+    console.warn('getRandomId is deprecated - mappings are now one-way only')
+    return undefined
+  }
+
+  /**
+   * @deprecated Use async methods instead
+   */
+  static getMapping(_randomId: string): BetMapping | null {
+    console.warn('getMapping is deprecated - use database methods')
+    return null
+  }
+
+  /**
+   * @deprecated No longer needed with database
    */
   static clearAllMappings(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(this.STORAGE_KEY)
-    }
-  }
-
-  /**
-   * Get storage statistics
-   */
-  static getStats(): { totalMappings: number; oldestMapping: number | null; newestMapping: number | null } {
-    const mappings = this.getAllMappings()
-    
-    if (mappings.length === 0) {
-      return { totalMappings: 0, oldestMapping: null, newestMapping: null }
-    }
-
-    const timestamps = mappings.map(m => m.createdAt)
-    return {
-      totalMappings: mappings.length,
-      oldestMapping: Math.min(...timestamps),
-      newestMapping: Math.max(...timestamps)
-    }
+    console.warn('clearAllMappings is deprecated - mappings are in database')
   }
 }
 
-// Export convenient aliases
+// Export convenient alias
 export const BetIdMapper = UnifiedBetMapper

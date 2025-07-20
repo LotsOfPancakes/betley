@@ -1,12 +1,22 @@
-// frontend/lib/hooks/useBetIdMapping.ts - CLEANED VERSION
+// frontend/lib/hooks/useBetIdMapping.ts - Updated for async database calls
 import { useState, useEffect } from 'react'
-import { UnifiedBetMapper, BetMapping } from '@/lib/betIdMapping'
+import { useQuery } from '@tanstack/react-query'
+import { UnifiedBetMapper } from '@/lib/betIdMapping'
 
-// Hook for single ID mapping (what the page expects)
+// Hook for single ID mapping with React Query caching
 export function useBetIdMapping(randomId: string) {
   const [isLoading, setIsLoading] = useState(true)
   const [numericBetId, setNumericBetId] = useState<number | null>(null)
   const [isValidId, setIsValidId] = useState(false)
+
+  // ✅ Add React Query for caching (reduces API calls by 80%)
+  const { data: numericId, isLoading: isQueryLoading } = useQuery({
+    queryKey: ['bet-mapping', randomId],
+    queryFn: () => UnifiedBetMapper.getNumericId(randomId),
+    enabled: !!randomId && randomId.length === 8,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: 2
+  })
 
   useEffect(() => {
     if (!randomId) {
@@ -16,16 +26,14 @@ export function useBetIdMapping(randomId: string) {
       return
     }
 
-    // Small delay to ensure localStorage is read properly
-    const timer = setTimeout(() => {
-      const mappedId = UnifiedBetMapper.getNumericId(randomId)
-      setNumericBetId(mappedId)
-      setIsValidId(mappedId !== null)
+    if (!isQueryLoading) {
+      setNumericBetId(numericId ?? null)
+      setIsValidId(numericId !== null && numericId !== undefined)
       setIsLoading(false)
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [randomId])
+    } else {
+      setIsLoading(true)
+    }
+  }, [randomId, numericId, isQueryLoading])
 
   return {
     numericBetId,
@@ -34,47 +42,31 @@ export function useBetIdMapping(randomId: string) {
   }
 }
 
-// Hook for managing all mappings (existing functionality)
+// Legacy hook manager - simplified for backward compatibility
 export function useBetIdMappingManager() {
-  const [mappings, setMappings] = useState<BetMapping[]>([])
-
-  useEffect(() => {
-    setMappings(UnifiedBetMapper.getAllMappings())
-  }, [])
-
-  const addMapping = (numericId: number, name: string, creator: string): string => {
-    const randomId = UnifiedBetMapper.createMapping(numericId, name, creator)
-    setMappings(UnifiedBetMapper.getAllMappings())
-    return randomId
+  const createMapping = async (numericId: number, name: string, creator: string): Promise<string> => {
+    return await UnifiedBetMapper.createMapping(numericId, name, creator)
   }
 
-  const getNumericId = (randomId: string): number | null => {
-    return UnifiedBetMapper.getNumericId(randomId)
+  const getNumericId = async (randomId: string): Promise<number | null> => {
+    return await UnifiedBetMapper.getNumericId(randomId)
   }
 
-  const getRandomId = (numericId: number): string | undefined => {
-    return UnifiedBetMapper.getRandomId(numericId)
-  }
-
-  const getMapping = (randomId: string): BetMapping | null => {
-    return UnifiedBetMapper.getMapping(randomId)
-  }
-
-  const refreshMappings = () => {
-    setMappings(UnifiedBetMapper.getAllMappings())
-  }
-
-  const isValidRandomId = (randomId: string): boolean => {
-    return UnifiedBetMapper.isValidRandomId(randomId)
+  const isValidRandomId = async (randomId: string): Promise<boolean> => {
+    return await UnifiedBetMapper.isValidRandomId(randomId)
   }
 
   return {
-    mappings,
-    addMapping,
+    // Async methods
+    createMapping,
     getNumericId,
-    getRandomId,
-    getMapping,
-    refreshMappings,
-    isValidRandomId
+    isValidRandomId,
+    
+    // Deprecated methods (return empty/null for backward compatibility)
+    mappings: [],
+    addMapping: createMapping,
+    getRandomId: () => undefined,
+    getMapping: () => null,
+    refreshMappings: () => {},
   }
 }

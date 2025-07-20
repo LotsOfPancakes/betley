@@ -1,4 +1,4 @@
-// frontend/app/setup/hooks/useBetCreation.ts - CLEANED VERSION: Debug logs removed
+// frontend/app/setup/hooks/useBetCreation.ts - Updated for async mapping creation
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -7,7 +7,6 @@ import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadCont
 import { useQueryClient } from '@tanstack/react-query'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
-import { ZERO_ADDRESS } from '@/lib/tokenUtils'
 import { UnifiedBetMapper } from '@/lib/betIdMapping'
 
 interface BetCreationState {
@@ -29,7 +28,7 @@ export function useBetCreation() {
   const { showError, showSuccess } = useNotification()
   
   // Get current bet counter for ID prediction
-  const { data: betCounter, refetch: refetchBetCounter } = useReadContract({
+  const { data: betCounter } = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'betCounter',
@@ -51,106 +50,86 @@ export function useBetCreation() {
     data: receipt 
   } = useWaitForTransactionReceipt({ hash: txHash })
 
-  // Handle successful transaction ONLY after receipt is confirmed
+  // ✅ CRITICAL: Handle successful transaction with async mapping creation
   useEffect(() => {
     if (isSuccess && receipt && betCounterWhenStarted !== null && address && lastBetName) {
-      // The bet ID is the counter value when we started
-      const newBetId = betCounterWhenStarted
+      const createMappingAndRedirect = async () => {
+        try {
+          setState(prev => ({ ...prev, isLoading: true }))
+          
+          // The bet ID is the counter value when we started
+          const newBetId = betCounterWhenStarted
+          
+          // ✅ AWAIT the mapping creation before redirect
+          const randomId = await UnifiedBetMapper.createMapping(
+            newBetId,
+            lastBetName,
+            address
+          )
+          
+          // Invalidate React Query cache
+          queryClient.invalidateQueries({ queryKey: ['betCounter'] })
+          queryClient.invalidateQueries({ queryKey: ['bet'] })
+          queryClient.invalidateQueries({ queryKey: ['bet-mapping'] })
+          
+          setState(prev => ({ ...prev, isLoading: false }))
+          showSuccess('Bet created successfully!')
+          
+          // Now safe to redirect
+          router.push(`/bets/${randomId}`)
+          
+        } catch (error) {
+          console.error('Error creating mapping:', error)
+          setState(prev => ({ 
+            ...prev, 
+            isLoading: false, 
+            error: 'Failed to create bet link. Please try again.' 
+          }))
+          showError('Failed to create bet link')
+        }
+      }
       
-      // Create the mapping AFTER transaction is confirmed
-      const randomId = UnifiedBetMapper.createMapping(
-        newBetId,
-        lastBetName,
-        address
-      )
-      
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['betCounter'] })
-      queryClient.invalidateQueries({ queryKey: ['bet'] })
-      
-      setState(prev => ({ ...prev, isLoading: false }))
-      showSuccess('Bet created successfully! Redirecting...', `Created Bet "${lastBetName}"`)
-
-      // Reset state
-      setBetCounterWhenStarted(null)
-      setLastBetName('')
-
-      // Redirect to the confirmed bet
-      setTimeout(() => {
-        router.push(`/bets/${randomId}`)
-      }, 3000)
+      createMappingAndRedirect()
     }
-  }, [isSuccess, receipt, betCounterWhenStarted, address, router, lastBetName, showSuccess, queryClient])
+  }, [isSuccess, receipt, betCounterWhenStarted, address, lastBetName, queryClient, showSuccess, showError, router])
 
-  const createBet = async (
-    name: string, 
-    options: string[], 
-    durationInSeconds: number
-  ) => {
+  const createBet = async (name: string, options: string[], durationInSeconds: number) => {
     if (!address) {
       setState(prev => ({ ...prev, error: 'Please connect your wallet' }))
       return
     }
 
-    if (durationInSeconds <= 0) {
-      setState(prev => ({ ...prev, error: 'Please set a valid duration' }))
-      return
-    }
-
     try {
-      setState(prev => ({ ...prev, error: null, isLoading: true }))
+      setState(prev => ({ ...prev, isLoading: true, error: null }))
+      
+      // Store bet details for mapping creation
       setLastBetName(name)
+      setBetCounterWhenStarted(Number(betCounter || 0))
       
-      // Refresh bet counter to get accurate next ID
-      await refetchBetCounter()
-      
-      // Store the current bet counter - this will be our bet's ID
-      if (betCounter !== undefined) {
-        setBetCounterWhenStarted(Number(betCounter))
-      } else {
-        throw new Error('Could not determine bet counter')
-      }
-      
-      const contractArgs: readonly [string, readonly string[], bigint, `0x${string}`] = [
-        name,
-        options as readonly string[],
-        BigInt(durationInSeconds),
-        ZERO_ADDRESS as `0x${string}` // Native HYPE token
-      ]
-      
+      // Create the bet
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'createBet',
-        args: contractArgs,
+        args: [name, options, BigInt(durationInSeconds), '0x0000000000000000000000000000000000000000'],
       })
       
-    } catch (err) {
-      console.error('❌ createBet error:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create bet'
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       
-      // Reset state on error
-      setBetCounterWhenStarted(null)
-      setLastBetName('')
-      
-      // Check for user cancellation
       if (errorMessage.toLowerCase().includes('user rejected') || 
           errorMessage.toLowerCase().includes('cancelled') ||
-          errorMessage.toLowerCase().includes('denied') ||
-          errorMessage.includes('4001')) {
-        setState(prev => ({ ...prev, isLoading: false, error: null }))
+          errorMessage.toLowerCase().includes('denied')) {
+        setState(prev => ({ ...prev, isLoading: false }))
         return
       }
       
-      showError(
-        'Please check your wallet connection and try again. Make sure you have sufficient funds for gas fees.',
-        'Failed to Create Bet'
-      )
       setState(prev => ({ 
         ...prev, 
-        isLoading: false,
-        error: errorMessage
+        isLoading: false, 
+        error: 'Failed to create bet. Please try again.' 
       }))
+      showError('Failed to create bet')
     }
   }
 
@@ -160,14 +139,10 @@ export function useBetCreation() {
 
   return {
     isCreating: isWritePending,
-    isConfirming: isConfirming,
-    isSuccess: isSuccess,
-    isLoading: state.isLoading || isWritePending || isConfirming,
+    isConfirming,
+    isSuccess,
     error: state.error,
     createBet,
     clearError,
-    betCounter,
-    txHash,
-    isWaitingForConfirmation: isWritePending === false && isConfirming === true
   }
 }
