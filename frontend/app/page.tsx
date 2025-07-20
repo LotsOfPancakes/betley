@@ -22,7 +22,7 @@ export default function HomePage() {
       const encodedTitle = encodeURIComponent(betTitle.trim())
       await router.push(`/setup?title=${encodedTitle}`)
     } catch (error) {
-      // Handle navigation error
+      console.error('Navigation failed:', error)
       setIsNavigating(false)
     }
   }
