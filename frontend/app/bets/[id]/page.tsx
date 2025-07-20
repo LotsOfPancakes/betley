@@ -1,11 +1,10 @@
-// frontend/app/bets/[id]/page.tsx - Updated with bento-style design
+// frontend/app/bets/[id]/page.tsx - Fixed TypeScript issues
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { useState } from 'react'
 import { useBetIdMapping } from '@/lib/hooks/useBetIdMapping'
-import { parseUnits } from 'viem'
 
 // Import only the components we actually use
 import { CreatorActions } from './components/CreatorActions'
@@ -17,6 +16,18 @@ import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBou
 // Import hooks
 import { useBetData } from './hooks/useBetData'
 import { useBetActions } from './hooks/useBetActions'
+
+// Type definition for bet details array - FIXED TypeScript typing
+type BetDetailsArray = readonly [
+  string,              // name
+  readonly string[],   // options  
+  `0x${string}`,      // creator
+  bigint,             // endTime
+  boolean,            // resolved
+  number,             // winningOption
+  readonly bigint[],  // totalAmounts
+  `0x${string}`       // token address
+]
 
 // Error state for invalid IDs with bento styling
 function InvalidBetError({ randomId }: { randomId: string }) {
@@ -97,15 +108,16 @@ export default function BetPage() {
     resolutionDeadlinePassed
   } = useBetData(isValidBetId && numericBetId !== null ? numericBetId.toString() : '999999', { useReactQuery: true })
 
-  // Extract bet data
-  const name = betDetails?.[0] as string
-  const options = betDetails?.[1] as readonly string[]
-  const creator = betDetails?.[2] as string
-  const endTime = betDetails?.[3] as bigint
-  const resolved = betDetails?.[4] as boolean
-  const winningOption = betDetails?.[5] as number
-  const totalAmounts = betDetails?.[6] as readonly bigint[]
-  const tokenAddress = betDetails?.[7] as string
+  // Extract bet data with proper typing - FIXED TypeScript issues
+  const typedBetDetails = betDetails as BetDetailsArray | undefined
+  const name = typedBetDetails?.[0]
+  const options = typedBetDetails?.[1]
+  const creator = typedBetDetails?.[2]
+  const endTime = typedBetDetails?.[3]
+  const resolved = typedBetDetails?.[4]
+  const winningOption = typedBetDetails?.[5]
+  const totalAmounts = typedBetDetails?.[6]
+  const tokenAddress = typedBetDetails?.[7]
 
   // Get bet actions
   const {
@@ -122,7 +134,7 @@ export default function BetPage() {
     isApproving,
   } = useBetActions(
     numericBetId ? numericBetId.toString() : '0',
-    tokenAddress
+    tokenAddress || ''
   )
   
   // Loading states with bento styling
@@ -156,30 +168,25 @@ export default function BetPage() {
   }
 
   // Invalid bet ID
-  if (!isValidBetId || !betDetails) {
+  if (!isValidBetId || !typedBetDetails) {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
   // Check if user is creator
   const isCreator = address && creator && address.toLowerCase() === creator.toLowerCase()
 
-  // Calculate time values
-  const endTimeMs = Number(endTime) * 1000
+  // Calculate time values - FIXED typing
+  const endTimeMs = endTime ? Number(endTime) * 1000 : 0
   const isActive = Date.now() < endTimeMs
 
-  // Check if user has existing bet
-  const hasExistingBet = userBets?.some(amount => amount > BigInt(0)) || false
-
-  // Smart approval logic - skip approval for native HYPE
-  const needsApproval = !isNativeBet && 
-    allowance !== undefined && 
-    parseUnits(betAmount || '0', decimals || 18) > allowance &&
-    parseFloat(betAmount || '0') > 0
+  // Check if user has existing bet - FIXED typing
+  const hasExistingBet = userBets && Array.isArray(userBets) ? 
+    userBets.some((bet: bigint) => bet > BigInt(0)) : false
 
   return (
     <PageErrorBoundary>
-      <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
-        {/* Animated background grid */}
+      <div className="min-h-screen bg-gray-950 relative overflow-hidden">
+        {/* Animated background */}
         <div 
           className="absolute inset-0 opacity-[0.02]"
           style={{
@@ -195,89 +202,153 @@ export default function BetPage() {
         <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-emerald-400/10 to-green-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
         
-        <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
-          
-          {/* Main Unified Betting Interface */}
-          <ComponentErrorBoundary>
-            <UnifiedBettingInterface
-              // Bet info props
-              name={name}
-              isActive={isActive}
-              resolved={resolved}
-              winningOption={winningOption}
-              timeLeft={timeLeft}
-              resolutionTimeLeft={resolutionTimeLeft}
-              resolutionDeadlinePassed={resolutionDeadlinePassed}
-              
-              // Betting interface props
-              address={address}
-              options={options}
-              userBets={userBets}
-              selectedOption={selectedOption}
-              setSelectedOption={setSelectedOption}
-              betAmount={betAmount}
-              setBetAmount={setBetAmount}
-              needsApproval={needsApproval}
-              isApproving={isApproving}
-              isPending={isPending}
-              handleApprove={handleApprove}
-              handlePlaceBet={handlePlaceBet}
-              totalAmounts={totalAmounts}
-              decimals={decimals}
-              hypeBalance={hypeBalance}
-              justPlacedBet={justPlacedBet}
-              hasExistingBet={hasExistingBet}
-              isNativeBet={isNativeBet}
-            />
-          </ComponentErrorBoundary>
+        <div className="relative z-10 py-8">
+          <div className="max-w-4xl mx-auto px-4">
+            {/* Back button */}
+            <button
+              onClick={() => window.history.back()}
+              className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+            >
+              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
 
-          {/* Creator Actions - Only show if user is creator and bet needs resolution */}
-          {isCreator && !isActive && !resolved && (
-            <div className="mt-6">
+            {/* Main content */}
+            <div className="space-y-6">
+              {/* Bet header with bento styling */}
               <ComponentErrorBoundary>
-                <CreatorActions
-                  address={address}
-                  creator={creator}
+                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/30 transition-all duration-500">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div className="flex-1">
+                      <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
+                        {name || 'Loading...'}
+                      </h1>
+                      
+                      <div className="flex flex-wrap gap-3 text-sm">
+                        <span className={`px-3 py-1 rounded-full font-medium ${
+                          resolved 
+                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                            : isActive 
+                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                              : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                        }`}>
+                          {resolved ? 'Resolved' : isActive ? 'Active' : 'Pending Resolution'}
+                        </span>
+                        
+                        {creator && (
+                          <span className="px-3 py-1 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+                            Creator: {creator.slice(0, 6)}...{creator.slice(-4)}
+                          </span>
+                        )}
+                        
+                        {isCreator && (
+                          <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                            Your bet
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Time display */}
+                    {!resolved && (
+                      <div className="text-right">
+                        <p className="text-sm text-gray-400 mb-1">
+                          {isActive ? 'Time left' : 'Awaiting resolution'}
+                        </p>
+                        <p className="text-xl font-bold text-white">
+                          {isActive 
+                            ? `${Math.floor(timeLeft / 3600)}h ${Math.floor((timeLeft % 3600) / 60)}m`
+                            : resolutionDeadlinePassed 
+                              ? 'Deadline passed'
+                              : `${Math.floor(resolutionTimeLeft / 3600)}h ${Math.floor((resolutionTimeLeft % 3600) / 60)}m to resolve`
+                          }
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </ComponentErrorBoundary>
+
+              {/* Main betting interface */}
+              <ComponentErrorBoundary>
+                <UnifiedBettingInterface
+                  name={name || ''}
+                  options={options as readonly string[] || []}
+                  userBets={userBets as readonly bigint[] || []}
+                  selectedOption={selectedOption}
+                  setSelectedOption={setSelectedOption}
+                  betAmount={betAmount}
+                  setBetAmount={setBetAmount}
+                  needsApproval={allowance ? (allowance as bigint) < BigInt(betAmount || '0') : false}
+                  isApproving={isApproving}
+                  isPending={isPending}
+                  handleApprove={handleApprove}
+                  handlePlaceBet={handlePlaceBet}
+                  totalAmounts={totalAmounts as readonly bigint[] || []}
+                  decimals={Number(decimals) || 18}
+                  hypeBalance={hypeBalance as bigint || BigInt(0)}
+                  justPlacedBet={justPlacedBet}
+                  hasExistingBet={hasExistingBet}
+                  isNativeBet={isNativeBet || false}
+                  isActive={isActive}
+                  resolved={resolved || false}
+                  winningOption={winningOption}
                   timeLeft={timeLeft}
-                  resolved={resolved}
-                  resolutionDeadlinePassed={resolutionDeadlinePassed}
                   resolutionTimeLeft={resolutionTimeLeft}
-                  onShowResolveModal={() => setShowResolveModal(true)}
+                  resolutionDeadlinePassed={resolutionDeadlinePassed}
+                  address={address}
+                />
+              </ComponentErrorBoundary>
+
+              {/* Creator Actions - Only show if user is creator and bet needs resolution */}
+              {isCreator && !isActive && !resolved && (
+                <ComponentErrorBoundary>
+                  <CreatorActions
+                    address={address}
+                    creator={creator || ''}
+                    timeLeft={timeLeft}
+                    resolved={resolved || false}
+                    resolutionDeadlinePassed={resolutionDeadlinePassed}
+                    resolutionTimeLeft={resolutionTimeLeft}
+                    onShowResolveModal={() => setShowResolveModal(true)}
+                  />
+                </ComponentErrorBoundary>
+              )}
+
+              {/* User Actions */}
+              <ComponentErrorBoundary>
+                <UserActions
+                  address={address}
+                  resolved={resolved || false}
+                  winningOption={winningOption}
+                  userBets={userBets as readonly bigint[] || []}
+                  totalAmounts={totalAmounts as readonly bigint[] || []}
+                  resolutionDeadlinePassed={resolutionDeadlinePassed}
+                  hasClaimed={Boolean(hasClaimed)}
+                  decimals={Number(decimals) || 18}
+                  isPending={isPending}
+                  handleClaimWinnings={handleClaimWinnings}
+                  betId={numericBetId?.toString() || '0'}
+                  isNativeBet={isNativeBet || false}
+                  creator={creator || ''}
                 />
               </ComponentErrorBoundary>
             </div>
-          )}
-
-          {/* User Actions */}
-          <ComponentErrorBoundary>
-            <UserActions
-              address={address}
-              resolved={resolved}
-              winningOption={winningOption}
-              userBets={userBets}
-              totalAmounts={totalAmounts}
-              resolutionDeadlinePassed={resolutionDeadlinePassed}
-              hasClaimed={hasClaimed}
-              decimals={decimals}
-              isPending={isPending}
-              handleClaimWinnings={handleClaimWinnings}
-              betId={numericBetId ? numericBetId.toString() : ''}
-              isNativeBet={isNativeBet}
-              creator={creator}
-            />
-          </ComponentErrorBoundary>
-          
-          {/* Resolve Modal */}
-          {showResolveModal && options && (
-            <ResolveModal
-              isOpen={showResolveModal}
-              betName={name}
-              options={options}
-              onResolve={handleResolveBet}
-              onClose={() => setShowResolveModal(false)}
-            />
-          )}
+          </div>
         </div>
+
+        {/* Resolve Modal */}
+        <ComponentErrorBoundary>
+          <ResolveModal
+            isOpen={showResolveModal}
+            onClose={() => setShowResolveModal(false)}
+            betName={name || ''}
+            options={options as readonly string[] || []}
+            onResolve={handleResolveBet}
+          />
+        </ComponentErrorBoundary>
       </div>
     </PageErrorBoundary>
   )

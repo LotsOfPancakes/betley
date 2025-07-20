@@ -103,7 +103,7 @@ export default function MyBetsPage() {
             <div className="text-center py-12">
               <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 max-w-md mx-auto">
                 <div className="w-8 h-8 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-white">Loading your bets...</p>
+                <p className="text-white">Betley is poking around for your bets...</p>
               </div>
             </div>
           ) : filteredBets.length === 0 ? (
@@ -111,7 +111,7 @@ export default function MyBetsPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredBets.map((bet) => (
-                <BetCard key={bet.id} bet={bet} decimals={decimals || 18} />
+                <BetCard key={bet.id} bet={bet} decimals={Number(decimals) || 18} />
               ))}
             </div>
           )}

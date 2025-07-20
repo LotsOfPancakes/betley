@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/hooks/useBetData.ts - V2 Compatible
+// frontend/app/bets/[id]/hooks/useBetData.ts - V2 Compatible with TypeScript fixes
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useReadContract, useBalance } from 'wagmi'
 import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
@@ -7,6 +7,18 @@ import { isNativeHype } from '@/lib/tokenUtils'
 interface UseBetDataOptions {
   useReactQuery?: boolean
 }
+
+// Type for contract response - FIXED TypeScript typing
+type BetDetailsArray = readonly [
+  string,              // name
+  readonly string[],   // options  
+  `0x${string}`,      // creator
+  bigint,             // endTime
+  boolean,            // resolved
+  number,             // winningOption
+  readonly bigint[],  // totalAmounts
+  `0x${string}`       // token address
+]
 
 export function useBetData(betId: string, options: UseBetDataOptions = {}) {
   const { useReactQuery = true } = options
@@ -43,8 +55,8 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     }
   })
 
-  // Extract token address from bet details (index 7 in V2)
-  const tokenAddress = betDetails?.[7] as string
+  // Extract token address from bet details (index 7 in V2) - FIXED typing
+  const tokenAddress = (betDetails as BetDetailsArray)?.[7] as string
   const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : false
 
   // Native balance query
@@ -132,9 +144,9 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
 
   // === TIME CALCULATIONS ===
   useEffect(() => {
-    if (betDetails && betDetails[3]) {
+    if (betDetails && (betDetails as BetDetailsArray)[3]) {
       // V2: endTime is at index 3 (same as V1)
-      const endTime = Number(betDetails[3]) * 1000
+      const endTime = Number((betDetails as BetDetailsArray)[3]) * 1000
       const now = Date.now()
       setTimeLeft(Math.max(0, Math.floor((endTime - now) / 1000)))
     }

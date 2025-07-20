@@ -1,4 +1,4 @@
-// frontend/lib/hooks/useSmartApproval.ts
+// frontend/lib/hooks/useSmartApproval.ts - Fixed TypeScript issues
 'use client'
 
 import { useState, useMemo } from 'react'
@@ -46,14 +46,18 @@ export function useSmartApproval({
     }
   })
 
-  // Determine if new approval is needed
+  // Determine if new approval is needed - FIXED typing
   const needsNewApproval = useMemo(() => {
     if (skipApproval) return false // Native HYPE never needs approval
-    if (!currentAllowance || !amount || !userAddress) return false
+    if (!userAddress) return false
+    
+    // Type the currentAllowance properly
+    const typedAllowance = currentAllowance as bigint | undefined
+    if (!typedAllowance || !amount) return false
     
     try {
       const amountWei = parseUnits(amount, 18)
-      return currentAllowance < amountWei
+      return typedAllowance < amountWei
     } catch {
       return false // Invalid amount format
     }
@@ -108,7 +112,7 @@ export function useSmartApproval({
     isPending: isWritePending || isConfirming,
     isSuccess: isConfirmed,
     skipApproval,
-    currentAllowance,
+    currentAllowance: currentAllowance as bigint | undefined,
     error: error || writeError || null
   }
 }

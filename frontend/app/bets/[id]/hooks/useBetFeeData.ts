@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/hooks/useBetFeeData.ts
+// frontend/app/bets/[id]/hooks/useBetFeeData.ts - Fixed TypeScript issues
 'use client'
 
 import { useMemo } from 'react'
@@ -36,6 +36,9 @@ interface BetFeeData {
   feesEnabled: boolean
   hasValidData: boolean
 }
+
+// Type definitions for contract responses - FIXED TypeScript typing
+type FeeParametersResult = readonly [boolean, bigint, boolean, bigint, string]
 
 export function useBetFeeData(
   betId: string,
@@ -76,14 +79,19 @@ export function useBetFeeData(
     }
   })
 
-  // Calculate losing pool using utility function
+  // Calculate losing pool using utility function - FIXED typing
   const losingPool = useMemo(() => {
-    return calculateLosingPool(totalAmounts || [], winningOption || -1)
+    if (!totalAmounts || !Array.isArray(totalAmounts)) {
+      return BigInt(0)
+    }
+    return calculateLosingPool(totalAmounts, winningOption || -1)
   }, [totalAmounts, winningOption])
 
-  // Calculate fee amounts and breakdown using utility functions
+  // Calculate fee amounts and breakdown using utility functions - FIXED typing
   const feeCalculations = useMemo(() => {
-    if (!feeParams || !losingPool) {
+    const typedFeeParams = feeParams as FeeParametersResult | undefined
+    
+    if (!typedFeeParams || !losingPool) {
       return {
         creatorFeeAmount: BigInt(0),
         platformFeeAmount: BigInt(0),
@@ -97,7 +105,7 @@ export function useBetFeeData(
       }
     }
 
-    const [creatorEnabled, creatorRate, platformEnabled, platformRate] = feeParams
+    const [creatorEnabled, creatorRate, platformEnabled, platformRate] = typedFeeParams
     
     // Use utility function for all fee calculations
     const feeBreakdown = calculateAllFees(
@@ -128,9 +136,9 @@ export function useBetFeeData(
   const error = winningsError || feeParamsError || null
 
   return {
-    // Contract data
-    contractWinnings,
-    feeParams,
+    // Contract data - FIXED typing
+    contractWinnings: contractWinnings as bigint | undefined,
+    feeParams: feeParams as FeeParametersResult | undefined,
     
     // Calculated amounts
     creatorFeeAmount: feeCalculations.creatorFeeAmount,
