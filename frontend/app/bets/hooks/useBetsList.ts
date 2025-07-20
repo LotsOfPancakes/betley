@@ -1,9 +1,13 @@
-// frontend/app/bets/hooks/useBetsList.ts - Updated for database-based mappings
+// frontend/app/bets/hooks/useBetsList.ts - FIXED: TypeScript errors resolved
 import { useState, useEffect } from 'react'
 import { useReadContract, useConfig, useAccount } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI, HYPE_TOKEN_ADDRESS } from '@/lib/contractABI'
 import { BetDetails } from '../types/bet.types'
+
+// ✅ FIXED: Add proper type definitions for contract returns
+type BetDetailsResult = readonly [string, readonly string[], `0x${string}`, bigint, boolean, number, readonly bigint[]]
+type UserBetsResult = readonly bigint[]
 
 export function useBetsList() {
   const config = useConfig()
@@ -42,27 +46,33 @@ export function useBetsList() {
 
         for (let i = 0; i < Number(betCounter); i++) {
           try {
-            // Get bet details
-            const betData = await readContract(config, {
+            // ✅ FIXED: Properly type the betData return
+            const betDataRaw = await readContract(config, {
               address: BETLEY_ADDRESS,
               abi: BETLEY_ABI,
               functionName: 'getBetDetails',
               args: [BigInt(i)],
             })
 
-            if (!betData) continue
+            // ✅ FIXED: Type assertion and validation
+            const betData = betDataRaw as BetDetailsResult
+            if (!betData || !Array.isArray(betData) || betData.length < 7) continue
 
-            // Check if user has bet on this
-            const userBets = await readContract(config, {
+            // ✅ FIXED: Properly type the userBets return  
+            const userBetsRaw = await readContract(config, {
               address: BETLEY_ADDRESS,
               abi: BETLEY_ABI,
               functionName: 'getUserBets',
               args: [BigInt(i), address],
             })
 
+            // ✅ FIXED: Type assertion and validation
+            const userBets = userBetsRaw as UserBetsResult
+            if (!userBets || !Array.isArray(userBets)) continue
+
+            // ✅ FIXED: Now betData and userBets are properly typed as arrays
             const isCreator = betData[2].toLowerCase() === address.toLowerCase()
-            const userTotalBet = userBets ? 
-              userBets.reduce((total: bigint, amount: bigint) => total + amount, BigInt(0)) : BigInt(0)
+            const userTotalBet = userBets.reduce((total: bigint, amount: bigint) => total + amount, BigInt(0))
             const hasBet = userTotalBet > BigInt(0)
 
             // Only include if user is creator OR has placed a bet
@@ -107,7 +117,7 @@ export function useBetsList() {
             // Continue with other bets even if one fails
           }
         }
-  
+
         setBets(fetchedBets)
       } catch (err) {
         console.error('Error fetching bets:', err)

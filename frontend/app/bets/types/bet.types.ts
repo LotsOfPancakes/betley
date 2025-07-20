@@ -10,6 +10,7 @@ export interface BetDetails {
   resolved: boolean
   winningOption: number
   totalAmounts: readonly bigint[]
+  token?: string // Optional token address
   userRole: 'creator' | 'bettor' | 'both'
   userTotalBet: bigint
 }

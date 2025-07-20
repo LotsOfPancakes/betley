@@ -68,7 +68,7 @@ contract ViewFees is Script {
         }
         
         // Check pending platform fees (native token)
-        uint256 pendingNative = betley.pendingPlatformFees(recipient, address(0));
+        uint256 pendingNative = betley.pendingPlatformFees(address(0));
         if (pendingNative > 0) {
             console.log("");
             console.log("=== Pending Platform Fees ===");
@@ -93,17 +93,17 @@ contract EnableFees is Script {
         
         Betley betley = Betley(payable(contractAddress));
         
-        // Enable creator fees: 2% (200 basis points)
-        betley.updateFeeCreator(true, 200);
-        console.log("Creator fees enabled: 2% of losing bets");
+        // Enable creator fees: 1% (100 basis points)
+        betley.updateFeeCreator(true, 100);
+        console.log("Creator fees enabled: 1% of losing bets");
         
-        // Enable platform fees: 1% (100 basis points)  
-        betley.updateFeePlatform(true, 100);
-        console.log("Platform fees enabled: 1% of losing bets");
+        // Enable platform fees: 0.5% (50 basis points)  
+        betley.updateFeePlatform(true, 50);
+        console.log("Platform fees enabled: 0.5% of losing bets");
         
         console.log("");
         console.log("=== Production Fees Active ===");
-        console.log("Total fee rate: 3% of losing bets");
+        console.log("Total fee rate: 1.5% of losing bets");
         console.log("Fees only apply when bets are resolved properly");
         console.log("Unresolved bets = 100% refunds (no fees)");
         
@@ -141,10 +141,9 @@ contract ClaimFees is Script {
         vm.startBroadcast(recipientPrivateKey);
         
         Betley betley = Betley(payable(contractAddress));
-        address recipient = vm.addr(recipientPrivateKey);
         
         // Check pending fees before claiming
-        uint256 pendingNative = betley.pendingPlatformFees(recipient, address(0));
+        uint256 pendingNative = betley.pendingPlatformFees(address(0));
         
         if (pendingNative > 0) {
             console.log("Claiming platform fees:", pendingNative, "wei");

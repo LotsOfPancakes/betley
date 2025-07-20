@@ -5,8 +5,7 @@ import { parseUnits } from 'viem'
 import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
 import { useNotification } from '@/lib/hooks/useNotification'
 
-// ✅ FIXED: Add proper type definitions
-type BetDetailsResult = readonly [string, readonly string[], `0x${string}`, bigint, boolean, number, readonly bigint[]]
+type BetDetailsResult = readonly [string, readonly string[], `0x${string}`, bigint, boolean, number, readonly bigint[], `0x${string}`]
 type UserBetsResult = readonly bigint[]
 type AddressType = `0x${string}`
 
@@ -225,7 +224,7 @@ export function useResolveBetMutation(betId: number) {
 
 // Safe data extraction helpers
 export function extractBetDetails(data: unknown): BetDetailsResult | null {
-  if (!data || !Array.isArray(data) || data.length < 7) return null
+  if (!data || !Array.isArray(data) || data.length < 8) return null
   return data as unknown as BetDetailsResult // Add 'unknown' intermediate cast
 }
 
@@ -236,7 +235,7 @@ export function extractUserBets(data: unknown): UserBetsResult | null {
 
 // Type guards for safer data access
 export function isBetDetailsValid(data: unknown): data is BetDetailsResult {
-  return Array.isArray(data) && data.length >= 7
+  return Array.isArray(data) && data.length >= 8
 }
 
 export function isUserBetsValid(data: unknown): data is UserBetsResult {

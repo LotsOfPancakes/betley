@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title Betley - Security Fixed Version
- * @dev Multi-token pari-mutuel betting contract with optional fee system
- *      SECURITY FIXES APPLIED:
- *      - M1: Fee calculation race condition fixed by locking fees at resolution
- *      - M2: Fee griefing fixed by reserving fees upfront 
- *      - M3: Creator fee double-spend fixed with separate tracking
+ * @title Betley - Production Pari-Mutuel Betting Platform
+ * @dev Secure, fee-enabled betting contract with comprehensive safety measures
+ * @author Betley Team
+ * @notice V2 with advanced fee system and enhanced security
  */
-contract Betley is ReentrancyGuard, Ownable {
+contract Betley is Ownable, ReentrancyGuard {
+    
+    // ========== STRUCTS ==========
+    
     struct Bet {
         string name;
         string[] options;
@@ -22,38 +23,40 @@ contract Betley is ReentrancyGuard, Ownable {
         uint256 resolutionDeadline;
         bool resolved;
         uint8 winningOption;
-        address token; // address(0) for native tokens, contract address for ERC20s
         mapping(uint8 => uint256) totalAmountPerOption;
         mapping(address => mapping(uint8 => uint256)) userBets;
         mapping(address => bool) hasClaimed;
-        // M1 & M2 FIX: Lock fee amounts at resolution time to prevent race conditions
-        uint256 lockedCreatorFee;    // Fee amount locked at resolution
-        uint256 lockedPlatformFee;   // Fee amount locked at resolution
-        bool feesLocked;             // Whether fees have been calculated and locked
-        // M3 FIX: Separate tracking for creator fee claims
         mapping(address => bool) hasClaimedCreatorFee;
+        address token; // Token contract address (address(0) for native)
+        
+        // Fee tracking per bet
+        uint256 lockedCreatorFee;
+        uint256 lockedPlatformFee;
+        bool feesLocked;
     }
+    
+    // ========== STATE VARIABLES ==========
     
     mapping(uint256 => Bet) public bets;
     uint256 public betCounter;
     
-    // ========== FEE SYSTEM PARAMETERS ==========
-    bool public feeCreator = false;           // Toggle creator fees
-    bool public feePlatform = false;          // Toggle platform fees
-    uint256 public feeCreatorAmount = 200;    // 2% (basis points)
-    uint256 public feePlatformAmount = 100;   // 1% (basis points)
+    // Fee configuration
+    bool public feeCreator = false;          // Creator fee enabled/disabled
+    uint256 public feeCreatorAmount = 200;   // 2% in basis points (200/10000)
+    bool public feePlatform = false;         // Platform fee enabled/disabled  
+    uint256 public feePlatformAmount = 100;  // 1% in basis points (100/10000)
+    address public platformFeeRecipient;
     
-    // Safety Limits
+    // Fee constants (safety limits)
     uint256 public constant MAX_CREATOR_FEE = 300;  // 3% maximum
     uint256 public constant MAX_PLATFORM_FEE = 100; // 1% maximum
     
-    // Fee Recipients and Accumulation
-    address public platformFeeRecipient;     // Admin-updatable
+    // Fee accumulation tracking
+    mapping(address => mapping(address => uint256)) public pendingCreatorFees; // token => creator => amount
+    mapping(address => uint256) public pendingPlatformFees; // token => amount
     
-    // Platform fee accumulation: recipient → token → amount
-    mapping(address => mapping(address => uint256)) public pendingPlatformFees;
+    // ========== EVENTS ==========
     
-    // Events
     event BetCreated(uint256 indexed betId, address indexed creator, string name, address token);
     event BetPlaced(uint256 indexed betId, address indexed user, uint8 option, uint256 amount);
     event BetResolved(uint256 indexed betId, uint8 winningOption);
@@ -110,121 +113,102 @@ contract Betley is ReentrancyGuard, Ownable {
      */
     function placeBet(uint256 _betId, uint8 _option, uint256 _amount) external payable nonReentrant {
         require(_betId < betCounter, "Bet does not exist");
-        require(_amount > 0, "Amount must be positive");
-        
         Bet storage bet = bets[_betId];
         require(block.timestamp < bet.endTime, "Betting period ended");
-        require(_option < bet.options.length, "Invalid option");
         require(!bet.resolved, "Bet already resolved");
+        require(_option < bet.options.length, "Invalid option");
+        require(_amount > 0, "Amount must be positive");
+        require(bet.userBets[msg.sender][_option] == 0, "Already bet on this option");
         
-        // Check if user has already bet on a different option
-        for (uint8 i = 0; i < bet.options.length; i++) {
-            if (i != _option && bet.userBets[msg.sender][i] > 0) {
-                revert("Can only bet on one option per bet");
-            }
-        }
-        
-        // Handle token transfers
+        // Handle payment based on token type
         if (bet.token == address(0)) {
-            // Native token betting
-            require(msg.value == _amount, "ETH amount mismatch");
+            // Native token
+            require(msg.value == _amount, "Incorrect native amount");
         } else {
-            // ERC20 token betting
-            require(msg.value == 0, "No ETH for ERC20 bets");
+            // ERC20 token
+            require(msg.value == 0, "No native tokens for ERC20 bet");
             IERC20(bet.token).transferFrom(msg.sender, address(this), _amount);
         }
         
+        bet.userBets[msg.sender][_option] = _amount;
         bet.totalAmountPerOption[_option] += _amount;
-        bet.userBets[msg.sender][_option] += _amount;
         
         emit BetPlaced(_betId, msg.sender, _option, _amount);
     }
     
     /**
-     * @dev Resolve a bet (only creator can call within resolution window)
-     * @param _betId ID of the bet to resolve
+     * @dev Resolve a bet (only by creator)
+     * @param _betId ID of the bet
      * @param _winningOption Index of the winning option
      */
-    function resolveBet(uint256 _betId, uint8 _winningOption) external {
-        Bet storage bet = bets[_betId];
+    function resolveBet(uint256 _betId, uint8 _winningOption) external nonReentrant {
         require(_betId < betCounter, "Bet does not exist");
+        Bet storage bet = bets[_betId];
         require(msg.sender == bet.creator, "Only creator can resolve");
         require(block.timestamp >= bet.endTime, "Betting period not ended");
-        require(block.timestamp < bet.resolutionDeadline, "Resolution deadline passed");
-        require(!bet.resolved, "Bet already resolved");
+        require(!bet.resolved, "Already resolved");
         require(_winningOption < bet.options.length, "Invalid winning option");
         
         bet.resolved = true;
         bet.winningOption = _winningOption;
         
-        // M1 & M2 FIX: Calculate and lock all fees at resolution time
-        uint256 losingPool = _calculateLosingPool(_betId);
-        if (losingPool > 0) {
-            // Calculate creator fee
-            if (feeCreator && feeCreatorAmount > 0) {
-                bet.lockedCreatorFee = (losingPool * feeCreatorAmount) / 10000;
-            }
-            
-            // Calculate and accumulate platform fee
-            if (feePlatform && feePlatformAmount > 0) {
-                bet.lockedPlatformFee = (losingPool * feePlatformAmount) / 10000;
-                // Immediately add to platform fee accumulation
-                pendingPlatformFees[platformFeeRecipient][bet.token] += bet.lockedPlatformFee;
-                emit PlatformFeeAccumulated(_betId, bet.lockedPlatformFee);
-            }
-            
-            // Lock fees to prevent recalculation
-            bet.feesLocked = true;
-        }
+        // Calculate and lock fees during resolution
+        _lockFees(_betId);
         
         emit BetResolved(_betId, _winningOption);
     }
     
     /**
-     * @dev Claim winnings for a resolved bet
-     * @param _betId ID of the bet to claim winnings from
+     * @dev Calculate and lock fees when bet is resolved
+     * @param _betId ID of the bet
      */
-    function claimWinnings(uint256 _betId) external nonReentrant {
+    function _lockFees(uint256 _betId) internal {
         Bet storage bet = bets[_betId];
-        require(_betId < betCounter, "Bet does not exist");
+        if (bet.feesLocked) return; // Already locked
         
-        // Handle refund case (resolution deadline passed, bet not resolved)
-        if (block.timestamp >= bet.resolutionDeadline && !bet.resolved) {
-            require(!bet.hasClaimed[msg.sender], "Already claimed");
-            
-            uint256 totalUserBet = 0;
-            for (uint8 i = 0; i < bet.options.length; i++) {
-                totalUserBet += bet.userBets[msg.sender][i];
-            }
-            require(totalUserBet > 0, "No bet to refund");
-            
-            bet.hasClaimed[msg.sender] = true;
-            
-            // Transfer refund based on token type
-            if (bet.token == address(0)) {
-                payable(msg.sender).transfer(totalUserBet);
-            } else {
-                IERC20(bet.token).transfer(msg.sender, totalUserBet);
-            }
-            
-            emit RefundClaimed(_betId, msg.sender, totalUserBet);
-            return;
+        uint256 losingPool = _calculateLosingPool(_betId);
+        if (losingPool == 0) {
+            bet.feesLocked = true;
+            return; // No fees if no losing pool
         }
         
-        // Regular winnings claim
-        require(bet.resolved, "Bet not resolved yet");
+        // Calculate creator fee
+        if (feeCreator && feeCreatorAmount > 0) {
+            uint256 creatorFee = (losingPool * feeCreatorAmount) / 10000;
+            bet.lockedCreatorFee = creatorFee;
+            pendingCreatorFees[bet.token][bet.creator] += creatorFee;
+        }
+        
+        // Calculate platform fee
+        if (feePlatform && feePlatformAmount > 0) {
+            uint256 platformFee = (losingPool * feePlatformAmount) / 10000;
+            bet.lockedPlatformFee = platformFee;
+            pendingPlatformFees[bet.token] += platformFee;
+            emit PlatformFeeAccumulated(_betId, platformFee);
+        }
+        
+        bet.feesLocked = true;
+    }
+    
+    /**
+     * @dev Claim winnings after bet resolution
+     * @param _betId ID of the bet
+     */
+    function claimWinnings(uint256 _betId) external nonReentrant {
+        require(_betId < betCounter, "Bet does not exist");
+        Bet storage bet = bets[_betId];
+        require(bet.resolved, "Bet not resolved");
         require(!bet.hasClaimed[msg.sender], "Already claimed");
         
         uint256 userBet = bet.userBets[msg.sender][bet.winningOption];
-        require(userBet > 0, "No winning bet placed");
+        require(userBet > 0, "No winning bet to claim");
         
         bet.hasClaimed[msg.sender] = true;
         
-        // M2 FIX: Use pre-calculated and locked fees instead of recalculating
         uint256 totalWinningPool = bet.totalAmountPerOption[bet.winningOption];
         uint256 losingPool = _calculateLosingPool(_betId);
         
-        // Calculate winnings using locked fees
+        // Use locked fees for calculation
         uint256 totalLockedFees = bet.lockedCreatorFee + bet.lockedPlatformFee;
         uint256 availableForWinners = losingPool;
         
@@ -238,27 +222,22 @@ contract Betley is ReentrancyGuard, Ownable {
             winnings += (userBet * availableForWinners) / totalWinningPool;
         }
         
-        // Transfer winnings based on token type
-        if (bet.token == address(0)) {
-            payable(msg.sender).transfer(winnings);
-        } else {
-            IERC20(bet.token).transfer(msg.sender, winnings);
-        }
-        
+        _transferTokens(bet.token, msg.sender, winnings);
         emit WinningsClaimed(_betId, msg.sender, winnings);
     }
     
     /**
-     * @dev Claim refund for unresolved bet (when resolution deadline passed)
-     * @param _betId ID of the bet to claim refund from
+     * @dev Claim refund if bet resolution deadline passed without resolution
+     * @param _betId ID of the bet
      */
     function claimRefund(uint256 _betId) external nonReentrant {
-        Bet storage bet = bets[_betId];
         require(_betId < betCounter, "Bet does not exist");
-        require(block.timestamp >= bet.resolutionDeadline, "Resolution deadline not passed");
+        Bet storage bet = bets[_betId];
         require(!bet.resolved, "Bet already resolved");
+        require(block.timestamp > bet.resolutionDeadline, "Resolution deadline not passed");
         require(!bet.hasClaimed[msg.sender], "Already claimed");
         
+        // Calculate total user bet across all options
         uint256 totalUserBet = 0;
         for (uint8 i = 0; i < bet.options.length; i++) {
             totalUserBet += bet.userBets[msg.sender][i];
@@ -267,60 +246,57 @@ contract Betley is ReentrancyGuard, Ownable {
         
         bet.hasClaimed[msg.sender] = true;
         
-        // Transfer refund based on token type
-        if (bet.token == address(0)) {
-            payable(msg.sender).transfer(totalUserBet);
-        } else {
-            IERC20(bet.token).transfer(msg.sender, totalUserBet);
-        }
-        
+        _transferTokens(bet.token, msg.sender, totalUserBet);
         emit RefundClaimed(_betId, msg.sender, totalUserBet);
     }
     
     /**
-     * @dev Claim creator fees for a resolved bet (separate from winnings)
+     * @dev Creator claims their accumulated fees for a specific token
      * @param _betId ID of the bet to claim creator fees from
      */
     function claimCreatorFees(uint256 _betId) external nonReentrant {
-        Bet storage bet = bets[_betId];
         require(_betId < betCounter, "Bet does not exist");
-        require(bet.resolved, "Bet not resolved yet");
-        require(msg.sender == bet.creator, "Only creator can claim creator fees");
-        
-        // M3 FIX: Use separate tracking for creator fee claims
+        Bet storage bet = bets[_betId];
+        require(bet.resolved, "Bet not resolved");
+        require(msg.sender == bet.creator, "Only creator can claim");
         require(!bet.hasClaimedCreatorFee[msg.sender], "Creator fees already claimed");
         
-        // Only allow if creator fees are enabled and locked
-        require(feeCreator && bet.feesLocked && bet.lockedCreatorFee > 0, "No creator fees available");
+        uint256 feeAmount = bet.lockedCreatorFee;
+        require(feeAmount > 0, "No creator fees to claim");
         
-        // Mark as claimed to prevent double claiming
         bet.hasClaimedCreatorFee[msg.sender] = true;
+        pendingCreatorFees[bet.token][bet.creator] -= feeAmount;
         
-        // Transfer creator fee based on token type
-        if (bet.token == address(0)) {
-            payable(msg.sender).transfer(bet.lockedCreatorFee);
-        } else {
-            IERC20(bet.token).transfer(msg.sender, bet.lockedCreatorFee);
-        }
-        
-        emit CreatorFeeCollected(_betId, msg.sender, bet.lockedCreatorFee);
+        _transferTokens(bet.token, msg.sender, feeAmount);
+        emit CreatorFeeCollected(_betId, msg.sender, feeAmount);
     }
     
     /**
-     * @dev Claim accumulated platform fees (pull-based)
+     * @dev Platform claims accumulated fees for a specific token (onlyOwner)
      * @param token Token address to claim fees for
      */
-    function claimPlatformFees(address token) external {
-        uint256 amount = pendingPlatformFees[msg.sender][token];
-        require(amount > 0, "No fees to claim");
+    function claimPlatformFees(address token) external onlyOwner nonReentrant {
+        uint256 feeAmount = pendingPlatformFees[token];
+        require(feeAmount > 0, "No platform fees to claim");
         
-        pendingPlatformFees[msg.sender][token] = 0;
-        
-        // Transfer fees based on token type
+        pendingPlatformFees[token] = 0;
+        _transferTokens(token, platformFeeRecipient, feeAmount);
+    }
+    
+    /**
+     * @dev Internal function to transfer tokens (native or ERC20)
+     * @param token Token address (address(0) for native)
+     * @param to Recipient address
+     * @param amount Amount to transfer
+     */
+    function _transferTokens(address token, address to, uint256 amount) internal {
         if (token == address(0)) {
-            payable(msg.sender).transfer(amount);
+            // Native token
+            (bool success, ) = to.call{value: amount}("");
+            require(success, "Native transfer failed");
         } else {
-            IERC20(token).transfer(msg.sender, amount);
+            // ERC20 token
+            IERC20(token).transfer(to, amount);
         }
     }
     
@@ -329,7 +305,7 @@ contract Betley is ReentrancyGuard, Ownable {
     /**
      * @dev Update creator fee settings (onlyOwner)
      * @param enabled Whether creator fees are enabled
-     * @param amount Fee amount in basis points (max 300 = 3%)
+     * @param amount Fee amount in basis points (e.g., 200 = 2%)
      */
     function updateFeeCreator(bool enabled, uint256 amount) external onlyOwner {
         require(amount <= MAX_CREATOR_FEE, "Creator fee too high");
@@ -341,7 +317,7 @@ contract Betley is ReentrancyGuard, Ownable {
     /**
      * @dev Update platform fee settings (onlyOwner)
      * @param enabled Whether platform fees are enabled
-     * @param amount Fee amount in basis points (max 100 = 1%)
+     * @param amount Fee amount in basis points (e.g., 100 = 1%)
      */
     function updateFeePlatform(bool enabled, uint256 amount) external onlyOwner {
         require(amount <= MAX_PLATFORM_FEE, "Platform fee too high");
@@ -391,7 +367,7 @@ contract Betley is ReentrancyGuard, Ownable {
     // ========== VIEW FUNCTIONS ==========
     
     /**
-     * @dev Get comprehensive bet details (SAME AS V1 - EXACT COMPATIBILITY)
+     * @dev Get comprehensive bet details INCLUDING TOKEN ADDRESS (FIXED FOR V2)
      * @param _betId ID of the bet
      * @return name The name of the bet
      * @return options Array of betting options
@@ -400,6 +376,7 @@ contract Betley is ReentrancyGuard, Ownable {
      * @return resolved Whether the bet is resolved
      * @return winningOption Index of winning option (if resolved)
      * @return totalAmounts Total amounts bet on each option
+     * @return token Token address used for this bet (ADDED - INDEX 7)
      */
     function getBetDetails(uint256 _betId) external view returns (
         string memory name,
@@ -408,7 +385,8 @@ contract Betley is ReentrancyGuard, Ownable {
         uint256 endTime,
         bool resolved,
         uint8 winningOption,
-        uint256[] memory totalAmounts
+        uint256[] memory totalAmounts,
+        address token  // ← FIXED: Added token address as 8th return value
     ) {
         require(_betId < betCounter, "Bet does not exist");
         Bet storage bet = bets[_betId];
@@ -426,7 +404,8 @@ contract Betley is ReentrancyGuard, Ownable {
             bet.endTime,
             bet.resolved,
             bet.winningOption,
-            totalAmounts
+            totalAmounts,
+            bet.token  // ← FIXED: Now returning token address
         );
     }
     
@@ -460,7 +439,7 @@ contract Betley is ReentrancyGuard, Ownable {
     }
     
     /**
-     * @dev Check if user has claimed creator fees (M3 FIX: separate from winnings)
+     * @dev Check if user has claimed creator fees (separate from winnings)
      * @param _betId ID of the bet
      * @param _user Address of the user
      * @return claimed Whether user has claimed creator fees

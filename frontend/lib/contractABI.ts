@@ -154,56 +154,61 @@ export const BETLEY_ABI = [
   
   // ========== VIEW FUNCTIONS ==========
   
-  // Get Bet Details (SAME STRUCTURE AS V1 - DO NOT CHANGE ORDER)
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_betId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getBetDetails",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "internalType": "string[]",
-        "name": "options",
-        "type": "string[]"
-      },
-      {
-        "internalType": "address",
-        "name": "creator",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "endTime",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "resolved",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint8",
-        "name": "winningOption",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "totalAmounts",
-        "type": "uint256[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
+  // Get Bet Details (FIXED - NOW INCLUDES TOKEN ADDRESS)
+{
+  "inputs": [
+    {
+      "internalType": "uint256",
+      "name": "_betId",
+      "type": "uint256"
+    }
+  ],
+  "name": "getBetDetails",
+  "outputs": [
+    {
+      "internalType": "string",
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "internalType": "string[]",
+      "name": "options",
+      "type": "string[]"
+    },
+    {
+      "internalType": "address",
+      "name": "creator",
+      "type": "address"
+    },
+    {
+      "internalType": "uint256",
+      "name": "endTime",
+      "type": "uint256"
+    },
+    {
+      "internalType": "bool",
+      "name": "resolved",
+      "type": "bool"
+    },
+    {
+      "internalType": "uint8",
+      "name": "winningOption",
+      "type": "uint8"
+    },
+    {
+      "internalType": "uint256[]",
+      "name": "totalAmounts",
+      "type": "uint256[]"
+    },
+    {
+      "internalType": "address",
+      "name": "token",
+      "type": "address"
+    }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+},
   
   // Get User Bets
   {
