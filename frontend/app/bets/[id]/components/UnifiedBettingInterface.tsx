@@ -246,7 +246,7 @@ export function UnifiedBettingInterface({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-white mb-4">
-          {hasExistingBet && isActive ? 'Add More to Your Bet' : 'Bet Options'}
+          {hasExistingBet && isActive ? '' : ' '}
         </h3>
         
         {/* Show wallet connection prompt if not connected */}
@@ -337,7 +337,7 @@ export function UnifiedBettingInterface({
           {/* Amount Input */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-3">
-              {hasExistingBet ? 'Additional bet amount:' : 'Bet amount:'}
+              {hasExistingBet ? 'Additional bet:' : 'Bet amount:'}
             </label>
             <div className="relative">
               <input

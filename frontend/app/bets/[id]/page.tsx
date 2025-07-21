@@ -101,6 +101,7 @@ export default function BetPage() {
     allowance,
     decimals,
     hasClaimed,
+    hasClaimedCreatorFees,
     isBetLoading,
     isNativeBet,
     timeLeft,
@@ -273,6 +274,7 @@ export default function BetPage() {
                   totalAmounts={totalAmounts as readonly bigint[] || []}
                   resolutionDeadlinePassed={resolutionDeadlinePassed}
                   hasClaimed={Boolean(hasClaimed)}
+                  hasClaimedCreatorFees={Boolean(hasClaimedCreatorFees)} // NEW: Pass creator fee claim status
                   decimals={Number(decimals) || 18}
                   isPending={isPending}
                   handleClaimWinnings={handleClaimWinnings}

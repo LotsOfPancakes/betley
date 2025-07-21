@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/hooks/useBetData.ts - V2 Compatible with TypeScript fixes
+// frontend/app/bets/[id]/hooks/useBetData.ts
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useReadContract, useBalance } from 'wagmi'
 import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
@@ -8,7 +8,7 @@ interface UseBetDataOptions {
   useReactQuery?: boolean
 }
 
-// Type for contract response - FIXED TypeScript typing
+// Type for contract response
 type BetDetailsArray = readonly [
   string,              // name
   readonly string[],   // options  
@@ -37,9 +37,9 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     setRefreshTrigger(prev => prev + 1)
   }, [])
 
-  // === V2 CONTRACT CALLS ===
+  // === CONTRACT CALLS ===
   
-  // Main bet details (same function name as V1, but V2 contract)
+  // Main bet details
   const { 
     data: betDetails, 
     isLoading: isBetLoading, 
@@ -55,7 +55,7 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     }
   })
 
-  // Extract token address from bet details (index 7 in V2) - FIXED typing
+  // Extract token address from bet details
   const tokenAddress = (betDetails as BetDetailsArray)?.[7] as string
   const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : false
 
@@ -104,11 +104,23 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     }
   })
 
-  // Has user claimed
+  // Has user claimed winnings/refund
   const { data: hasClaimed } = useReadContract({
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'hasUserClaimed',
+    args: address && numericBetId !== null ? [BigInt(numericBetId), address] : undefined,
+    query: {
+      enabled: numericBetId !== null && !!address,
+      refetchInterval: 10000,
+    }
+  })
+
+  // Has user claimed creator fees (separate from winnings/refund)
+  const { data: hasClaimedCreatorFees } = useReadContract({
+    address: BETLEY_ADDRESS,
+    abi: BETLEY_ABI,
+    functionName: 'hasClaimedCreatorFees',
     args: address && numericBetId !== null ? [BigInt(numericBetId), address] : undefined,
     query: {
       enabled: numericBetId !== null && !!address,
@@ -145,7 +157,6 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
   // === TIME CALCULATIONS ===
   useEffect(() => {
     if (betDetails && (betDetails as BetDetailsArray)[3]) {
-      // V2: endTime is at index 3 (same as V1)
       const endTime = Number((betDetails as BetDetailsArray)[3]) * 1000
       const now = Date.now()
       setTimeLeft(Math.max(0, Math.floor((endTime - now) / 1000)))
@@ -180,12 +191,13 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     new Error(`Invalid bet ID: "${betId}". Bet IDs must be numbers.`) : null
 
   return {
-    // Data (same structure as V1)
+    // Data
     betDetails,
     userBets,
     hypeBalance,
     decimals: isNativeBet ? 18 : decimals, // Native HYPE has 18 decimals
     hasClaimed,
+    hasClaimedCreatorFees, // NEW: Add creator fee claim status
     resolutionDeadline: resolutionDeadline ? Number(resolutionDeadline) : undefined,
     allowance,
     isNativeBet, // Export this so components know token type

@@ -27,6 +27,7 @@ interface UserActionsProps {
   totalAmounts?: readonly bigint[]
   resolutionDeadlinePassed: boolean
   hasClaimed?: boolean
+  hasClaimedCreatorFees?: boolean // NEW: Add creator fee claim status
   decimals?: number
   isPending: boolean
   handleClaimWinnings: () => void
@@ -134,61 +135,72 @@ function CollapsibleDetails({ data, type, decimals, isNativeBet }: CollapsibleDe
   
   // Theme configuration based on type
   const theme = type === 'winnings' 
-    ? {
-        borderColor: 'border-green-600/30',
-        textColor: 'text-green-300 hover:text-green-200',
-        contentColor: 'text-green-200',
-        accentColor: 'text-green-100'
-      }
-    : {
-        borderColor: 'border-yellow-600/30', 
-        textColor: 'text-yellow-300 hover:text-yellow-200',
-        contentColor: 'text-gray-300',
-        accentColor: 'text-yellow-400'
-      }
+    ? { bg: 'from-green-800/30 to-emerald-800/30', text: 'text-green-200', accent: 'text-green-400' }
+    : { bg: 'from-yellow-800/30 to-orange-800/30', text: 'text-yellow-200', accent: 'text-yellow-400' }
+
+  if (!data) return null
 
   return (
-    <div className={`border-t ${theme.borderColor} pt-3`}>
+    <div className={`bg-gradient-to-br ${theme.bg} rounded-2xl p-4 mt-4`}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full flex items-center justify-between ${theme.textColor} transition-colors text-sm`}
+        className={`w-full flex items-center justify-between ${theme.text} hover:${theme.accent} transition-colors`}
         aria-expanded={isExpanded}
-        aria-controls={`breakdown-${type}`}
+        aria-controls={`${type}-details`}
       >
-        <span>View breakdown</span>
-        <svg
-          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <span className="font-semibold">
+          {type === 'winnings' ? 'Winnings Breakdown' : 'Fee Breakdown'}
+        </span>
+        <span className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+          ▼
+        </span>
       </button>
-
+      
       {isExpanded && (
-        <div 
-          id={`breakdown-${type}`}
-          className="mt-3 text-sm space-y-2 animate-in slide-in-from-top-2 duration-200"
-        >
-          <div className="space-y-1">
-            {type === 'winnings' ? (
-              <WinningsBreakdownContent 
-                breakdown={data as WinningsBreakdown}
-                decimals={decimals}
-                tokenSymbol={getTokenSymbol(isNativeBet)}
-                theme={theme}
-              />
-            ) : (
-              <FeeBreakdownContent 
-                feeBreakdown={data as FeeBreakdown}
-                decimals={decimals}
-                tokenSymbol={getTokenSymbol(isNativeBet)}
-                theme={theme}
-              />
-            )}
-          </div>
+        <div id={`${type}-details`} className={`mt-3 space-y-2 ${theme.text} text-sm`}>
+          {type === 'winnings' ? (
+            <>
+              <div className="flex justify-between">
+                <span>Your Bet:</span>
+                <span>{formatTokenAmount((data as WinningsBreakdown).originalBet, decimals, isNativeBet)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Share of Losing Pool:</span>
+                <span>{formatTokenAmount((data as WinningsBreakdown).rawWinningsFromLosers, decimals, isNativeBet)}</span>
+              </div>
+              <div className="flex justify-between text-red-300">
+                <span>Creator Fee:</span>
+                <span>-{formatTokenAmount((data as FeeBreakdown).creatorFee, decimals, isNativeBet)}</span>
+              </div>
+              <div className="flex justify-between text-red-300">
+                <span>Platform Fee:</span>
+                <span>-{formatTokenAmount((data as FeeBreakdown).platformFee, decimals, isNativeBet)}</span>
+              </div>
+              <div className="flex justify-between font-semibold border-t border-gray-600 pt-2">
+                <span>Total Winnings:</span>
+                <span className={theme.accent}>{formatTokenAmount((data as WinningsBreakdown).totalWinnings, decimals, isNativeBet)}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between">
+                <span>Losing Pool:</span>
+                <span>{formatTokenAmount((data as FeeBreakdown).losingPool, decimals, isNativeBet)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Creator Fee:</span>
+                <span>{formatTokenAmount((data as FeeBreakdown).creatorFee, decimals, isNativeBet)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Platform Fee:</span>
+                <span>{formatTokenAmount((data as FeeBreakdown).platformFee, decimals, isNativeBet)}</span>
+              </div>
+              <div className="flex justify-between font-semibold border-t border-gray-600 pt-2">
+                <span>Total Fees:</span>
+                <span className={theme.accent}>{formatTokenAmount((data as FeeBreakdown).totalFees, decimals, isNativeBet)}</span>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -196,96 +208,17 @@ function CollapsibleDetails({ data, type, decimals, isNativeBet }: CollapsibleDe
 }
 
 /**
- * Winnings breakdown content component
+ * Reusable claim button with consistent styling and variants
  */
-function WinningsBreakdownContent({ 
-  breakdown, 
-  decimals, 
-  tokenSymbol, 
-  theme 
-}: {
-  breakdown: WinningsBreakdown
-  decimals: number
-  tokenSymbol: string
-  theme: {
-    borderColor: string
-    contentColor: string
-    accentColor: string
-  }
-}) {
-  return (
-    <>
-      <p className={theme.contentColor}>
-        Your original bet: {formatUnits(breakdown.originalBet, decimals)} {tokenSymbol}
-      </p>
-      {breakdown.rawWinningsFromLosers > BigInt(0) && (
-        <p className={theme.contentColor}>
-          Winnings from other bets: +{formatUnits(breakdown.rawWinningsFromLosers, decimals)} {tokenSymbol}
-        </p>
-      )}
-      {breakdown.showFees && (
-        <>
-          <p className="text-red-400">
-            Creator Fee (1%): -{formatUnits(breakdown.creatorFee, decimals)} {tokenSymbol}
-          </p>
-          <p className="text-red-400">
-            Platform Fee (0.5%): -{formatUnits(breakdown.platformFee, decimals)} {tokenSymbol}
-          </p>
-        </>
-      )}
-      <div className={`border-t ${theme.borderColor} pt-2 mt-2`}>
-        <p className={`font-semibold ${theme.accentColor}`}>
-          Total winnings: {formatUnits(breakdown.totalWinnings, decimals)} {tokenSymbol}
-        </p>
-      </div>
-    </>
-  )
-}
-
-/**
- * Fee breakdown content component
- */
-function FeeBreakdownContent({ 
-  feeBreakdown, 
-  decimals, 
-  tokenSymbol, 
-  theme 
-}: {
-  feeBreakdown: FeeBreakdown
-  decimals: number
-  tokenSymbol: string
-  theme: {
-    contentColor: string
-    accentColor: string
-  }
-}) {
-  return (
-    <>
-      <p className={theme.contentColor}>
-        Losing Pool: {formatUnits(feeBreakdown.losingPool, decimals)} {tokenSymbol}
-      </p>
-      <p className={theme.accentColor}>
-        Creator Fee (1%): -{formatUnits(feeBreakdown.creatorFee, decimals)} {tokenSymbol}
-      </p>
-      <p className={theme.contentColor}>
-        Platform Fee (0.5%): -{formatUnits(feeBreakdown.platformFee, decimals)} {tokenSymbol}
-      </p>
-    </>
-  )
-}
-
-/**
- * Standardized claim button component
- */
-function ClaimButton({
-  onClick,
-  disabled,
-  variant = 'success',
-  children
+function ClaimButton({ 
+  onClick, 
+  disabled, 
+  variant, 
+  children 
 }: {
   onClick: () => void
   disabled: boolean
-  variant?: 'success' | 'warning' | 'info'
+  variant: 'success' | 'warning' | 'info'
   children: React.ReactNode
 }) {
   const variantStyles = {
@@ -317,6 +250,7 @@ export function UserActions({
   totalAmounts,
   resolutionDeadlinePassed,
   hasClaimed,
+  hasClaimedCreatorFees, // NEW: Accept creator fee claim status
   decimals = 18,
   isPending,
   handleClaimWinnings,
@@ -422,31 +356,23 @@ export function UserActions({
   }, [betId, isCreatorClaimPending, writeCreatorClaim, showError])
 
   // ============================================================================
-  // EARLY RETURNS - Guard clauses for cleaner flow
-  // ============================================================================
-  
-  if (!address || !userBets) {
-    return null
-  }
-
-  // ============================================================================
-  // RENDER LOGIC - Clean, declarative UI based on state
+  // RENDER - Clean JSX with clear structure
   // ============================================================================
   
   return (
-    <div className="space-y-6">
-      {/* Main Claim Status */}
+    <div className="space-y-4">
+      {/* Main Claim Status Section */}
       {(() => {
         switch (claimStatus.type) {
           case 'already-claimed':
             return (
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/30 rounded-3xl p-6">
-                <p className="text-gray-300 mb-2">
-                  ✅ You have already claimed your {claimStatus.claimType}.
+              <div className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 backdrop-blur-sm rounded-3xl p-6">
+                <p className="text-blue-300">
+                  You have already claimed your {claimStatus.claimType}.
                 </p>
                 {claimStatus.amount && (
-                  <p className="text-sm text-green-200">
-                    Amount claimed: {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
+                  <p className="text-sm text-blue-200 mt-2">
+                    Amount: {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
                   </p>
                 )}
               </div>
@@ -455,34 +381,33 @@ export function UserActions({
           case 'can-claim-winnings':
             return (
               <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm rounded-3xl p-6">
-                <p className="text-green-300 mb-3">🎉 Congratulations! You won this bet.</p>
-                <p className="text-sm text-green-200 mb-4">
-                  Total winnings: {formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)}
+                <p className="text-green-300 mb-4">
+                  🎉 Congratulations! You won {formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)}
                 </p>
+                
                 <ClaimButton
                   onClick={handleClaimWinnings}
                   disabled={isPending}
                   variant="success"
                 >
-                  {isPending ? 'Claiming...' : `Claim ${formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)}`}
+                  {isPending ? 'Claiming...' : `Claim ${formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)} Winnings`}
                 </ClaimButton>
 
-                {claimStatus.breakdown.showFees && (
-                  <CollapsibleDetails
-                    data={claimStatus.breakdown}
-                    type="winnings"
-                    decimals={decimals}
-                    isNativeBet={isNativeBet}
-                  />
-                )}
+                <CollapsibleDetails
+                  data={claimStatus.breakdown}
+                  type="winnings"
+                  decimals={decimals}
+                  isNativeBet={isNativeBet}
+                />
               </div>
             )
 
           case 'can-claim-refund':
             return (
               <div className="bg-gradient-to-br from-orange-900/40 to-yellow-900/40 backdrop-blur-sm rounded-3xl p-6">
-                <p className="text-orange-300 mb-2">
-                  This bet was not resolved within 72 hours. You can claim a refund.
+                <p className="text-orange-300 mb-4">
+                  The bet resolution deadline has passed without resolution.
+                  You can claim a refund.
                 </p>
                 <p className="text-sm text-orange-200 mb-3">
                   Your total bet: {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
@@ -511,8 +436,8 @@ export function UserActions({
         }
       })()}
 
-      {/* Creator Fee Section */}
-      {hasCreatorFees && !hasClaimed ? (
+      {/* Creator Fee Section - FIXED: Use hasClaimedCreatorFees instead of hasClaimed */}
+      {hasCreatorFees && !hasClaimedCreatorFees ? (
         <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm rounded-3xl p-6">
           <p className="text-yellow-300 mb-4">
             Creator Fees available: {formatTokenAmount(creatorFeeAmount, decimals, isNativeBet)}
