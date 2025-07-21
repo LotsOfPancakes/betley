@@ -54,7 +54,7 @@ export default function BetTitleInput({
           onKeyPress={handleKeyPress}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder={isFocused ? "Will Elvis be late?" : "What are you betting on today?"}
+          placeholder={isFocused ? "Will it rain later?" : "What are we betting on today?"}
           disabled={isLoading}
           className={`w-full px-6 py-4 pr-20 text-lg rounded-2xl bg-gray-800/65 text-white transition-all duration-300 focus:outline-none backdrop-blur-sm ${
             isFocused || hasValue 

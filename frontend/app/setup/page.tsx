@@ -96,14 +96,14 @@ function SetupPageContent() {
         <div className="max-w-2xl mx-auto px-4">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-white">Setup New Bet</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-white">Set up New Bet</h1>
           </div>
 
           {/* Always show the form - no wallet check */}
           <div className="space-y-8">
             {/* Bet Name Input */}
             <ComponentErrorBoundary>
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
                 <BetNameInput
                   value={formData.name}
                   onChange={updateName}
@@ -113,7 +113,7 @@ function SetupPageContent() {
 
             {/* Options Manager */}
             <ComponentErrorBoundary>
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
                 <OptionsManager
                   options={formData.options}
                   onChange={updateOptions}
@@ -123,7 +123,7 @@ function SetupPageContent() {
 
             {/* Duration Selector */}
             <ComponentErrorBoundary>
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
                 <DurationSelector
                   duration={formData.duration}
                   onChange={updateDuration}                  
@@ -133,7 +133,7 @@ function SetupPageContent() {
 
             {/* Submit Section - Updated to handle new flow */}
             <ComponentErrorBoundary>
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
                 <SubmitSection
                   isValid={isValid}
                   isConnected={!!address}

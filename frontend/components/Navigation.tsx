@@ -25,7 +25,7 @@ export function Navigation() {
                 <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-emerald-200/20 rounded-xl blur-sm group-hover:blur-md transition-all duration-300" />
                 <div className="relative w-full h-full rounded-xl transition-all duration-300 sm:p-1">
                   <Image 
-                    src="/images/betley2.png" 
+                    src="/images/betley-logo-128.png" 
                     alt="Betley Logo"
                     width={32}
                     height={32}

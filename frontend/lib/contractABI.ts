@@ -1,11 +1,10 @@
-// frontend/lib/contractABI.ts - Updated for BetleyNativeV2 with Security Fixes
+// frontend/lib/contractABI.ts
 import { config } from './config'
 
 // Contract addresses from config
 export const BETLEY_ADDRESS = config.contracts.betley as `0x${string}`
 export const HYPE_TOKEN_ADDRESS = config.contracts.hypeToken as `0x${string}`
 
-// BetleyNativeV2 ABI - WITH SECURITY FIXES APPLIED
 export const BETLEY_ABI = [
   // ========== CORE BETTING FUNCTIONS ==========
   

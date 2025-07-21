@@ -1,4 +1,4 @@
-// frontend/app/layout.tsx - Enhanced SEO metadata with Open Graph
+// frontend/app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from './providers'
@@ -20,24 +20,24 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Betley - Bet Anything",
-  description: "The easiest way to setup an on-chain Bet on anything",
+  description: "Easiest way to set up an on-chain bet on anything",
   
   // ✅ ENHANCED: Open Graph for rich previews in chat apps
   openGraph: {
     title: "Betley - Bet Anything",
-    description: "The easiest way to setup an on-chain Bet on anything", 
+    description: "Easiest way to set up an on-chain bet on anything", 
     type: "website",
-    url: "https://www.betley.xyz/", // Your actual domain
+    url: "https://www.betley.xyz/", 
     siteName: "Betley",
     images: [
       {
-        url: "/og-image.png", // You'll need to create this 1200x630px image
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Betley - Decentralized Betting Platform",
       },
       {
-        url: "/logo-512.png", // Square logo for some platforms
+        url: "/betley-logo-512.png", // Square logo for some platforms
         width: 512,
         height: 512,
         alt: "Betley Logo",
@@ -50,10 +50,10 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Betley - Bet Anything",
-    description: "The easiest way to setup an on-chain Bet on anything",
+    description: "Easiest way to set up an on-chain bet on anything",
     images: ["/og-image.png"], // Same image as OG
-    creator: "@YourTwitterHandle", // Optional: Your Twitter handle
-    site: "@BetleyApp", // Optional: Your app's Twitter handle
+    creator: "@betleyxyz", // creator Twitter handle
+    site: "@betleyxyz", // app's Twitter handle
   },
 
   // ✅ ENHANCED: Additional metadata for better SEO
@@ -93,7 +93,7 @@ export const metadata: Metadata = {
       {
         rel: "mask-icon",
         url: "/safari-pinned-tab.svg",
-        color: "#22c55e" // Your brand green color
+        color: "#22c55e" // brand green color
       }
     ]
   },
@@ -157,7 +157,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebApplication",
               "name": "Betley",
-              "description": "The easiest way to setup an on-chain Bet on anything",
+              "description": "Easiest way to set up an on-chain bet on anything",
               "url": "https://www.betley.xyz/",
               "applicationCategory": "GameApplication",
               "operatingSystem": "Web Browser",
@@ -166,7 +166,7 @@ export default function RootLayout({
                 "price": "0",
                 "priceCurrency": "USD"
               },
-              "screenshot": "https://www.betley.xyz//og-image.png"
+              "screenshot": "https://www.betley.xyz/og-image.png"
             })
           }}
         />
