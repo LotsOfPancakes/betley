@@ -149,7 +149,7 @@ export default function MyBetsPage() {
             <h1 className="text-3xl md:text-4xl font-bold text-white">My Bets</h1>
             <button
               onClick={() => router.push('/setup')}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30"
+              className="bg-gradient-to-r from-green-500/80 to-emerald-400/70 hover:from-green-400 hover:to-emerald-400 text-gray-100 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30"
             >
               Create New Bet
             </button>

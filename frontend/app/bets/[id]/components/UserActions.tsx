@@ -168,12 +168,27 @@ function CollapsibleDetails({ data, type, decimals, isNativeBet }: CollapsibleDe
                 <span>Share of Losing Pool:</span>
                 <span>{formatTokenAmount((data as WinningsBreakdown).rawWinningsFromLosers, decimals, isNativeBet)}</span>
               </div>
-              <div className="flex justify-between font-semibold border-t border-gray-600 pt-2">
-                <span>Total Winnings:</span>
-                <span className={theme.accent}>{formatTokenAmount((data as WinningsBreakdown).totalWinnings, decimals, isNativeBet)}</span>
-              </div>
-            </>
-          ) : (
+              
+              {/* NEW: Show fee deductions in red if they exist */}
+              {(data as WinningsBreakdown).creatorFee > BigInt(0) && (
+                <div className="flex justify-between text-red-300">
+                  <span>Creator Fee (1%):</span>
+                  <span>-{formatTokenAmount((data as WinningsBreakdown).creatorFee, decimals, isNativeBet)}</span>
+                </div>
+              )}
+              {(data as WinningsBreakdown).platformFee > BigInt(0) && (
+                <div className="flex justify-between text-red-300">
+                  <span>Platform Fee (0.5%):</span>
+                  <span>-{formatTokenAmount((data as WinningsBreakdown).platformFee, decimals, isNativeBet)}</span>
+                </div>
+              )}
+        
+        <div className="flex justify-between font-semibold border-t border-gray-600 pt-2">
+          <span>Total Winnings:</span>
+          <span className={theme.accent}>{formatTokenAmount((data as WinningsBreakdown).totalWinnings, decimals, isNativeBet)}</span>
+        </div>
+      </>
+    ) : (
             <>
               <div className="flex justify-between">
                 <span>Losing Pool:</span>

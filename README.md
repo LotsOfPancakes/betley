@@ -9,7 +9,7 @@ A production-ready pari-mutuel style betting platform built on HyperEVM testnet 
 - **Dual Token Support**: Bet with native HYPE or mock HYPE (mHYPE) tokens
 - **Pari-Mutuel Payouts**: Automatic fair distribution based on betting pools
 - **Privacy-First**: Random bet IDs prevent enumeration and protect user privacy
-- **Auto-Resolution**: 72-hour resolution deadline with automatic refund system
+- **Auto-Resolution**:48-hour resolution deadline with automatic refund system
 - **Mobile Optimized**: Responsive design with PWA capabilities
 - **Fee System**: 1% creator and 0.5% platform fees
 

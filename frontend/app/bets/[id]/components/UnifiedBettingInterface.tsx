@@ -117,7 +117,7 @@ export function UnifiedBettingInterface({
     
     return {
       text: 'Active',
-      color: 'bg-gradient-to-r from-blue-500 to-blue-600',
+      color: 'bg-gradient-to-r from-blue-500/40 to-blue-600/80',
       textColor: 'text-white',
       timeInfo: timeLeft > 0 ? formatTimeRemaining(timeLeft) : null,
       icon: '🎯'
@@ -165,6 +165,46 @@ export function UnifiedBettingInterface({
   const isValidAmount = parseFloat(betAmount || '0') > 0
   const hasBalance = hypeBalance && parseFloat(betAmount || '0') <= parseFloat(formatUnits(hypeBalance, decimals || 18))
 
+  // NEW: Get button text with integrated validation messages
+  const getButtonContent = () => {
+    if (needsApproval) {
+      if (isApproving) {
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            Approving...
+          </div>
+        )
+      }
+      return `Approve ${isNativeBet ? 'HYPE' : 'mHYPE'}`
+    }
+
+    if (isPending) {
+      return (
+        <div className="flex items-center justify-center gap-2">
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          Placing Bet...
+        </div>
+      )
+    }
+
+    // Check validation conditions and return appropriate message
+    if (!isValidAmount && betAmount) {
+      return 'Please enter a valid amount'
+    }
+
+    if (!hasBalance && isValidAmount) {
+      return 'Insufficient balance'
+    }
+
+    if (selectedOption === null && isValidAmount && hasBalance) {
+      return 'Please select an option to bet on'
+    }
+
+    // Default: normal Place Bet text
+    return `Place Bet${selectedOption !== null && options ? ` on ${options[selectedOption]}` : ''}`
+  }
+
   return (
   <div className="">
     {/* Header */}
@@ -182,7 +222,7 @@ export function UnifiedBettingInterface({
           
           {/* Pool Total Pill */}
           {hasPool && (
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium bg-gradient-to-r from-gray-400 to-slate-500 text-black shadow-lg">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium bg-gradient-to-r from-gray-400/90 to-slate-500 text-black shadow-lg">
               <span>💰</span>
               Pool TVL: {formatDynamicDecimals(formatUnits(totalPool, decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'}
             </span>
@@ -207,40 +247,6 @@ export function UnifiedBettingInterface({
         )}
       </button>
     </div>
-    
-    {/* Your Current Bet
-    {hasExistingBet && userBets && options && (
-      <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm border border-green-500/20 rounded-2xl p-4 mb-6">
-        <h3 className="text-xs font-medium text-gray-400 mb-2">Your Current Bet</h3>
-        {userBets.map((amount, index) => {
-          if (amount === BigInt(0)) return null
-          return (
-            <div key={index} className="space-y-1">
-              <p className="text-lg font-bold text-white">
-                {formatDynamicDecimals(formatUnits(amount, decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'} 
-                <span className="text-xs"> on</span>
-                <span className="text-xs"> {options[index]}</span>
-              </p>
-            </div>
-          )
-        })}
-      </div>
-    )} */}
-
-    {/* Just Placed Bet Success Message
-    {justPlacedBet && (
-      <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm border border-green-500/40 rounded-3xl p-6 animate-pulse mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold">✓</span>
-          </div>
-          <div>
-            <p className="text-green-400 font-semibold">Bet Placed Successfully!</p>
-            <p className="text-gray-300 text-sm">Your transaction has been confirmed</p>
-          </div>
-        </div>
-      </div>
-    )} */}
 
     {/* Bet Options */}
     <div className="space-y-6">
@@ -271,21 +277,26 @@ export function UnifiedBettingInterface({
             const isSelected = effectiveSelectedOption === index
             const isWinningOption = resolved && winningOption === index
             
+// visual hierarchy
+// Green = Success/Winner (highest importance)
+// Blue = Selected/Active (medium-high importance)
+// Gray = Default/Disabled (low importance)
+
             return (
               <button
                 key={index}
                 onClick={() => !isDisabled && setSelectedOption(index)}
                 disabled={isDisabled}
-                className={`p-4 rounded-2xl text-left transition-all duration-300 ${
+                className={`p-4 rounded-2xl text-left transition-all duration-300  ${
                   isWinningOption
-                    ? 'border-green-500/60 bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-green-300 shadow-xl shadow-green-500/20'
+                    ? 'bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-green-300 shadow-lg shadow-green-500/20 scale-105'
                     : isSelected
-                    ? 'border-green-500/50 bg-gradient-to-br from-green-900/30 to-emerald-900/30 text-green-300 shadow-lg shadow-green-500/10 hover:scale-105'
+                    ? 'bg-gradient-to-br from-blue-900/30 to-blue-800/30 text-blue-300 shadow-md shadow-green-500/10 scale-101'
                     : isUserCurrentOption
-                    ? 'border-green-500/40 bg-gradient-to-br from-green-900/25 to-emerald-900/25 text-green-300'
+                    ? 'bg-gradient-to-br from-blue-900/30 to-blue-800/30 text-blue-300'
                     : isDisabled
-                    ? 'border-gray-700/30 bg-gray-800/20 text-gray-500 cursor-not-allowed opacity-50'
-                    : 'border-gray-600/30 bg-gray-800/20 text-gray-300 hover:border-gray-500/50 hover:bg-gray-700/30 hover:scale-105'
+                    ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed opacity-70'
+                    : 'bg-gradient-to-br from-gray-400/30 to-gray-500/60 text-gray-300'
                 }`}
               >
                 <div className="flex justify-between items-center mb-3">
@@ -297,7 +308,7 @@ export function UnifiedBettingInterface({
                       </span>
                     )}
                     {isUserCurrentOption && !isWinningOption && (
-                      <span className="text-xs bg-green-500/80 text-white px-3 py-1 rounded-full font-medium">
+                      <span className="text-xs bg-gray-500/80 text-white px-3 py-1 rounded-full font-medium">
                         You Bet: {formatDynamicDecimals(formatUnits(userBets?.[index] || BigInt(0), decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'}
                       </span>
                     )}
@@ -355,22 +366,15 @@ export function UnifiedBettingInterface({
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-3">
+          {/* Action Button - Updated with integrated validation */}
+          <div>
             {needsApproval ? (
               <button
                 onClick={handleApprove}
                 disabled={isApproving || !isValidAmount || !hasBalance}
                 className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-yellow-500/30 disabled:shadow-none"
               >
-                {isApproving ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Approving...
-                  </div>
-                ) : (
-                  `Approve ${isNativeBet ? 'HYPE' : 'mHYPE'}`
-                )}
+                {getButtonContent()}
               </button>
             ) : (
               <button
@@ -378,34 +382,8 @@ export function UnifiedBettingInterface({
                 disabled={isPending || !isValidAmount || !hasBalance || selectedOption === null}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-green-500/30 disabled:shadow-none"
               >
-                {isPending ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Placing Bet...
-                  </div>
-                ) : (
-                  `Place Bet${selectedOption !== null && options ? ` on ${options[selectedOption]}` : ''}`
-                )}
+                {getButtonContent()}
               </button>
-            )}
-            
-            {/* Validation Messages */}
-            {!isValidAmount && betAmount && (
-              <p className="text-red-400 text-sm text-center bg-red-900/20 border border-red-500/30 rounded-xl p-3">
-                Please enter a valid amount
-              </p>
-            )}
-            
-            {!hasBalance && isValidAmount && (
-              <p className="text-red-400 text-sm text-center bg-red-900/20 border border-red-500/30 rounded-xl p-3">
-                Insufficient balance
-              </p>
-            )}
-            
-            {selectedOption === null && isValidAmount && hasBalance && (
-              <p className="text-yellow-400 text-sm text-center bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-3">
-                Please select an option to bet on
-              </p>
             )}
           </div>
         </>

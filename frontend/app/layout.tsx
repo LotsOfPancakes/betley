@@ -19,6 +19,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://betley.xyz'),
   title: "Betley - Bet Anything",
   description: "Easiest way to set up an on-chain bet on anything",
   

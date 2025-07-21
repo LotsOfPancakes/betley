@@ -96,7 +96,7 @@ contract Betley is Ownable, ReentrancyGuard {
         bet.options = _options;
         bet.creator = msg.sender;
         bet.endTime = block.timestamp + _duration;
-        bet.resolutionDeadline = bet.endTime + 72 hours; // 72 hour resolution window
+        bet.resolutionDeadline = bet.endTime + 48 hours; // 48 hour resolution window
         bet.token = _token;
         // Fees start unlocked (will be locked during resolution)
         bet.feesLocked = false;

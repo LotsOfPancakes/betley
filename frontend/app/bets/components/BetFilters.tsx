@@ -24,7 +24,7 @@ export default function BetFilters({ currentFilter, onFilterChange }: BetFilters
           onClick={() => onFilterChange(option.value)}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             currentFilter === option.value
-              ? 'bg-blue-600 text-white'
+              ? 'bg-green-600 text-white'
               : 'text-gray-300 hover:text-white hover:bg-gray-700'
           }`}
         >

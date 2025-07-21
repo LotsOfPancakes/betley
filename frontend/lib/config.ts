@@ -48,7 +48,7 @@ export const config = {
   contracts: {
     betley: getRequiredEnv(
       'NEXT_PUBLIC_BETLEY_ADDRESS',
-      '0x88598D1EfC9032318FB7B39DCdD9E5c2a7a4F8b9'
+      '0x3eB11c552cc4259730f14b8b88dEEF06f78A7913'
     ) as `0x${string}`,
     hypeToken: getRequiredEnv(
       'NEXT_PUBLIC_HYPE_TOKEN_ADDRESS', // this is mockhype token, could be other ERC20 tokens

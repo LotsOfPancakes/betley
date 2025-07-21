@@ -39,7 +39,7 @@ export default function EmptyState({ filter }: EmptyStateProps) {
   const message = getEmptyMessage()
 
   return (
-    <div className="text-center py-12 bg-gray-800 rounded-lg border border-gray-700">
+    <div className="text-center py-12">
       <h3 className="text-xl font-semibold text-white mb-4">
         {message.title}
       </h3>
@@ -48,7 +48,7 @@ export default function EmptyState({ filter }: EmptyStateProps) {
       </p>
       <button
         onClick={() => router.push('/setup')}
-        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+        className="bg-gradient-to-r from-green-500/80 to-emerald-400/70 hover:from-green-400 hover:to-emerald-400 text-gray-100 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30"
       >
         {filter === 'all' ? 'Create Your First Bet' : 'Create New Bet'}
       </button>
