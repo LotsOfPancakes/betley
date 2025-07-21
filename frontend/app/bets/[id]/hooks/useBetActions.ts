@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/hooks/useBetActions.ts - CLEANED VERSION: Debug logs removed
+// frontend/app/bets/[id]/hooks/useBetActions.ts
 import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'

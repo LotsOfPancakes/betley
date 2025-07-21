@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/components/ResolveModal.tsx - Original functionality with minimal bento styling
+// frontend/app/bets/[id]/components/ResolveModal.tsx 
 'use client'
 
 import { useState } from 'react'

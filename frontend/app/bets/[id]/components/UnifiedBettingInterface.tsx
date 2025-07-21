@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/components/UnifiedBettingInterface.tsx - Updated with requested changes
+// frontend/app/bets/[id]/components/UnifiedBettingInterface.tsx
 'use client'
 
 import { formatUnits } from 'viem'
@@ -310,20 +310,6 @@ export function UnifiedBettingInterface({
                       {percentage.toFixed(0)}%
                     </div>
                   </div>
-                </div>
-                
-                {/* Progress bar */}
-                <div className="w-full bg-gray-700/30 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-500 ${
-                      isWinningOption
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-500'
-                        : isSelected || isUserCurrentOption
-                        ? 'bg-gradient-to-r from-green-500/60 to-emerald-500/60' 
-                        : 'bg-gradient-to-r from-gray-500/50 to-gray-600/50'
-                    }`}
-                    style={{ width: `${Math.max(percentage, 2)}%` }}
-                  />
                 </div>
               </button>
             )

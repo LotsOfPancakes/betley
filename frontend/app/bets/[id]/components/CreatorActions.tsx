@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/components/CreatorActions.tsx - Updated with bento-style design (minimal)
+// frontend/app/bets/[id]/components/CreatorActions.tsx
 'use client'
 
 interface CreatorActionsProps {

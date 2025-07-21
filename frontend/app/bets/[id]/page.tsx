@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/page.tsx - Fixed TypeScript issues
+// frontend/app/bets/[id]/page.tsx
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
@@ -17,7 +17,7 @@ import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBou
 import { useBetData } from './hooks/useBetData'
 import { useBetActions } from './hooks/useBetActions'
 
-// Type definition for bet details array - FIXED TypeScript typing
+// Type definition for bet details array 
 type BetDetailsArray = readonly [
   string,              // name
   readonly string[],   // options  

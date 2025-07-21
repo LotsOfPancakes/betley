@@ -12,7 +12,6 @@ import {
   calculateWinningsBreakdown, 
   calculateUserTotalBet,
   hasUserWon,
-  calculateLosingPool,
   type WinningsBreakdown,
 } from '@/lib/utils'
 
@@ -169,14 +168,6 @@ function CollapsibleDetails({ data, type, decimals, isNativeBet }: CollapsibleDe
                 <span>Share of Losing Pool:</span>
                 <span>{formatTokenAmount((data as WinningsBreakdown).rawWinningsFromLosers, decimals, isNativeBet)}</span>
               </div>
-              <div className="flex justify-between text-red-300">
-                <span>Creator Fee:</span>
-                <span>-{formatTokenAmount((data as FeeBreakdown).creatorFee, decimals, isNativeBet)}</span>
-              </div>
-              <div className="flex justify-between text-red-300">
-                <span>Platform Fee:</span>
-                <span>-{formatTokenAmount((data as FeeBreakdown).platformFee, decimals, isNativeBet)}</span>
-              </div>
               <div className="flex justify-between font-semibold border-t border-gray-600 pt-2">
                 <span>Total Winnings:</span>
                 <span className={theme.accent}>{formatTokenAmount((data as WinningsBreakdown).totalWinnings, decimals, isNativeBet)}</span>
@@ -267,7 +258,6 @@ export function UserActions({
   const {
     contractWinnings,
     creatorFeeAmount,
-    feeBreakdown,
     feeParams,
     error: feeDataError
   } = useBetFeeData(betId, address, totalAmounts, winningOption, resolved)
@@ -283,6 +273,9 @@ export function UserActions({
   const { isSuccess: isCreatorClaimSuccess } = useWaitForTransactionReceipt({ 
     hash: creatorClaimTxHash 
   })
+
+  // State for creator fee breakdown
+  const [isCreatorFeeExpanded, setIsCreatorFeeExpanded] = useState(false)
 
   // ============================================================================
   // COMPUTED VALUES - Derived state, well-named
@@ -318,8 +311,7 @@ export function UserActions({
     [userBets, resolved, winningOption, resolutionDeadlinePassed, hasClaimed, isCreator, winningsBreakdown]
   )
 
-  // const hasCreatorFees = isCreator && creatorFeeAmount && creatorFeeAmount > BigInt(0)
-
+  // Use the fee data from winnings breakdown if available, fallback to calculated
   const actualCreatorFeeAmount = winningsBreakdown?.creatorFee ?? creatorFeeAmount
   const hasCreatorFees = isCreator && actualCreatorFeeAmount && actualCreatorFeeAmount > BigInt(0)
 
@@ -372,13 +364,13 @@ export function UserActions({
             return (
               <div className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 backdrop-blur-sm rounded-3xl p-6">
                 <p className="text-blue-300">
-                  You have already claimed your {claimStatus.claimType}.
+                  You have already claimed {claimStatus.claimType} o
+                  {claimStatus.amount && (
+                  <span>
+                  f {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
+                  </span>
+                  )}
                 </p>
-                {claimStatus.amount && (
-                  <p className="text-sm text-blue-200 mt-2">
-                    Amount: {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
-                  </p>
-                )}
               </div>
             )
 
@@ -440,7 +432,7 @@ export function UserActions({
         }
       })()}
 
-      {/* Creator Fee Section - FIXED: Use hasClaimedCreatorFees instead of hasClaimed */}
+      {/* Creator Fee Section */}
       {hasCreatorFees && !hasClaimedCreatorFees ? (
         <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm rounded-3xl p-6">
           <p className="text-yellow-300 mb-4">
@@ -455,17 +447,39 @@ export function UserActions({
             {isCreatorClaimPending ? 'Claiming...' : `Claim ${formatTokenAmount(actualCreatorFeeAmount, decimals, isNativeBet)} Creator Fees`}
           </ClaimButton>
 
-          <CollapsibleDetails
-  data={winningsBreakdown ? {
-    creatorFee: winningsBreakdown.creatorFee,
-    platformFee: winningsBreakdown.platformFee,
-    totalFees: winningsBreakdown.creatorFee + winningsBreakdown.platformFee,
-    losingPool: winningsBreakdown.rawWinningsFromLosers
-  } : feeBreakdown}
-  type="fees"
-  decimals={decimals}
-  isNativeBet={isNativeBet}
-/>
+          {/* Clean Creator Fee Breakdown */}
+          <div className="bg-gradient-to-br from-yellow-800/30 to-orange-800/30 rounded-2xl p-4 mt-4">
+            <button
+              onClick={() => setIsCreatorFeeExpanded(!isCreatorFeeExpanded)}
+              className="w-full flex items-center justify-between text-yellow-200 hover:text-yellow-400 transition-colors"
+              aria-expanded={isCreatorFeeExpanded}
+              aria-controls="creator-fee-details"
+            >
+              <span className="font-semibold">Fee Breakdown</span>
+              <span className={`transform transition-transform ${isCreatorFeeExpanded ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
+            
+            {isCreatorFeeExpanded && (
+              <div id="creator-fee-details" className="mt-3 space-y-2 text-yellow-200 text-sm">
+                <div className="flex justify-between">
+                  <span>Losing Pool Total:</span>
+                  <span>{formatTokenAmount(
+                    winningsBreakdown ? 
+                      winningsBreakdown.rawWinningsFromLosers + winningsBreakdown.creatorFee + winningsBreakdown.platformFee :
+                      BigInt(0), 
+                    decimals, 
+                    isNativeBet
+                  )}</span>
+                </div>
+                <div className="flex justify-between font-semibold border-t border-gray-600 pt-2">
+                  <span>Creator Fee (1%):</span>
+                  <span className="text-yellow-400">{formatTokenAmount(actualCreatorFeeAmount, decimals, isNativeBet)}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       ) : null}
     </div>

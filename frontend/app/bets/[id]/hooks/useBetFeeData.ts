@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/hooks/useBetFeeData.ts - Fixed TypeScript issues
+// frontend/app/bets/[id]/hooks/useBetFeeData.ts
 'use client'
 
 import { useMemo } from 'react'
