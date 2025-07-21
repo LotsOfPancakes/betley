@@ -207,13 +207,47 @@ export function UnifiedBettingInterface({
         )}
       </button>
     </div>
+    
+    {/* Your Current Bet
+    {hasExistingBet && userBets && options && (
+      <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm border border-green-500/20 rounded-2xl p-4 mb-6">
+        <h3 className="text-xs font-medium text-gray-400 mb-2">Your Current Bet</h3>
+        {userBets.map((amount, index) => {
+          if (amount === BigInt(0)) return null
+          return (
+            <div key={index} className="space-y-1">
+              <p className="text-lg font-bold text-white">
+                {formatDynamicDecimals(formatUnits(amount, decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'} 
+                <span className="text-xs"> on</span>
+                <span className="text-xs"> {options[index]}</span>
+              </p>
+            </div>
+          )
+        })}
+      </div>
+    )} */}
+
+    {/* Just Placed Bet Success Message
+    {justPlacedBet && (
+      <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm border border-green-500/40 rounded-3xl p-6 animate-pulse mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+            <span className="text-white font-bold">✓</span>
+          </div>
+          <div>
+            <p className="text-green-400 font-semibold">Bet Placed Successfully!</p>
+            <p className="text-gray-300 text-sm">Your transaction has been confirmed</p>
+          </div>
+        </div>
+      </div>
+    )} */}
 
     {/* Bet Options */}
     <div className="space-y-6">
       <div>
-        {/* <h3 className="text-lg font-semibold text-white mb-4">
-          {hasExistingBet && isActive ? 'Add More to Your Bet' : ''}
-        </h3> temporarily removing this header, clean up page elements*/}
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {hasExistingBet && isActive ? 'Add More to Your Bet' : 'Bet Options'}
+        </h3>
         
         {/* Show wallet connection prompt if not connected */}
         {!address && (
@@ -242,19 +276,19 @@ export function UnifiedBettingInterface({
                 key={index}
                 onClick={() => !isDisabled && setSelectedOption(index)}
                 disabled={isDisabled}
-                className={`p-4 rounded-2xl text-left transition-all duration-300 border border-green-200/50 ${
+                className={`p-4 rounded-2xl text-left transition-all duration-300 ${
                   isWinningOption
-                    ? 'bg-gradient-to-br from-green-900/40 to-emerald-900/40 border border-green-200 text-green-300 shadow-xl shadow-green-500/20 scale-105'
+                    ? 'border-green-500/60 bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-green-300 shadow-xl shadow-green-500/20'
                     : isSelected
-                    ? 'bg-gradient-to-br from-green-700/20 to-emerald-700/50 border border-green-600 text-gray-300 shadow-lg shadow-green-500/10 hover:scale-105'
+                    ? 'border-green-500/50 bg-gradient-to-br from-green-900/30 to-emerald-900/30 text-green-300 shadow-lg shadow-green-500/10 hover:scale-105'
                     : isUserCurrentOption
-                    ? 'bg-gradient-to-br from-green-900/25 to-emerald-900/25 text-green-300'
+                    ? 'border-green-500/40 bg-gradient-to-br from-green-900/25 to-emerald-900/25 text-green-300'
                     : isDisabled
-                    ? 'bg-gray-800/20 text-gray-500 cursor-not-allowed opacity-50'
-                    : 'bg-gray-800/20 text-gray-300 hover:border-gray-500/50 hover:bg-gray-700/30 hover:scale-105'
+                    ? 'border-gray-700/30 bg-gray-800/20 text-gray-500 cursor-not-allowed opacity-50'
+                    : 'border-gray-600/30 bg-gray-800/20 text-gray-300 hover:border-gray-500/50 hover:bg-gray-700/30 hover:scale-105'
                 }`}
               >
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-3">
                     <span className="font-medium text-lg">{option}</span>
                     {isWinningOption && (
@@ -262,13 +296,8 @@ export function UnifiedBettingInterface({
                         Winner
                       </span>
                     )}
-                    {isUserCurrentOption && isWinningOption && (
-                      <span className="text-xs bg-green-500/80 text-white px-3 py-1 rounded-full font-medium">
-                        You Bet: {formatDynamicDecimals(formatUnits(userBets?.[index] || BigInt(0), decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'}
-                      </span>
-                    )}
                     {isUserCurrentOption && !isWinningOption && (
-                      <span className="text-xs bg-gray-500/80 text-white px-3 py-1 rounded-full font-medium">
+                      <span className="text-xs bg-green-500/80 text-white px-3 py-1 rounded-full font-medium">
                         You Bet: {formatDynamicDecimals(formatUnits(userBets?.[index] || BigInt(0), decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'}
                       </span>
                     )}
@@ -283,7 +312,7 @@ export function UnifiedBettingInterface({
                   </div>
                 </div>
                 
-                {/* Progress bar
+                {/* Progress bar */}
                 <div className="w-full bg-gray-700/30 rounded-full h-2">
                   <div 
                     className={`h-2 rounded-full transition-all duration-500 ${
@@ -295,7 +324,7 @@ export function UnifiedBettingInterface({
                     }`}
                     style={{ width: `${Math.max(percentage, 2)}%` }}
                   />
-                </div> */}
+                </div>
               </button>
             )
           })}
@@ -308,7 +337,7 @@ export function UnifiedBettingInterface({
           {/* Amount Input */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-3">
-              {hasExistingBet ? 'Bet more?:' : 'Bet amount:'}
+              {hasExistingBet ? 'Additional bet amount:' : 'Bet amount:'}
             </label>
             <div className="relative">
               <input

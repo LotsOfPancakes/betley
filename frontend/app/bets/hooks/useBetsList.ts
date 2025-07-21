@@ -1,5 +1,5 @@
-// frontend/app/bets/hooks/useBetsList.ts - FIXED: TypeScript errors resolved
-import { useState, useEffect } from 'react'
+// frontend/app/bets/hooks/useBetsList.ts - OPTIMIZED version with batch API calls
+import { useState, useEffect, useCallback } from 'react'
 import { useReadContract, useConfig, useAccount } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI, HYPE_TOKEN_ADDRESS } from '@/lib/contractABI'
@@ -30,7 +30,62 @@ export function useBetsList() {
     functionName: 'decimals',
   })
 
-  // Fetch wallet-specific bets
+  // ✅ OPTIMIZATION 1: Batch API call for all mappings (memoized)
+  const fetchAllMappings = useCallback(async (betCount: number): Promise<Record<number, string>> => {
+    try {
+      // Single API call to get all mappings for this user
+      const response = await fetch('/api/bets/user-mappings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          address,
+          maxBetId: betCount - 1 
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        return data.mappings || {}
+      }
+    } catch (error) {
+      console.error('Failed to fetch batch mappings:', error)
+    }
+    
+    // Fallback to individual calls if batch fails
+    return {}
+  }, [address])
+
+  // ✅ OPTIMIZATION 2: Parallel contract calls (memoized)
+  const fetchBetDataParallel = useCallback(async (betIds: number[]) => {
+    const promises = betIds.map(async (i) => {
+      try {
+        // Parallel contract calls
+        const [betDataRaw, userBetsRaw] = await Promise.all([
+          readContract(config, {
+            address: BETLEY_ADDRESS,
+            abi: BETLEY_ABI,
+            functionName: 'getBetDetails',
+            args: [BigInt(i)],
+          }),
+          readContract(config, {
+            address: BETLEY_ADDRESS,
+            abi: BETLEY_ABI,
+            functionName: 'getUserBets',
+            args: [BigInt(i), address],
+          })
+        ])
+
+        return { id: i, betDataRaw, userBetsRaw }
+      } catch (error) {
+        console.error(`Error fetching bet ${i}:`, error)
+        return null
+      }
+    })
+
+    return Promise.all(promises)
+  }, [config, address])
+
+  // Fetch wallet-specific bets with optimizations
   useEffect(() => {
     async function fetchMyBets() {
       if (!address || betCounter === undefined || !decimals) {
@@ -42,79 +97,60 @@ export function useBetsList() {
       setError(null)
       
       try {
+        const betCount = Number(betCounter)
+        
+        // ✅ STEP 1: Get all mappings in one batch call
+        const mappings = await fetchAllMappings(betCount)
+        
+        // ✅ STEP 2: Get bet data for all bets in parallel
+        const betIds = Array.from({ length: betCount }, (_, i) => i)
+        const contractResults = await fetchBetDataParallel(betIds)
+        
+        // ✅ STEP 3: Process results
         const fetchedBets: BetDetails[] = []
+        
+        for (const result of contractResults) {
+          if (!result) continue
+          
+          const { id: i, betDataRaw, userBetsRaw } = result
+          
+          // Type assertions and validation
+          const betData = betDataRaw as BetDetailsResult
+          const userBets = userBetsRaw as UserBetsResult
+          
+          if (!betData || !Array.isArray(betData) || betData.length < 7) continue
+          if (!userBets || !Array.isArray(userBets)) continue
 
-        for (let i = 0; i < Number(betCounter); i++) {
-          try {
-            // ✅ FIXED: Properly type the betData return
-            const betDataRaw = await readContract(config, {
-              address: BETLEY_ADDRESS,
-              abi: BETLEY_ABI,
-              functionName: 'getBetDetails',
-              args: [BigInt(i)],
-            })
+          const isCreator = betData[2].toLowerCase() === address.toLowerCase()
+          const userTotalBet = userBets.reduce((total: bigint, amount: bigint) => total + amount, BigInt(0))
+          const hasBet = userTotalBet > BigInt(0)
 
-            // ✅ FIXED: Type assertion and validation
-            const betData = betDataRaw as BetDetailsResult
-            if (!betData || !Array.isArray(betData) || betData.length < 7) continue
+          // Only include if user is creator OR has placed a bet
+          if (isCreator || hasBet) {
+            let userRole: 'creator' | 'bettor' | 'both'
+            if (isCreator && hasBet) userRole = 'both'
+            else if (isCreator) userRole = 'creator'
+            else userRole = 'bettor'
 
-            // ✅ FIXED: Properly type the userBets return  
-            const userBetsRaw = await readContract(config, {
-              address: BETLEY_ADDRESS,
-              abi: BETLEY_ABI,
-              functionName: 'getUserBets',
-              args: [BigInt(i), address],
-            })
-
-            // ✅ FIXED: Type assertion and validation
-            const userBets = userBetsRaw as UserBetsResult
-            if (!userBets || !Array.isArray(userBets)) continue
-
-            // ✅ FIXED: Now betData and userBets are properly typed as arrays
-            const isCreator = betData[2].toLowerCase() === address.toLowerCase()
-            const userTotalBet = userBets.reduce((total: bigint, amount: bigint) => total + amount, BigInt(0))
-            const hasBet = userTotalBet > BigInt(0)
-
-            // Only include if user is creator OR has placed a bet
-            if (isCreator || hasBet) {
-              let userRole: 'creator' | 'bettor' | 'both'
-              if (isCreator && hasBet) userRole = 'both'
-              else if (isCreator) userRole = 'creator'
-              else userRole = 'bettor'
-
-              // ✅ Try to get random ID from database for this bet
-              let randomId: string | undefined = undefined
-              try {
-                const response = await fetch(`/api/bets/lookup-by-numeric/${i}`)
-                if (response.ok) {
-                  const data = await response.json()
-                  randomId = data.randomId
-                }
-              } catch (error) {
-                console.error(`Failed to get random ID for bet ${i}:`, error)
-              }
-
-              // ✅ Only include bets that have random ID mappings
-              if (randomId) {
-                fetchedBets.push({
-                  id: i,
-                  randomId, // Only bets with mappings will appear in the list
-                  name: betData[0],
-                  options: betData[1],
-                  creator: betData[2],
-                  endTime: betData[3],
-                  resolved: betData[4],
-                  winningOption: betData[5],
-                  totalAmounts: betData[6],
-                  userRole,
-                  userTotalBet
-                })
-              }
-              // ✅ Bets without random IDs are intentionally excluded (not accessible)
+            // ✅ Use mapping from batch call
+            const randomId = mappings[i]
+            
+            // Only include bets that have random ID mappings
+            if (randomId) {
+              fetchedBets.push({
+                id: i,
+                randomId,
+                name: betData[0],
+                options: betData[1],
+                creator: betData[2],
+                endTime: betData[3],
+                resolved: betData[4],
+                winningOption: betData[5],
+                totalAmounts: betData[6],
+                userRole,
+                userTotalBet
+              })
             }
-          } catch (err) {
-            console.error(`Error fetching bet ${i}:`, err)
-            // Continue with other bets even if one fails
           }
         }
 
@@ -128,7 +164,7 @@ export function useBetsList() {
     }
 
     fetchMyBets()
-  }, [address, betCounter, decimals, config])
+  }, [address, betCounter, decimals, config, fetchAllMappings, fetchBetDataParallel])
 
   // Refresh function for manual updates
   const refreshBets = () => {

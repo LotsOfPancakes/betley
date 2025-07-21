@@ -1,9 +1,10 @@
-// frontend/app/bets/page.tsx - Updated with modern background
+// frontend/app/bets/page.tsx - Updated with custom search image using Next.js Image
 'use client'
 
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { ConnectKitButton } from 'connectkit'
+import Image from 'next/image'
 
 // Import our extracted components and hooks
 import BetCard from './components/BetCard'
@@ -11,6 +12,59 @@ import BetFilters from './components/BetFilters'
 import EmptyState from './components/EmptyState'
 import { useBetsList } from './hooks/useBetsList'
 import { useBetsFiltering } from './hooks/useBetsFiltering'
+
+// Custom loading component specifically for bets search
+function BetsSearchLoading() {
+  return (
+    <div className="text-center py-12">
+      <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 max-w-md mx-auto">
+        <div className="w-16 h-16 mx-auto mb-4 relative">
+          <Image
+            src="/images/betley-searching.png"
+            alt="Searching for bets"
+            width={64}
+            height={64}
+            className="object-contain animate-pulse"
+            style={{
+              animation: 'pulse 2s infinite, float 3s ease-in-out infinite'
+            }}
+            priority={false} // Not critical for initial page load
+            quality={90} // High quality for sharp rendering
+          />
+          <div 
+            className="w-16 h-16 absolute inset-0 bg-green-500/20 rounded-full blur-lg animate-pulse"
+            style={{ zIndex: -1 }}
+          />
+        </div>
+        <p className="text-white">Betley is looking around for your bets...</p>
+      </div>
+      
+      {/* Custom CSS animations for this component only */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        
+        /* Alternative animation options */
+        @keyframes gentle-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+        
+        @keyframes bounce-subtle {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+      `}</style>
+    </div>
+  )
+}
 
 export default function MyBetsPage() {
   const router = useRouter()
@@ -44,7 +98,20 @@ export default function MyBetsPage() {
         
         <div className="text-center relative z-10">
           <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
-            <div className="text-5xl mb-4">🎲</div>
+            <div className="w-16 h-16 mx-auto mb-4 relative">
+              <Image
+            src="/images/betley-searching.png"
+            alt="Searching for bets"
+            width={64}
+            height={64}
+            className="object-contain animate-pulse"
+            style={{
+              animation: 'pulse 2s infinite, float 3s ease-in-out infinite'
+            }}
+            priority={false} // Not critical for initial page load
+            quality={90} // High quality for sharp rendering
+          />
+          </div>
             <h1 className="text-2xl font-bold text-white mb-4">Looking for your Bets?</h1>
             <div className="flex justify-center mb-4"> 
               <ConnectKitButton />
@@ -98,14 +165,9 @@ export default function MyBetsPage() {
             </div>
           )}
 
-          {/* Loading state */}
+          {/* Loading state - using custom BetsSearchLoading component */}
           {loading ? (
-            <div className="text-center py-12">
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 max-w-md mx-auto">
-                <div className="w-8 h-8 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-white">Betley is poking around for your bets...</p>
-              </div>
-            </div>
+            <BetsSearchLoading />
           ) : filteredBets.length === 0 ? (
             <EmptyState filter={filter} />
           ) : (

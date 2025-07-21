@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/components/UserActions.tsx - BEST PRACTICES REFACTORING
+// frontend/app/bets/[id]/components/UserActions.tsx
 'use client'
 
 import { formatUnits } from 'viem'
