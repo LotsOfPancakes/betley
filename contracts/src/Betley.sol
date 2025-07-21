@@ -118,7 +118,6 @@ contract Betley is Ownable, ReentrancyGuard {
         require(!bet.resolved, "Bet already resolved");
         require(_option < bet.options.length, "Invalid option");
         require(_amount > 0, "Amount must be positive");
-        require(bet.userBets[msg.sender][_option] == 0, "Already bet on this option");
         
         // Handle payment based on token type
         if (bet.token == address(0)) {
@@ -130,10 +129,10 @@ contract Betley is Ownable, ReentrancyGuard {
             IERC20(bet.token).transferFrom(msg.sender, address(this), _amount);
         }
         
-        bet.userBets[msg.sender][_option] = _amount;
+        bet.userBets[msg.sender][_option] += _amount;
         bet.totalAmountPerOption[_option] += _amount;
-        
-        emit BetPlaced(_betId, msg.sender, _option, _amount);
+    
+    emit BetPlaced(_betId, msg.sender, _option, _amount);
     }
     
     /**

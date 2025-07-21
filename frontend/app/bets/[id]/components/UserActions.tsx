@@ -12,6 +12,7 @@ import {
   calculateWinningsBreakdown, 
   calculateUserTotalBet,
   hasUserWon,
+  calculateLosingPool,
   type WinningsBreakdown,
 } from '@/lib/utils'
 
@@ -317,7 +318,10 @@ export function UserActions({
     [userBets, resolved, winningOption, resolutionDeadlinePassed, hasClaimed, isCreator, winningsBreakdown]
   )
 
-  const hasCreatorFees = isCreator && creatorFeeAmount && creatorFeeAmount > BigInt(0)
+  // const hasCreatorFees = isCreator && creatorFeeAmount && creatorFeeAmount > BigInt(0)
+
+  const actualCreatorFeeAmount = winningsBreakdown?.creatorFee ?? creatorFeeAmount
+  const hasCreatorFees = isCreator && actualCreatorFeeAmount && actualCreatorFeeAmount > BigInt(0)
 
   // ============================================================================
   // EFFECTS - Properly isolated side effects
@@ -440,7 +444,7 @@ export function UserActions({
       {hasCreatorFees && !hasClaimedCreatorFees ? (
         <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm rounded-3xl p-6">
           <p className="text-yellow-300 mb-4">
-            Creator Fees available: {formatTokenAmount(creatorFeeAmount, decimals, isNativeBet)}
+            Creator Fees available: {formatTokenAmount(actualCreatorFeeAmount, decimals, isNativeBet)}
           </p>
           
           <ClaimButton
@@ -448,15 +452,20 @@ export function UserActions({
             disabled={isCreatorClaimPending}
             variant="warning"
           >
-            {isCreatorClaimPending ? 'Claiming...' : `Claim ${formatTokenAmount(creatorFeeAmount, decimals, isNativeBet)} Creator Fees`}
+            {isCreatorClaimPending ? 'Claiming...' : `Claim ${formatTokenAmount(actualCreatorFeeAmount, decimals, isNativeBet)} Creator Fees`}
           </ClaimButton>
 
           <CollapsibleDetails
-            data={feeBreakdown}
-            type="fees"
-            decimals={decimals}
-            isNativeBet={isNativeBet}
-          />
+  data={winningsBreakdown ? {
+    creatorFee: winningsBreakdown.creatorFee,
+    platformFee: winningsBreakdown.platformFee,
+    totalFees: winningsBreakdown.creatorFee + winningsBreakdown.platformFee,
+    losingPool: winningsBreakdown.rawWinningsFromLosers
+  } : feeBreakdown}
+  type="fees"
+  decimals={decimals}
+  isNativeBet={isNativeBet}
+/>
         </div>
       ) : null}
     </div>
