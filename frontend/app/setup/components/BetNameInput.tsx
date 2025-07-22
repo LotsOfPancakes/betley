@@ -50,7 +50,7 @@ export default function BetNameInput({
         {/* Status indicator */}
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
           {isGoodLength && (
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
               isPreFilled ? 'bg-green-500' : 'bg-green-500'
             }`}>
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

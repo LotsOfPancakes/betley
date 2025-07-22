@@ -12,8 +12,8 @@ interface DurationSelectorProps {
 }
 
 const quickPresets = [
-  { label: '1h', hours: 1, minutes: 0, description: 'Quick decision' },
-  { label: '1d', hours: 24, minutes: 0, description: 'Full day' },
+  { label: '1h', hours: 1, minutes: 0, description: 'Default - Quick Bet' },
+  { label: '1d', hours: 24, minutes: 0, description: 'Full day Bet' },
 ]
 
 export default function DurationSelector({ duration, onChange, error }: DurationSelectorProps) {
@@ -50,32 +50,26 @@ export default function DurationSelector({ duration, onChange, error }: Duration
     return 'border-green-500/30 focus:border-green-400'
   }
 
-  const formatDuration = () => {
-    if (totalMinutes === 0) return 'Not set'
-    if (duration.hours === 0) return `${duration.minutes}m`
-    if (duration.minutes === 0) return `${duration.hours}h`
-    return `${duration.hours}h ${duration.minutes}m`
-  }
+  // const formatDuration = () => {
+  //   if (totalMinutes === 0) return 'Not set'
+  //   if (duration.hours === 0) return `${duration.minutes}m`
+  //   if (duration.minutes === 0) return `${duration.hours}h`
+  //   return `${duration.hours}h ${duration.minutes}m`
+  // }
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <label className="block text-lg font-semibold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-          Betting Duration <span className="text-sm text-gray-400">
-          ({formatDuration()}) </span>
+          Bet Duration 
+          {/* <span className="text-sm text-gray-400">
+          ({formatDuration()}) </span> */}
         </label>
         <span className="text-sm text-gray-400">
           {isValid && isReasonable && !isTooLong && (
             <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          )}
-          {totalMinutes > 0 && (totalMinutes < 10 || isTooLong) && (
-            <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
           )}
@@ -90,7 +84,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
             // If custom is already selected, do nothing
             // If not selected and current value is 0, set to 2h as default
             if (!isCustomSelected && totalMinutes === 0) {
-              onChange({ hours: 2, minutes: 0 })
+              onChange({ hours: 1, minutes: 0 })
             }
           }}
           className={`p-4 rounded-xl border-2 transition-all duration-300 text-left group hover:scale-105 ${
@@ -102,7 +96,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
           <div className="flex items-center justify-between">
             <div>
               <div className="font-bold text-lg">Custom</div>
-              <div className="text-xs opacity-75">Set custom time</div>
+              {/* <div className="text-xs opacity-75">Set custom time</div> */}
             </div>
             {isCustomSelected && (
               <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">

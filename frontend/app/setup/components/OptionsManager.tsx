@@ -39,7 +39,7 @@ export default function OptionsManager({
   }
 
   // Calculate validation states
-  const filledOptions = options.filter(opt => opt.trim().length > 0)
+  // const filledOptions = options.filter(opt => opt.trim().length > 0)
   
   // Check for duplicate detection per option
   const getDuplicateStatus = (index: number, value: string) => {
@@ -64,9 +64,9 @@ export default function OptionsManager({
         <label className="block text-lg font-semibold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
           Betting Options
         </label>
-        <span className="text-sm text-gray-400">
+        {/* <span className="text-sm text-gray-400">
           {filledOptions.length}/{maxOptions} options
-        </span>
+        </span> */}
       </div>
 
       <div className="space-y-4">
