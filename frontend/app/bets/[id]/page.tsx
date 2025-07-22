@@ -12,6 +12,8 @@ import { UserActions } from './components/UserActions'
 import { UnifiedBettingInterface } from './components/UnifiedBettingInterface'
 import { ResolveModal } from './components/ResolveModal'
 import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBoundary'
+import type { Metadata } from 'next'
+import { supabase } from '@/lib/supabase'
 
 // Import hooks
 import { useBetData } from './hooks/useBetData'
@@ -28,6 +30,96 @@ type BetDetailsArray = readonly [
   readonly bigint[],  // totalAmounts
   `0x${string}`       // token address
 ]
+
+// Generate dynamic metadata function
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}): Promise<Metadata> {
+  try {
+    // Await the params in Next.js 15
+    const { id: randomId } = await params
+    
+    // Look up bet details from database
+    const { data: mapping } = await supabase
+      .from('bet_mappings')
+      .select('bet_name, numeric_id')
+      .eq('random_id', randomId)
+      .single()
+
+    if (!mapping) {
+      // Fallback for invalid bet IDs
+      return {
+        title: 'Bet Not Found - Betley',
+        description: 'This bet could not be found.',
+        openGraph: {
+          title: 'Bet Not Found - Betley',
+          description: 'This bet could not be found.',
+          images: ['/og-image.png'],
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title: 'Bet Not Found - Betley',
+          description: 'This bet could not be found.',
+          images: ['/og-image.png'],
+        }
+      }
+    }
+
+    const betTitle = mapping.bet_name
+    const betUrl = `https://www.betley.xyz/bets/${randomId}`
+    
+    // Create dynamic metadata with bet title
+    return {
+      title: `${betTitle} - Betley`,
+      description: `Join the bet: "${betTitle}" on Betley, the easiest way to set up on-chain bets.`,
+      
+      openGraph: {
+        title: betTitle,
+        description: `Join this bet on Betley: "${betTitle}"`,
+        type: 'website',
+        url: betUrl,
+        siteName: 'Betley',
+        images: [
+          {
+            url: '/og-bet-image.png', // You can create a specific image for bets
+            width: 1200,
+            height: 630,
+            alt: `Bet: ${betTitle}`,
+          }
+        ],
+      },
+      
+      twitter: {
+        card: 'summary_large_image',
+        title: betTitle,
+        description: `Join this bet on Betley: "${betTitle}"`,
+        images: ['/og-bet-image.png'],
+        creator: '@betleyxyz',
+        site: '@betleyxyz',
+      },
+      
+      // Additional metadata
+      alternates: {
+        canonical: betUrl
+      }
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error)
+    
+    // Fallback metadata on error
+    return {
+      title: 'Bet - Betley',
+      description: 'Join this bet on Betley, the easiest way to set up on-chain bets.',
+      openGraph: {
+        title: 'Bet - Betley',
+        description: 'Join this bet on Betley.',
+        images: ['/og-image.png'],
+      }
+    }
+  }
+}
 
 // Error state for invalid IDs with bento styling
 function InvalidBetError({ randomId }: { randomId: string }) {
