@@ -1,9 +1,10 @@
-// frontend/app/bets/[id]/hooks/useBetActions.ts
+// frontend/app/bets/[id]/hooks/useBetActions.ts - Updated with chain validation
 import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { parseUnits } from 'viem'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { useChainValidation } from '@/lib/hooks/useChainValidation' // ✅ ADD THIS
 import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
 import { isNativeHype } from '@/lib/tokenUtils'
 
@@ -19,10 +20,10 @@ export function useBetActions(betId: string, tokenAddress?: string) {
   const numericBetId = parseInt(betId)
   const queryClient = useQueryClient()
   const { showError, showSuccess } = useNotification()
+  const { validateChain } = useChainValidation() // ✅ ADD THIS
 
   // Determine if this bet uses native HYPE
-  const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : true // Default to native if no token address yet
-
+  const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : true
 
   // Contract interactions
   const { 
@@ -38,9 +39,12 @@ export function useBetActions(betId: string, tokenAddress?: string) {
     data: receipt 
   } = useWaitForTransactionReceipt({ hash: txHash })
 
-  // === ACTION HANDLERS ===
+  // === ACTION HANDLERS WITH CHAIN VALIDATION ===
   const handleApprove = async () => {
     if (!betAmount || isWritePending) return
+    
+    // ✅ VALIDATE CHAIN FIRST
+    if (!validateChain()) return
     
     try {
       setIsSubmitting(true)
@@ -76,57 +80,61 @@ export function useBetActions(betId: string, tokenAddress?: string) {
     }
   }
 
-
-// REPLACE THE DEBUG handlePlaceBet WITH THIS CLEAN VERSION:
-const handlePlaceBet = async () => {
-  if (!betAmount || selectedOption === null || isWritePending) return
-  
-  try {
-    setIsSubmitting(true)
-    setCurrentTxType('placeBet')
+  const handlePlaceBet = async () => {
+    if (!betAmount || selectedOption === null || isWritePending) return
     
-    const decimals = 18
-    const amountWei = parseUnits(betAmount, decimals)
+    // ✅ VALIDATE CHAIN FIRST
+    if (!validateChain()) return
     
-    const txArgs = {
-      address: BETLEY_ADDRESS,
-      abi: BETLEY_ABI,
-      functionName: 'placeBet' as const,
-      args: [BigInt(numericBetId), selectedOption, amountWei] as const,
-      ...(isNativeBet && { value: amountWei })
-    }
-    
-    await writeContract(txArgs)
-    
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    
-    if (errorMessage.toLowerCase().includes('user rejected') || 
-        errorMessage.toLowerCase().includes('cancelled') ||
-        errorMessage.toLowerCase().includes('denied') ||
-        errorMessage.includes('4001')) {
+    try {
+      setIsSubmitting(true)
+      setCurrentTxType('placeBet')
+      
+      const decimals = 18
+      const amountWei = parseUnits(betAmount, decimals)
+      
+      const txArgs = {
+        address: BETLEY_ADDRESS,
+        abi: BETLEY_ABI,
+        functionName: 'placeBet' as const,
+        args: [BigInt(numericBetId), selectedOption, amountWei] as const,
+        ...(isNativeBet && { value: amountWei })
+      }
+      
+      await writeContract(txArgs)
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      
+      if (errorMessage.toLowerCase().includes('user rejected') || 
+          errorMessage.toLowerCase().includes('cancelled') ||
+          errorMessage.toLowerCase().includes('denied') ||
+          errorMessage.includes('4001')) {
+        setIsSubmitting(false)
+        setCurrentTxType(null)
+        return
+      }
+      
+      if (errorMessage.toLowerCase().includes('already placed bet on different option')) {
+        showError('You can only bet on one option per bet. To add more funds, select the same option you previously chose.')
+      } else {
+        showError(
+          isNativeBet 
+            ? 'Failed to place bet. Please check your HYPE balance and try again.'
+            : 'Failed to place bet. Please make sure you have approved the token transfer.'
+        )
+      }
+      
       setIsSubmitting(false)
       setCurrentTxType(null)
-      return
     }
-    
-    if (errorMessage.toLowerCase().includes('already placed bet on different option')) {
-      showError('You can only bet on one option per bet. To add more funds, select the same option you previously chose.')
-    } else {
-      showError(
-        isNativeBet 
-          ? 'Failed to place bet. Please check your HYPE balance and try again.'
-          : 'Failed to place bet. Please make sure you have approved the token transfer.'
-      )
-    }
-    
-    setIsSubmitting(false)
-    setCurrentTxType(null)
   }
-}  
 
   const handleClaimWinnings = async () => {
     if (isWritePending) return
+    
+    // ✅ VALIDATE CHAIN FIRST
+    if (!validateChain()) return
     
     try {
       setIsSubmitting(true)
@@ -159,6 +167,9 @@ const handlePlaceBet = async () => {
 
   const handleResolveBet = async (winningOption: number) => {
     if (isWritePending) return
+    
+    // ✅ VALIDATE CHAIN FIRST
+    if (!validateChain()) return
     
     try {
       setIsSubmitting(true)

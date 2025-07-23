@@ -1,4 +1,4 @@
-// frontend/app/setup/hooks/useBetCreation.ts - Updated for async mapping creation
+// frontend/app/setup/hooks/useBetCreation.ts - Updated with chain validation
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { useChainValidation } from '@/lib/hooks/useChainValidation' // ✅ ADD THIS
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
 import { UnifiedBetMapper } from '@/lib/betIdMapping'
 
@@ -26,6 +27,7 @@ export function useBetCreation() {
   const { address } = useAccount()
   const queryClient = useQueryClient()
   const { showError, showSuccess } = useNotification()
+  const { validateChain } = useChainValidation() // ✅ ADD THIS
   
   // Get current bet counter for ID prediction
   const { data: betCounter } = useReadContract({
@@ -83,9 +85,9 @@ export function useBetCreation() {
           setState(prev => ({ 
             ...prev, 
             isLoading: false, 
-            error: 'Failed to create bet link. Please try again.' 
+            error: 'Failed to create bet link. Please try again.'
           }))
-          showError('Failed to create bet link')
+          showError('Failed to create bet link. Please try again.')
         }
       }
       
@@ -93,43 +95,61 @@ export function useBetCreation() {
     }
   }, [isSuccess, receipt, betCounterWhenStarted, address, lastBetName, queryClient, showSuccess, showError, router])
 
-  const createBet = async (name: string, options: string[], durationInSeconds: number) => {
-    if (!address) {
-      setState(prev => ({ ...prev, error: 'Please connect your wallet' }))
+  // Main create bet function with CHAIN VALIDATION
+  const createBet = async (
+    betName: string,
+    options: string[],
+    durationInSeconds: number,
+    tokenAddress?: string
+  ) => {
+    // ✅ VALIDATE CHAIN FIRST
+    if (!validateChain()) return
+
+    if (!address || !betCounter) {
+      showError('Please connect your wallet first')
+      return
+    }
+
+    if (!betName.trim() || options.length < 2) {
+      showError('Please provide a bet name and at least 2 options')
       return
     }
 
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }))
+      setState({ isLoading: true, error: null })
+      setLastBetName(betName.trim())
+      setBetCounterWhenStarted(Number(betCounter))
       
-      // Store bet details for mapping creation
-      setLastBetName(name)
-      setBetCounterWhenStarted(Number(betCounter || 0))
-      
-      // Create the bet
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'createBet',
-        args: [name, options, BigInt(durationInSeconds), '0x0000000000000000000000000000000000000000'],
+        args: [
+          betName.trim(),
+          options.filter(opt => opt.trim()),
+          BigInt(durationInSeconds),
+          tokenAddress || '0x0000000000000000000000000000000000000000'
+        ],
       })
       
     } catch (error: unknown) {
+      console.error('Error creating bet:', error)
+      
       const errorMessage = error instanceof Error ? error.message : String(error)
       
       if (errorMessage.toLowerCase().includes('user rejected') || 
           errorMessage.toLowerCase().includes('cancelled') ||
-          errorMessage.toLowerCase().includes('denied')) {
-        setState(prev => ({ ...prev, isLoading: false }))
+          errorMessage.toLowerCase().includes('denied') ||
+          errorMessage.includes('4001')) {
+        setState({ isLoading: false, error: null })
         return
       }
       
-      setState(prev => ({ 
-        ...prev, 
+      setState({ 
         isLoading: false, 
-        error: 'Failed to create bet. Please try again.' 
-      }))
-      showError('Failed to create bet')
+        error: 'Failed to create bet. Please try again.'
+      })
+      showError('Failed to create bet. Please try again.')
     }
   }
 
@@ -138,11 +158,12 @@ export function useBetCreation() {
   }
 
   return {
+    createBet,
+    clearError,
     isCreating: isWritePending,
     isConfirming,
     isSuccess,
+    isLoading: state.isLoading,
     error: state.error,
-    createBet,
-    clearError,
   }
 }
