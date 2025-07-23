@@ -46,11 +46,11 @@ export async function generateMetadata({
     // Create dynamic metadata with bet title
     return {
       title: `${betTitle}`,
-      description: `Betley | Join this Bet. What do you think - Yes or No?`,
+      description: `Betley | Join this Bet. Will you bet Yes or No?`,
       
       openGraph: {
         title: betTitle,
-        description: `Betley | Join this Bet. What do you think - Yes or No?.`,
+        description: `Betley | Join this Bet. Will you bet Yes or No?`,
         type: 'website',
         url: betUrl,
         siteName: 'Betley',
@@ -67,7 +67,7 @@ export async function generateMetadata({
       twitter: {
         card: 'summary_large_image',
         title: betTitle,
-        description: `Betley | Join this Bet. What do you think - Yes or No?`,
+        description: `Betley | Join this Bet. Will you bet Yes or No?`,
         images: ['/og-bet-image.png'],
         creator: '@betleyxyz',
         site: '@betleyxyz',
