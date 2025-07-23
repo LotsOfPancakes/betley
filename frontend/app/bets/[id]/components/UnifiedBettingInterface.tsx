@@ -1,9 +1,17 @@
 // frontend/app/bets/[id]/components/UnifiedBettingInterface.tsx
+// REFACTORED: Clean, focused component using extracted utilities and sub-components
 'use client'
 
-import { formatUnits } from 'viem'
-import { useEffect, useState } from 'react'
-import { ConnectKitButton } from 'connectkit'
+import { useEffect } from 'react'
+import { 
+  canUserBet, 
+  getUserExistingOptionIndex
+} from '@/lib/utils/bettingUtils'
+
+// Import our extracted components
+import { BetStatusHeader } from './BetStatusHeader'
+import { BetOptionsGrid } from './BetOptionsGrid'
+import { BetAmountInput } from './BetAmountInput'
 
 interface UnifiedBettingInterfaceProps {
   // Bet Info props
@@ -62,333 +70,92 @@ export function UnifiedBettingInterface({
   totalAmounts,
   decimals,
   hypeBalance,
-  //justPlacedBet,
+  //justPlacedBet, // Currently unused
   hasExistingBet,
   isNativeBet = false
 }: UnifiedBettingInterfaceProps) {
 
-  const [linkCopied, setLinkCopied] = useState(false)
+  // ============================================================================
+  // BUSINESS LOGIC - Centralized calculations
+  // ============================================================================
+  
+  // Safe defaults for required props
+  const safeOptions = options || []
+  const safeUserBets = userBets || []
+  const safeTotalAmounts = totalAmounts || []
+  const safeDecimals = decimals || 18
+  const safeBalance = hypeBalance || BigInt(0)
 
-  const formatTimeRemaining = (seconds: number) => {
-    if (seconds <= 0) return 'Expired'
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`
-    }
-    if (minutes > 0) {
-      return `${minutes}m ${secs}s`
-    }
-    return `${secs}s`
-  }
+  // Calculate totals and user state
+  const totalPool = safeTotalAmounts.reduce((a, b) => a + b, BigInt(0))
+  const userExistingOptionIndex = getUserExistingOptionIndex(safeUserBets)
+  const canBet = canUserBet(address, isActive, resolved)
 
-  const getStatusDisplay = () => {
-    if (resolved) {
-      return {
-        text: 'Resolved',
-        color: 'bg-gradient-to-r from-green-500 to-emerald-500',
-        textColor: 'text-white',
-        timeInfo: null,
-        icon: '✅'
-      }
-    }
-    
-    if (resolutionDeadlinePassed) {
-      return {
-        text: 'Refund Available',
-        color: 'bg-gradient-to-r from-yellow-500 to-orange-500',
-        textColor: 'text-white',
-        timeInfo: null,
-        icon: '💰'
-      }
-    }
-    
-    if (!isActive) {
-      return {
-        text: 'Pending Resolution',
-        color: 'bg-gradient-to-r from-yellow-600 to-orange-600',
-        textColor: 'text-white',
-        timeInfo: resolutionTimeLeft > 0 ? formatTimeRemaining(resolutionTimeLeft) : null,
-        icon: '⏳'
-      }
-    }
-    
-    return {
-      text: 'Active',
-      color: 'bg-gradient-to-r from-blue-500/40 to-blue-600/80',
-      textColor: 'text-white',
-      timeInfo: timeLeft > 0 ? formatTimeRemaining(timeLeft) : null,
-      icon: '🎯'
-    }
-  }
-
-  const status = getStatusDisplay()
-
-  // Calculate totals
-  const totalPool = totalAmounts?.reduce((a, b) => a + b, BigInt(0)) || BigInt(0)
-  const hasPool = totalPool > BigInt(0)
-
-  // User bet calculations
-  const userExistingOptionIndex = userBets?.findIndex(amount => amount > BigInt(0)) ?? -1
-  const effectiveSelectedOption = hasExistingBet ? userExistingOptionIndex : selectedOption
-
+  // ============================================================================
+  // SIDE EFFECTS - Auto-selection logic
+  // ============================================================================
+  
   // Auto-select the option user has already bet on
   useEffect(() => {
-    if (hasExistingBet && userExistingOptionIndex !== -1 && selectedOption !== userExistingOptionIndex) {
+    const safeHasExistingBet = hasExistingBet || false
+    if (safeHasExistingBet && userExistingOptionIndex !== -1 && selectedOption !== userExistingOptionIndex) {
       setSelectedOption(userExistingOptionIndex)
     }
   }, [hasExistingBet, userExistingOptionIndex, selectedOption, setSelectedOption])
 
-  // Copy link functionality
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href)
-      setLinkCopied(true)
-      setTimeout(() => setLinkCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy link:', err)
-    }
-  }
-
-  // Helper function for dynamic decimal formatting
-  const formatDynamicDecimals = (value: string | number): string => {
-    const num = parseFloat(value.toString())
-    if (isNaN(num) || num === 0) return '0'
-    // Show up to 8 decimals, then remove trailing zeros
-    return num.toFixed(8).replace(/\.?0+$/, '')
-  }
-
-  // Betting logic
-  const canBet = address && isActive && !resolved
-  const isValidAmount = parseFloat(betAmount || '0') > 0
-  const hasBalance = hypeBalance && parseFloat(betAmount || '0') <= parseFloat(formatUnits(hypeBalance, decimals || 18))
-
-  // NEW: Get button text with integrated validation messages
-  const getButtonContent = () => {
-    if (needsApproval) {
-      if (isApproving) {
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            Approving...
-          </div>
-        )
-      }
-      return `Approve ${isNativeBet ? 'HYPE' : 'mHYPE'}`
-    }
-
-    if (isPending) {
-      return (
-        <div className="flex items-center justify-center gap-2">
-          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-          Placing Bet...
-        </div>
-      )
-    }
-
-    // Check validation conditions and return appropriate message
-    if (!isValidAmount && betAmount) {
-      return 'Please enter a valid amount'
-    }
-
-    if (!hasBalance && isValidAmount) {
-      return 'Insufficient balance'
-    }
-
-    if (selectedOption === null && isValidAmount && hasBalance) {
-      return 'Please select an option to bet on'
-    }
-
-    // Default: normal Place Bet text
-    return `Place Bet${selectedOption !== null && options ? ` on ${options[selectedOption]}` : ''}`
-  }
-
+  // ============================================================================
+  // RENDER - Clean component composition
+  // ============================================================================
+  
   return (
-  <div className="">
-    {/* Header */}
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-      <div className="flex-1">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 leading-tight">{name}</h1>
-        <div className="flex items-center gap-3 flex-wrap">
-          
-          {/* Combined Status and Time Pill */}
-          <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium ${status.color} ${status.textColor} shadow-lg`}>
-            <span>{status.icon}</span>
-            {status.text}
-            {status.timeInfo && <span>• {status.timeInfo}</span>}
-          </span>
-          
-          {/* Pool Total Pill */}
-          {hasPool && (
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium bg-gradient-to-r from-gray-400/90 to-slate-500 text-black shadow-lg">
-              <span>💰</span>
-              Pool TVL: {formatDynamicDecimals(formatUnits(totalPool, decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'}
-            </span>
-          )}
-        </div>
-      </div>
-      
-      <button
-        onClick={copyLink}
-        className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-6 py-3 rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl flex items-center gap-2"
-      >
-        {linkCopied ? (
-          <>
-            <span className="text-green-400">✓</span>
-            Copied!
-          </>
-        ) : (
-          <>
-            <span>🔗</span>
-            Share
-          </>
-        )}
-      </button>
-    </div>
-
-    {/* Bet Options */}
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-4">
-          {hasExistingBet && isActive ? '' : ' '}
-        </h3>
-        
-        {/* Show wallet connection prompt if not connected */}
-        {!address && (
-          <div className="flex justify-center mb-6 p-6 bg-gray-800/40 rounded-2xl"> 
-            <div className="text-center">
-              <p className="text-gray-300 mb-4">Connect your wallet to start Betting</p>
-              <ConnectKitButton />
-            </div>
-          </div>
-        )}
+      {/* Header Section - Status, title, share */}
+      <BetStatusHeader
+        name={name}
+        isActive={isActive}
+        resolved={resolved}
+        resolutionDeadlinePassed={resolutionDeadlinePassed}
+        timeLeft={timeLeft}
+        resolutionTimeLeft={resolutionTimeLeft}
+        totalPool={totalPool}
+        decimals={safeDecimals}
+        isNativeBet={isNativeBet}
+      />
 
-        {/* Options Grid */}
-        <div className="grid gap-4">
-          {options?.map((option, index) => {
-            const totalForOption = totalAmounts?.[index] || BigInt(0)
-            const percentage = totalPool > BigInt(0) ? 
-              Number((totalForOption * BigInt(10000)) / totalPool) / 100 : 0
-            
-            const isUserCurrentOption = hasExistingBet && index === userExistingOptionIndex
-            const isDisabled = !canBet || (hasExistingBet && !isUserCurrentOption)
-            const isSelected = effectiveSelectedOption === index
-            const isWinningOption = resolved && winningOption === index
-            
-// visual hierarchy
-// Green = Success/Winner (highest importance)
-// Blue = Selected/Active (medium-high importance)
-// Gray = Default/Disabled (low importance)
+      {/* Options Grid - Betting options selection */}
+      <BetOptionsGrid
+        address={address}
+        options={safeOptions}
+        userBets={safeUserBets}
+        totalAmounts={safeTotalAmounts}
+        selectedOption={selectedOption}
+        setSelectedOption={setSelectedOption}
+        canBet={canBet}
+        hasExistingBet={hasExistingBet || false}
+        resolved={resolved}
+        winningOption={winningOption}
+        decimals={safeDecimals}
+        isNativeBet={isNativeBet}
+      />
 
-            return (
-              <button
-                key={index}
-                onClick={() => !isDisabled && setSelectedOption(index)}
-                disabled={isDisabled}
-                className={`p-4 rounded-2xl text-left transition-all duration-300  ${
-                  isWinningOption
-                    ? 'bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-green-300 shadow-lg shadow-green-500/20 scale-105'
-                    : isSelected
-                    ? 'bg-gradient-to-br from-blue-900/30 to-blue-800/30 text-blue-300 shadow-md shadow-green-500/10 scale-101'
-                    : isUserCurrentOption
-                    ? 'bg-gradient-to-br from-blue-900/30 to-blue-800/30 text-blue-300'
-                    : isDisabled
-                    ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed opacity-70'
-                    : 'bg-gradient-to-br from-gray-400/30 to-gray-500/60 text-gray-300'
-                }`}
-              >
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium text-lg">{option}</span>
-                    {isWinningOption && (
-                      <span className="text-xs bg-green-500 text-white px-3 py-1 rounded-full font-medium">
-                        Winner
-                      </span>
-                    )}
-                    {isUserCurrentOption && !isWinningOption && (
-                      <span className="text-xs bg-gray-500/80 text-white px-3 py-1 rounded-full font-medium">
-                        You Bet: {formatDynamicDecimals(formatUnits(userBets?.[index] || BigInt(0), decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-300">
-                      {formatDynamicDecimals(formatUnits(totalForOption, decimals || 18))} {isNativeBet ? 'HYPE' : 'mHYPE'}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {percentage.toFixed(0)}%
-                    </div>
-                  </div>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Betting Form - Only show if can bet */}
+      {/* Amount Input - Only show if user can bet */}
       {canBet && (
-        <>
-          {/* Amount Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-3">
-              {hasExistingBet ? 'Additional bet:' : 'Bet amount:'}
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={betAmount}
-                onChange={(e) => setBetAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                placeholder="0.00"
-                className="w-full bg-gray-800/60 backdrop-blur-sm border border-gray-600/50 rounded-2xl px-6 py-4 text-white placeholder-gray-500 focus:border-green-500 focus:outline-none transition-all duration-300"
-                style={{
-                  boxShadow: 'inset 0 0 0 1px transparent',
-                }}
-                onFocus={(e) => {
-                  e.target.style.boxShadow = '0 0 30px rgba(34, 197, 94, 0.3), 0 0 60px rgba(34, 197, 94, 0.2), 0 0 100px rgba(34, 197, 94, 0.1)'
-                }}
-                onBlur={(e) => {
-                  e.target.style.boxShadow = 'inset 0 0 0 1px transparent'
-                }}
-              />
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">
-                {isNativeBet ? 'HYPE' : 'mHYPE'}
-              </div>
-            </div>
-            
-            {/* Balance Display */}
-            {hypeBalance && (
-              <div className="mt-2 text-sm text-gray-400">
-                Balance: {formatDynamicDecimals(formatUnits(hypeBalance, decimals || 8))}  {isNativeBet ? 'HYPE' : 'mHYPE'}
-              </div>
-            )}
-          </div>
-
-          {/* Action Button - Updated with integrated validation */}
-          <div>
-            {needsApproval ? (
-              <button
-                onClick={handleApprove}
-                disabled={isApproving || !isValidAmount || !hasBalance}
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-yellow-500/30 disabled:shadow-none"
-              >
-                {getButtonContent()}
-              </button>
-            ) : (
-              <button
-                onClick={handlePlaceBet}
-                disabled={isPending || !isValidAmount || !hasBalance || selectedOption === null}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl shadow-green-500/30 disabled:shadow-none"
-              >
-                {getButtonContent()}
-              </button>
-            )}
-          </div>
-        </>
+        <BetAmountInput
+          betAmount={betAmount}
+          setBetAmount={setBetAmount}
+          balance={safeBalance}
+          decimals={safeDecimals}
+          isNativeBet={isNativeBet}
+          hasExistingBet={hasExistingBet || false}
+          needsApproval={needsApproval}
+          isApproving={isApproving}
+          isPending={isPending}
+          handleApprove={handleApprove}
+          handlePlaceBet={handlePlaceBet}
+          selectedOption={selectedOption}
+          options={safeOptions}
+        />
       )}
-    </div>
     </div>
   )
 }

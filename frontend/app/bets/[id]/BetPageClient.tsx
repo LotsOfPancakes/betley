@@ -57,6 +57,8 @@ function InvalidBetError({ randomId }: { randomId: string }) {
           <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
             <span className="text-3xl">🔍</span>
           </div>
+        
+        {/* Error texts when Bet not found */}
           <h1 className="text-2xl font-bold text-white mb-4">Bet Not Found</h1>
           <p className="text-gray-300 mb-6 leading-relaxed">
             The bet ID &quot;<span className="font-mono text-green-400">{randomId}</span>&quot; was not found.
