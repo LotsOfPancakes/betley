@@ -13,7 +13,7 @@ interface OptionsManagerProps {
 export default function OptionsManager({ 
   options, 
   onChange, 
-  maxOptions = 4,
+  // maxOptions = 4,
   minOptions = 2,
   maxLength = 50,
   error
@@ -25,11 +25,12 @@ export default function OptionsManager({
     onChange(newOptions)
   }
 
-  const addOption = () => {
-    if (options.length < maxOptions) {
-      onChange([...options, ''])
-    }
-  }
+  // temporarily hidden for now, along with maxOptions 
+  // const addOption = () => {
+  //   if (options.length < maxOptions) {
+  //     onChange([...options, ''])
+  //   }
+  // }
 
   const removeOption = (index: number) => {
     if (options.length > minOptions) {
@@ -145,8 +146,9 @@ export default function OptionsManager({
         ))}
       </div>
 
-      {/* Add Option Button */}
-      {options.length < maxOptions && (
+
+      {/* Add Option Button - temporarily removed along with vars maxOptions and addOption*/} 
+      {/* {options.length < maxOptions && (
         <button
           onClick={addOption}
           className="w-full mt-4 py-3 border-1 border-green-500/30 hover:border-green-400/50 rounded-xl text-green-400 hover:text-green-300 transition-all duration-300 flex items-center justify-center gap-2 hover:bg-green-500/5"
@@ -156,7 +158,7 @@ export default function OptionsManager({
           </svg>
           Add Option ({options.length}/{maxOptions})
         </button>
-      )}
+      )} */}
 
       {/* Error message */}
       {error && (

@@ -76,6 +76,34 @@ export default function DurationSelector({ duration, onChange, error }: Duration
         </span>
       </div>
 
+      {/* Custom Duration Inputs */}
+      <div className="mt-4 mb-2">
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <input
+              type="number"
+              min="0"
+              max="168"
+              value={duration.hours}
+              onChange={(e) => handleHoursChange(parseInt(e.target.value) || 0)}
+              className={`w-full px-4 py-3 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
+            />
+            <label className="block text-xs text-gray-400 p-1">Hours</label>
+          </div>
+          <div className="flex-1">
+            <input
+              type="number"
+              min="0"
+              max="59"
+              value={duration.minutes}
+              onChange={(e) => handleMinutesChange(parseInt(e.target.value) || 0)}
+              className={`w-full px-4 py-3 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
+            />
+            <label className="block text-xs text-gray-400 p-1">Minutes</label>
+          </div>
+        </div>
+      </div>
+      
       {/* Quick Presets + Custom */}
       <div className="grid grid-cols-3 gap-3">
         {/* Custom Option */}
@@ -137,34 +165,6 @@ export default function DurationSelector({ duration, onChange, error }: Duration
             </button>
           )
         })}
-      </div>
-
-      {/* Custom Duration Inputs */}
-      <div className="mt-4">
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <input
-              type="number"
-              min="0"
-              max="168"
-              value={duration.hours}
-              onChange={(e) => handleHoursChange(parseInt(e.target.value) || 0)}
-              className={`w-full px-4 py-3 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
-            />
-            <label className="block text-xs text-gray-400 p-1">Hours</label>
-          </div>
-          <div className="flex-1">
-            <input
-              type="number"
-              min="0"
-              max="59"
-              value={duration.minutes}
-              onChange={(e) => handleMinutesChange(parseInt(e.target.value) || 0)}
-              className={`w-full px-4 py-3 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
-            />
-            <label className="block text-xs text-gray-400 p-1">Minutes</label>
-          </div>
-        </div>
       </div>
     </div>
   )

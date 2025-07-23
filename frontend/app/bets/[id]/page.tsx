@@ -1,10 +1,10 @@
-// frontend/app/bets/[id]/page.tsx - SERVER COMPONENT (remove 'use client')
+// frontend/app/bets/[id]/page.tsx 
 
 import type { Metadata } from 'next'
 import { supabase } from '@/lib/supabase'
 import BetPageClient from './BetPageClient'
-  
-// ADD THIS: Generate dynamic metadata function
+
+// Simple generateMetadata function with static Yes/No
 export async function generateMetadata({ 
   params 
 }: { 
@@ -14,7 +14,7 @@ export async function generateMetadata({
     // Await the params in Next.js 15
     const { id: randomId } = await params
     
-    // Look up bet details from database
+    // Look up bet details from database (no options needed)
     const { data: mapping } = await supabase
       .from('bet_mappings')
       .select('bet_name, numeric_id')
@@ -43,20 +43,23 @@ export async function generateMetadata({
     const betTitle = mapping.bet_name
     const betUrl = `https://www.betley.xyz/bets/${randomId}`
     
+    // Static description with Yes or No
+    const description = `Betley | Join this Bet. What do you think - Yes or No?`
+    
     // Create dynamic metadata with bet title
     return {
-      title: `${betTitle} - Betley`,
-      description: `Join the bet: "${betTitle}" on Betley, the easiest way to set up on-chain bets.`,
+      title: betTitle,
+      description: description,
       
       openGraph: {
         title: betTitle,
-        description: `Join this bet on Betley: "${betTitle}"`,
+        description: description,
         type: 'website',
         url: betUrl,
         siteName: 'Betley',
         images: [
           {
-            url: '/og-bet-image.png', // You can create a specific image for bets
+            url: '/og-bet-image.png',
             width: 1200,
             height: 630,
             alt: `Bet: ${betTitle}`,
@@ -67,7 +70,7 @@ export async function generateMetadata({
       twitter: {
         card: 'summary_large_image',
         title: betTitle,
-        description: `Join this bet on Betley: "${betTitle}"`,
+        description: description,
         images: ['/og-bet-image.png'],
         creator: '@betleyxyz',
         site: '@betleyxyz',
