@@ -1,4 +1,4 @@
-// frontend/app/bets/components/BetCard.tsx - Only support random IDs
+// frontend/app/bets/components/BetCard.tsx - Updated with public badge
 'use client'
 
 import Link from 'next/link'
@@ -46,6 +46,14 @@ export default function BetCard({ bet, decimals }: BetCardProps) {
     <Link href={betUrl} className="block group">
       <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 h-full">
         
+        {/* ✅ NEW: Public Badge (Option 3: Contextual Display) */}
+        {bet.isPublic && (
+          <div className="flex items-center gap-1 text-sm text-green-400 mb-3">
+            <span>🌍</span>
+            <span>Public</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${statusColor}`}>

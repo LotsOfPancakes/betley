@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const clientIp = getClientIP(request)
 
     // ✅ SECURITY: Rate limit batch operations more strictly
-    const rateLimitOk = await checkRateLimit(clientIp, 'batch-lookup', 20, 60)
+    const rateLimitOk = await checkRateLimit(clientIp, 'batch-lookup', 1000, 60)
     if (!rateLimitOk) {
       return Response.json(
         { error: 'Rate limit exceeded' }, 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     // ✅ SECURITY: Use read-only client with specific filters
     const { data, error } = await supabase
       .from('bet_mappings')
-      .select('numeric_id, random_id')
+      .select('numeric_id, random_id, is_public')  // ✅ ADD is_public
       .eq('creator_address', address.toLowerCase()) // Only user's own bets
       .lte('numeric_id', maxBetId)
       .order('numeric_id')

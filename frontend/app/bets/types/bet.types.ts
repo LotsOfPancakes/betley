@@ -2,7 +2,7 @@
 
 export interface BetDetails {
   id: number
-  randomId?: string // Add optional random ID  
+  randomId?: string // optional random ID  
   name: string
   options: readonly string[]
   creator: string
@@ -13,6 +13,7 @@ export interface BetDetails {
   token?: string // Optional token address
   userRole: 'creator' | 'bettor' | 'both'
   userTotalBet: bigint
+  isPublic?: boolean //checks if bet type is public
 }
 
 export type FilterType = 'all' | 'active' | 'pending' | 'resolved'

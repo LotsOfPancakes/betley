@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { formatUnits } from 'viem'
 import { getBetStatusDisplay, formatDynamicDecimals, type BetStatusDisplay } from '@/lib/utils/bettingUtils'
-import { getTokenConfig } from '@/lib/tokenUtils'
+import { getTokenConfig, ZERO_ADDRESS } from '@/lib/tokenUtils'
 
 interface BetStatusHeaderProps {
   name: string
@@ -41,7 +41,7 @@ export function BetStatusHeader({
   )
 
   // Get token symbol
-  const tokenSymbol = getTokenConfig(isNativeBet ? '' : '0x1234567890123456789012345678901234567890').symbol
+  const tokenSymbol = getTokenConfig(isNativeBet ? ZERO_ADDRESS : '0x1234567890123456789012345678901234567890').symbol
 
   // Copy link functionality
   const copyLink = async () => {

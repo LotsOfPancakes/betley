@@ -41,11 +41,11 @@ export function getTokenConfig(tokenAddress: string) {
     }
   }
   
-  // Current Mock HYPE ERC20 token
+  // Current Mock ERC20 token
   return {
-    address: config.contracts.hypeToken,
-    symbol: 'mHYPE',
-    name: 'Mock HYPE Token',
+    address: config.contracts.mockERC20,
+    symbol: 'mockERC',
+    name: 'Mock ERC Token',
     decimals: 18,
     isNative: false
   }
@@ -58,7 +58,7 @@ export function getTokenConfig(tokenAddress: string) {
 export function getAvailableTokens() {
   return [
     getTokenConfig(ZERO_ADDRESS),           // Native HYPE
-    getTokenConfig(config.contracts.hypeToken)  // Mock HYPE ERC20
+    getTokenConfig(config.contracts.mockERC20)  // Mock HYPE ERC20
   ]
 }
 

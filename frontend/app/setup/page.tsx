@@ -1,4 +1,4 @@
-// frontend/app/setup/page.tsx - Updated with new user flow (form first, then connect)
+// frontend/app/setup/page.tsx - Updated with public/private toggle
 'use client'
 
 import { useEffect, Suspense } from 'react'
@@ -11,6 +11,7 @@ import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBou
 import BetNameInput from './components/BetNameInput'
 import OptionsManager from './components/OptionsManager'
 import DurationSelector from './components/DurationSelector'
+import PublicPrivateToggle from './components/PublicPrivateToggle'  // ✅ NEW IMPORT
 import SubmitSection from './components/SubmitSection'
 
 import { useBetForm } from './hooks/useBetForm'
@@ -31,6 +32,7 @@ function SetupPageContent() {
     updateName,
     updateOptions,
     updateDuration,
+    updateIsPublic,  // ✅ NEW FUNCTION
     getFilledOptions,
     getDurationInSeconds
   } = useBetForm()
@@ -62,7 +64,8 @@ function SetupPageContent() {
     const filledOptions = getFilledOptions()
     const durationInSeconds = getDurationInSeconds()
     
-    createBet(formData.name, filledOptions, durationInSeconds)
+    // ✅ UPDATED: Pass isPublic to createBet
+    createBet(formData.name, filledOptions, durationInSeconds, undefined, formData.isPublic)
   }
 
   const creationState = {
@@ -131,7 +134,17 @@ function SetupPageContent() {
               </div>
             </ComponentErrorBoundary>
 
-            {/* Submit Section - Updated to handle new flow */}
+            {/* ✅ NEW: Public/Private Toggle */}
+            <ComponentErrorBoundary>
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+                <PublicPrivateToggle
+                  isPublic={formData.isPublic}
+                  onChange={updateIsPublic}
+                />
+              </div>
+            </ComponentErrorBoundary>
+
+            {/* Submit Section */}
             <ComponentErrorBoundary>
               <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
                 <SubmitSection
@@ -140,6 +153,7 @@ function SetupPageContent() {
                   state={creationState}
                   onSubmit={handleSubmit}
                   onClearError={clearError}
+                  isPublic={formData.isPublic}  // ✅ NEW PROP
                 />
               </div>
             </ComponentErrorBoundary>
@@ -154,31 +168,8 @@ export default function SetupPage() {
   return (
     <PageErrorBoundary>
       <Suspense fallback={
-        <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
-          {/* Animated background grid */}
-          <div className="absolute inset-0 opacity-[0.2]">
-            <div 
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
-                `,
-                backgroundSize: '40px 40px'
-              }}
-            />
-          </div>
-
-          {/* Floating gradient orbs */}
-          <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/15 to-lime-400/15 rounded-full blur-3xl animate-pulse delay-1000" />
-          
-          <div className="text-center relative z-10">
-            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8">
-              <div className="w-8 h-8 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-white">Loading...</p>
-            </div>
-          </div>
+        <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+          <div className="text-white">Loading...</div>
         </div>
       }>
         <SetupPageContent />

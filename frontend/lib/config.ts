@@ -50,8 +50,8 @@ export const config = {
       'NEXT_PUBLIC_BETLEY_ADDRESS',
       '0x3eB11c552cc4259730f14b8b88dEEF06f78A7913'
     ) as `0x${string}`,
-    hypeToken: getRequiredEnv(
-      'NEXT_PUBLIC_HYPE_TOKEN_ADDRESS', // this is mockhype token, could be other ERC20 tokens
+    mockERC20: getRequiredEnv(
+      'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // this is mock ERC20 token
       '0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C'
     ) as `0x${string}`,
   },
@@ -107,8 +107,8 @@ export function validateConfig(): void {
     throw new Error('Invalid Betley contract address')
   }
   
-  if (!config.contracts.hypeToken.startsWith('0x') || config.contracts.hypeToken.length !== 42) {
-    throw new Error('Invalid HYPE token address')
+  if (!config.contracts.mockERC20.startsWith('0x') || config.contracts.mockERC20.length !== 42) {
+    throw new Error('Invalid mockERC20 token address')
   }
   
   // Validate network configuration

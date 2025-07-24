@@ -7,13 +7,20 @@ export interface BetMapping {
   name: string
   creator: string
   createdAt: number
+  isPublic?: boolean  // ✅ NEW FIELD
 }
 
 export class UnifiedBetMapper {
   /**
    * Create new mapping for a bet
+   * ✅ UPDATED: Now accepts isPublic parameter
    */
-  static async createMapping(numericId: number, name: string, creator: string): Promise<string> {
+  static async createMapping(
+    numericId: number, 
+    name: string, 
+    creator: string,
+    isPublic: boolean = false  // ✅ NEW PARAMETER
+  ): Promise<string> {
     try {
       const response = await fetch('/api/bets/create', {
         method: 'POST',
@@ -21,7 +28,8 @@ export class UnifiedBetMapper {
         body: JSON.stringify({ 
           numericId, 
           creatorAddress: creator, 
-          betName: name 
+          betName: name,
+          isPublic  // ✅ NEW FIELD
         })
       })
       

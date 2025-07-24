@@ -1,11 +1,12 @@
-// app/setup/hooks/useBetForm.ts
+// frontend/app/setup/hooks/useBetForm.ts
 import { useState } from 'react'
 import { BetFormData } from '../types/setup.types'
 
 const initialFormData: BetFormData = {
   name: '',
   options: ['Yes', 'No'],
-  duration: { hours: 1, minutes: 0 }
+  duration: { hours: 1, minutes: 0 },
+  isPublic: false  // ✅ NEW FIELD - Default to private
 }
 
 export function useBetForm(initialTitle?: string) {
@@ -24,6 +25,11 @@ export function useBetForm(initialTitle?: string) {
 
   const updateDuration = (duration: { hours: number; minutes: number }) => {
     setFormData(prev => ({ ...prev, duration }))
+  }
+
+  // ✅ NEW: Update isPublic
+  const updateIsPublic = (isPublic: boolean) => {
+    setFormData(prev => ({ ...prev, isPublic }))
   }
 
   const resetForm = () => {
@@ -46,6 +52,7 @@ export function useBetForm(initialTitle?: string) {
     updateName,
     updateOptions,
     updateDuration,
+    updateIsPublic,  // ✅ NEW FUNCTION
     resetForm,
     getFilledOptions,
     getDurationInSeconds

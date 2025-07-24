@@ -14,6 +14,8 @@ import {
   hasUserWon,
   type WinningsBreakdown,
 } from '@/lib/utils'
+import { config } from '@/lib/config'
+
 
 // ============================================================================
 // TYPES & INTERFACES - Clear separation of concerns
@@ -33,6 +35,7 @@ interface UserActionsProps {
   handleClaimWinnings: () => void
   betId: string
   isNativeBet?: boolean
+  tokenAddress?: string  // ADD THIS LINE
   creator?: string
 }
 
@@ -59,8 +62,13 @@ type ClaimStatus =
  * @param isNativeBet - Whether this is a native HYPE bet
  * @returns Token symbol string
  */
-const getTokenSymbol = (isNativeBet: boolean): string => 
-  getTokenConfig(isNativeBet ? ZERO_ADDRESS : '').symbol
+const getTokenSymbol = (tokenAddress?: string, isNativeBet?: boolean): string => {
+  if (tokenAddress) {
+    return getTokenConfig(tokenAddress).symbol
+  }
+  // Fallback to isNativeBet if tokenAddress is not available
+  return getTokenConfig(isNativeBet ? ZERO_ADDRESS : config.contracts.mockERC20).symbol
+}
 
 /**
  * Format amount with token symbol consistently
@@ -70,7 +78,7 @@ const getTokenSymbol = (isNativeBet: boolean): string =>
  * @returns Formatted string with amount and symbol
  */
 const formatTokenAmount = (amount: bigint, decimals: number, isNativeBet: boolean): string => 
-  `${formatUnits(amount, decimals)} ${getTokenSymbol(isNativeBet)}`
+  `${formatUnits(amount, decimals)} ${getTokenSymbol(isNativeBet.toString())}`
 
 /**
  * Determine user's claim status based on bet state
@@ -265,7 +273,7 @@ export function UserActions({
   isNativeBet = false,
   creator
 }: UserActionsProps) {
-  
+
   // ============================================================================
   // HOOKS & STATE - Grouped logically
   // ============================================================================

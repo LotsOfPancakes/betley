@@ -1,3 +1,4 @@
+// frontend/app/setup/components/SubmitSection.tsx
 'use client'
 
 import { ConnectKitButton } from 'connectkit'
@@ -9,6 +10,7 @@ interface SubmitSectionProps {
   state: BetCreationState
   onSubmit: () => void
   onClearError: () => void
+  isPublic?: boolean
 }
 
 export default function SubmitSection({
@@ -16,14 +18,17 @@ export default function SubmitSection({
   isConnected,
   state,
   onSubmit,
-  onClearError
+  onClearError,
+  isPublic = false  
 }: SubmitSectionProps) {
+  
+  // Dynamic button text based on public/private
   const getButtonText = () => {
     if (state.isCreating) return 'Confirming...'
-    if (state.isConfirming) return 'Creating Private Bet...'
+    if (state.isConfirming) return `Creating ${isPublic ? 'Public' : 'Private'} Bet...`
     if (state.isSuccess) return '✅ Bet Created Successfully! Redirecting...'
     if (!isConnected) return 'Connect Wallet & Create Bet'
-    return 'Create Private Bet'
+    return `Create ${isPublic ? 'Public' : 'Private'} Bet`
   }
 
   const getButtonDisabled = () => {
@@ -73,10 +78,9 @@ export default function SubmitSection({
         )}
       </ConnectKitButton.Custom>
 
-      {/* Misc. Bet info text */}
+      {/*  removed info text, since private/public info already mentioned in publicprivatetoggle component */}
       <div className="text-sm text-gray-400">
         <p>• 🧙🏼 As creator, you earn <span className="text-green-300">1%</span> of the losing option upon resolution</p>
-        <p>• 🔐 Privacy: Your bet will have a unique random ID. Only share the direct link with people you want to participate.</p>
       </div>
     </div>
   )

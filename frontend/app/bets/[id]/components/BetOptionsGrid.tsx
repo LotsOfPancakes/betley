@@ -8,7 +8,7 @@ import {
   calculateOptionPercentage, 
   getUserExistingOptionIndex
 } from '@/lib/utils/bettingUtils'
-import { getTokenConfig } from '@/lib/tokenUtils'
+import { getTokenConfig, ZERO_ADDRESS } from '@/lib/tokenUtils'
 
 interface BetOptionsGridProps {
   address?: string
@@ -46,7 +46,7 @@ export function BetOptionsGrid({
   const effectiveSelectedOption = hasExistingBet ? userExistingOptionIndex : selectedOption
 
   // Get token symbol
-  const tokenSymbol = getTokenConfig(isNativeBet ? '' : '0x1234567890123456789012345678901234567890').symbol
+  const tokenSymbol = getTokenConfig(isNativeBet ? ZERO_ADDRESS : '0x1234567890123456789012345678901234567890').symbol
 
   // Show wallet connection prompt if not connected
   if (!address) {

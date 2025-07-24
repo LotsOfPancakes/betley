@@ -1,9 +1,11 @@
 // frontend/app/bets/[id]/components/BetAmountInput.tsx
 'use client'
 
-import { formatUnits } from 'viem'
+import { useMemo } from 'react'
+import { formatUnits, parseUnits } from 'viem'
 import { formatDynamicDecimals, isValidBetAmount, hasWalletBalance } from '@/lib/utils/bettingUtils'
-import { getTokenConfig } from '@/lib/tokenUtils'
+import { calculatePotentialWinningsPreview } from '@/lib/utils/winningsCalculator'
+import { getTokenConfig, ZERO_ADDRESS } from '@/lib/tokenUtils'
 
 interface BetAmountInputProps {
   betAmount: string
@@ -19,6 +21,9 @@ interface BetAmountInputProps {
   handlePlaceBet: () => void
   selectedOption: number | null
   options: readonly string[]
+  // New props for potential winnings calculation
+  totalAmounts?: readonly bigint[]
+  feeParams?: readonly [boolean, bigint, boolean, bigint, string]
 }
 
 export function BetAmountInput({
@@ -34,15 +39,50 @@ export function BetAmountInput({
   handleApprove,
   handlePlaceBet,
   selectedOption,
-  options
+  options,
+  totalAmounts,
+  feeParams
 }: BetAmountInputProps) {
 
   // Get token symbol
-  const tokenSymbol = getTokenConfig(isNativeBet ? '' : '0x1234567890123456789012345678901234567890').symbol
+  const tokenSymbol = getTokenConfig(isNativeBet ? ZERO_ADDRESS : '0x1234567890123456789012345678901234567890').symbol
 
   // Validation logic
   const isValidAmount = isValidBetAmount(betAmount)
   const hasBalance = hasWalletBalance(betAmount, balance, decimals)
+
+  // Calculate potential winnings
+  const potentialWinnings = useMemo(() => {
+    if (!isValidAmount || selectedOption === null || !totalAmounts || !betAmount) {
+      return BigInt(0)
+    }
+
+    try {
+      const betAmountWei = parseUnits(betAmount, decimals)
+      return calculatePotentialWinningsPreview(
+        betAmountWei,
+        selectedOption,
+        totalAmounts,
+        feeParams
+      )
+    } catch {
+      return BigInt(0)
+    }
+  }, [betAmount, selectedOption, totalAmounts, feeParams, decimals, isValidAmount])
+
+  // Format potential winnings for display
+  const formattedPotentialWinnings = useMemo(() => {
+    if (potentialWinnings === BigInt(0)) return null
+    return formatDynamicDecimals(formatUnits(potentialWinnings, decimals))
+  }, [potentialWinnings, decimals])
+
+  // Check if we should show the potential winnings preview
+  const shouldShowPotentialWinnings = Boolean(
+    isValidAmount &&
+    selectedOption !== null &&
+    formattedPotentialWinnings &&
+    options[selectedOption]
+  )
 
   return (
     <div className="space-y-4">
@@ -81,6 +121,13 @@ export function BetAmountInput({
             Balance: {formatDynamicDecimals(formatUnits(balance, decimals))} {tokenSymbol}
           </div>
         )}
+
+        {/* Potential Winnings Preview */}
+        {shouldShowPotentialWinnings && (
+          <div className="mt-2 text-sm text-green-400">
+            Potential winnings: {formattedPotentialWinnings} {tokenSymbol} if &quot;{options[selectedOption!]}&quot; wins
+          </div>
+        )}
       </div>
 
       {/* Action Buttons */}
@@ -88,8 +135,12 @@ export function BetAmountInput({
         {needsApproval ? (
           <button
             onClick={handleApprove}
-            disabled={isApproving || !isValidAmount || !hasBalance}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl disabled:shadow-none"
+            disabled={!isValidAmount || !hasBalance || isApproving}
+            className={`w-full py-4 px-6 rounded-2xl font-semibold text-center transition-all duration-300 ${
+              !isValidAmount || !hasBalance || isApproving
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white shadow-lg shadow-blue-500/25 hover:scale-105'
+            }`}
           >
             {isApproving ? (
               <div className="flex items-center justify-center gap-2">
@@ -97,14 +148,18 @@ export function BetAmountInput({
                 Approving...
               </div>
             ) : (
-              `Approve ${tokenSymbol}`
+              'Approve Token'
             )}
           </button>
         ) : (
           <button
             onClick={handlePlaceBet}
-            disabled={isPending || !isValidAmount || !hasBalance || selectedOption === null}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl disabled:shadow-none"
+            disabled={!isValidAmount || !hasBalance || selectedOption === null || isPending}
+            className={`w-full py-4 px-6 rounded-2xl font-semibold text-center transition-all duration-300 ${
+              !isValidAmount || !hasBalance || selectedOption === null || isPending
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white shadow-lg shadow-green-500/25 hover:scale-105'
+            }`}
           >
             {isPending ? (
               <div className="flex items-center justify-center gap-2">

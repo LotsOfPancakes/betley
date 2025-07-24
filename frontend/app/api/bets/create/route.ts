@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { numericId, creatorAddress, betName } = body
+    const { numericId, creatorAddress, betName, isPublic = false } = body
 
-    console.log('Create bet request:', { numericId, creatorAddress, betName })
+    console.log('Create bet request:', { numericId, creatorAddress, betName, isPublic })
 
     // ✅ VALIDATION: Check all inputs
     if (typeof numericId !== 'number' || numericId < 0) {
@@ -66,6 +66,11 @@ export async function POST(request: NextRequest) {
 
     if (betName.length > 200) {
       return Response.json({ error: 'Bet name too long' }, { status: 400 })
+    }
+
+    // ✅ NEW: Validate isPublic parameter
+    if (typeof isPublic !== 'boolean') {
+      return Response.json({ error: 'Invalid public flag' }, { status: 400 })
     }
 
     // ✅ FIXED: Use server Supabase client with full permissions
@@ -120,12 +125,13 @@ export async function POST(request: NextRequest) {
 
     console.log('Generated random ID:', randomId, 'after', attempts, 'attempts')
 
-    // ✅ FIXED: Insert new mapping with proper error handling
+    // ✅ UPDATED: Insert new mapping with isPublic flag
     const insertData = {
       random_id: randomId,
       numeric_id: numericId,
       creator_address: creatorAddress.toLowerCase(), // Normalize case
-      bet_name: betName.trim()
+      bet_name: betName.trim(),
+      is_public: isPublic  // ✅ NEW FIELD
     }
 
     console.log('Inserting data:', insertData)

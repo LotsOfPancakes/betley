@@ -287,6 +287,8 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   handleClaimWinnings={handleClaimWinnings}
                   betId={numericBetId?.toString() || '0'}
                   isNativeBet={isNativeBet || false}
+                    tokenAddress={tokenAddress}  // ADD THIS LINE
+
                   creator={creator || ''}
                 />
               </ComponentErrorBoundary>

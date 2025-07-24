@@ -28,6 +28,8 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
   const [resolutionDeadlinePassed, setResolutionDeadlinePassed] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
+
+  
   // Validate bet ID
   const isValidBetId = betId && !isNaN(parseInt(betId)) && parseInt(betId) >= 0
   const numericBetId = isValidBetId ? parseInt(betId) : null
@@ -225,3 +227,4 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     usingReactQuery: useReactQuery,
   }
 }
+

@@ -156,7 +156,7 @@ export function calculatePotentialWinningsPreview(
   // Calculate proportional share
   const winningsFromLosers = (userBetAmount * availableForWinners) / newWinningPool
 
-  return userBetAmount + winningsFromLosers
+  return winningsFromLosers //exclude userBetAmount from the final returned value. Previous formula was userBetAmount + wininngsFromLosers
 }
 
 /**

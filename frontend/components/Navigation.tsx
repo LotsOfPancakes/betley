@@ -51,7 +51,7 @@ export function Navigation() {
                 pathname === '/bets' ? 'text-green-400' : ''
               }`}
             >
-              My Bets
+              All Bets
               {pathname === '/bets' && (
                 <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full" />
               )}

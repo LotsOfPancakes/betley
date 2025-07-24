@@ -1,5 +1,4 @@
 // frontend/app/bets/[id]/components/UnifiedBettingInterface.tsx
-// REFACTORED: Clean, focused component using extracted utilities and sub-components
 'use client'
 
 import { useEffect } from 'react'
@@ -7,6 +6,7 @@ import {
   canUserBet, 
   getUserExistingOptionIndex
 } from '@/lib/utils/bettingUtils'
+import { useBetFeeData } from '../hooks/useBetFeeData'
 
 // Import our extracted components
 import { BetStatusHeader } from './BetStatusHeader'
@@ -42,6 +42,7 @@ interface UnifiedBettingInterfaceProps {
   justPlacedBet?: boolean
   hasExistingBet?: boolean
   isNativeBet?: boolean
+  betId?: string // Added for fee data hook
 }
 
 export function UnifiedBettingInterface({
@@ -72,7 +73,8 @@ export function UnifiedBettingInterface({
   hypeBalance,
   //justPlacedBet, // Currently unused
   hasExistingBet,
-  isNativeBet = false
+  isNativeBet = false,
+  betId
 }: UnifiedBettingInterfaceProps) {
 
   // ============================================================================
@@ -90,6 +92,19 @@ export function UnifiedBettingInterface({
   const totalPool = safeTotalAmounts.reduce((a, b) => a + b, BigInt(0))
   const userExistingOptionIndex = getUserExistingOptionIndex(safeUserBets)
   const canBet = canUserBet(address, isActive, resolved)
+
+  // ============================================================================
+  // HOOKS - Fee data for potential winnings calculation
+  // ============================================================================
+  
+  // Fetch fee parameters for potential winnings preview
+  const { feeParams } = useBetFeeData(
+    betId || '', 
+    address, 
+    safeTotalAmounts, 
+    winningOption, 
+    resolved
+  )
 
   // ============================================================================
   // SIDE EFFECTS - Auto-selection logic
@@ -154,6 +169,8 @@ export function UnifiedBettingInterface({
           handlePlaceBet={handlePlaceBet}
           selectedOption={selectedOption}
           options={safeOptions}
+          totalAmounts={safeTotalAmounts}
+          feeParams={feeParams}
         />
       )}
     </div>

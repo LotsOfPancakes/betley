@@ -1,4 +1,4 @@
-// frontend/app/setup/hooks/useBetCreation.ts - Updated with chain validation
+// frontend/app/setup/hooks/useBetCreation.ts - Updated with chain validation and isPublic support
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNotification } from '@/lib/hooks/useNotification'
-import { useChainValidation } from '@/lib/hooks/useChainValidation' // ✅ ADD THIS
+import { useChainValidation } from '@/lib/hooks/useChainValidation'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
 import { UnifiedBetMapper } from '@/lib/betIdMapping'
 
@@ -21,13 +21,14 @@ export function useBetCreation() {
     error: null
   })
   const [lastBetName, setLastBetName] = useState<string>('')
+  const [lastIsPublic, setLastIsPublic] = useState<boolean>(false)  // ✅ NEW STATE
   const [betCounterWhenStarted, setBetCounterWhenStarted] = useState<number | null>(null)
   
   const router = useRouter()
   const { address } = useAccount()
   const queryClient = useQueryClient()
   const { showError, showSuccess } = useNotification()
-  const { validateChain } = useChainValidation() // ✅ ADD THIS
+  const { validateChain } = useChainValidation()
   
   // Get current bet counter for ID prediction
   const { data: betCounter } = useReadContract({
@@ -62,11 +63,12 @@ export function useBetCreation() {
           // The bet ID is the counter value when we started
           const newBetId = betCounterWhenStarted
           
-          // ✅ AWAIT the mapping creation before redirect
+          // ✅ UPDATED: Pass isPublic to mapping creation
           const randomId = await UnifiedBetMapper.createMapping(
             newBetId,
             lastBetName,
-            address
+            address,
+            lastIsPublic  // ✅ NEW PARAMETER
           )
           
           // Invalidate React Query cache
@@ -76,7 +78,7 @@ export function useBetCreation() {
           
           setState(prev => ({ ...prev, isLoading: false }))
           showSuccess('Bet created successfully!')
-          
+
           // Now safe to redirect
           router.push(`/bets/${randomId}`)
           
@@ -93,14 +95,15 @@ export function useBetCreation() {
       
       createMappingAndRedirect()
     }
-  }, [isSuccess, receipt, betCounterWhenStarted, address, lastBetName, queryClient, showSuccess, showError, router])
+  }, [isSuccess, receipt, betCounterWhenStarted, address, lastBetName, lastIsPublic, queryClient, showSuccess, showError, router])
 
-  // Main create bet function with CHAIN VALIDATION
+  // ✅ UPDATED: Main create bet function with isPublic parameter
   const createBet = async (
     betName: string,
     options: string[],
     durationInSeconds: number,
-    tokenAddress?: string
+    tokenAddress?: string,
+    isPublic: boolean = false  // ✅ NEW PARAMETER
   ) => {
     // ✅ VALIDATE CHAIN FIRST
     if (!validateChain()) return
@@ -118,8 +121,11 @@ export function useBetCreation() {
     try {
       setState({ isLoading: true, error: null })
       setLastBetName(betName.trim())
+      setLastIsPublic(isPublic)  // ✅ NEW: Store isPublic state
       setBetCounterWhenStarted(Number(betCounter))
       
+      // ✅ NOTE: Smart contract function signature remains unchanged
+      // isPublic is only stored in database, not on-chain
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
