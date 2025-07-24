@@ -1,11 +1,11 @@
-// frontend/app/bets/hooks/useBetsList.ts - OPTIMIZED version with batch API calls
+// frontend/app/bets/hooks/useBetsList.ts - Clean version without auto-reconnect
 import { useState, useEffect, useCallback } from 'react'
 import { useReadContract, useConfig, useAccount } from 'wagmi'
 import { readContract } from 'wagmi/actions'
-import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI, HYPE_TOKEN_ADDRESS } from '@/lib/contractABI'
+import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI, MOCKERC20_TOKEN_ADDRESS } from '@/lib/contractABI'
 import { BetDetails } from '../types/bet.types'
 
-// ✅ FIXED: Add proper type definitions for contract returns
+// Type definitions for contract returns
 type BetDetailsResult = readonly [string, readonly string[], `0x${string}`, bigint, boolean, number, readonly bigint[]]
 type UserBetsResult = readonly bigint[]
 
@@ -25,15 +25,14 @@ export function useBetsList() {
 
   // Read token decimals
   const { data: decimals } = useReadContract({
-    address: HYPE_TOKEN_ADDRESS,
+    address: MOCKERC20_TOKEN_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'decimals',
   })
 
-  // ✅ OPTIMIZATION 1: Batch API call for all mappings (memoized)
+  // Batch API call for all mappings
   const fetchAllMappings = useCallback(async (betCount: number): Promise<Record<number, string>> => {
     try {
-      // Single API call to get all mappings for this user
       const response = await fetch('/api/bets/user-mappings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,19 +46,16 @@ export function useBetsList() {
         const data = await response.json()
         return data.mappings || {}
       }
-    } catch (error) {
-      console.error('Failed to fetch batch mappings:', error)
+    } catch {
     }
     
-    // Fallback to individual calls if batch fails
     return {}
   }, [address])
 
-  // ✅ OPTIMIZATION 2: Parallel contract calls (memoized)
+  // Parallel contract calls
   const fetchBetDataParallel = useCallback(async (betIds: number[]) => {
     const promises = betIds.map(async (i) => {
       try {
-        // Parallel contract calls
         const [betDataRaw, userBetsRaw] = await Promise.all([
           readContract(config, {
             address: BETLEY_ADDRESS,
@@ -76,8 +72,7 @@ export function useBetsList() {
         ])
 
         return { id: i, betDataRaw, userBetsRaw }
-      } catch (error) {
-        console.error(`Error fetching bet ${i}:`, error)
+      } catch {
         return null
       }
     })
@@ -99,14 +94,14 @@ export function useBetsList() {
       try {
         const betCount = Number(betCounter)
         
-        // ✅ STEP 1: Get all mappings in one batch call
+        // Get all mappings in one batch call
         const mappings = await fetchAllMappings(betCount)
         
-        // ✅ STEP 2: Get bet data for all bets in parallel
+        // Get bet data for all bets in parallel
         const betIds = Array.from({ length: betCount }, (_, i) => i)
         const contractResults = await fetchBetDataParallel(betIds)
         
-        // ✅ STEP 3: Process results
+        // Process results
         const fetchedBets: BetDetails[] = []
         
         for (const result of contractResults) {
@@ -132,7 +127,7 @@ export function useBetsList() {
             else if (isCreator) userRole = 'creator'
             else userRole = 'bettor'
 
-            // ✅ Use mapping from batch call
+            // Use mapping from batch call
             const randomId = mappings[i]
             
             // Only include bets that have random ID mappings
@@ -155,8 +150,7 @@ export function useBetsList() {
         }
 
         setBets(fetchedBets)
-      } catch (err) {
-        console.error('Error fetching bets:', err)
+      } catch {
         setError('Failed to load bets. Please try again.')
       } finally {
         setLoading(false)

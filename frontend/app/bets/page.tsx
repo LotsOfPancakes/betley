@@ -59,7 +59,7 @@ function BetsSearchLoading() {
 
 export default function BetsPage() {
   const router = useRouter()
-  const { isConnected } = useAccount()  // REMOVE address since it's unused
+  const { address } = useAccount()  // REMOVE address since it's unused
   
   // Tab state management
   const [activeTab, setActiveTab] = useState<TabType>('my')
@@ -146,7 +146,7 @@ export default function BetsPage() {
           )}
 
           {/* Connection check for My Bets */}
-          {activeTab === 'my' && !isConnected ? (
+          {activeTab === 'my' && !address ? (
           <div className="text-center relative z-10">
             <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
               <div className="w-16 h-16 mx-auto mb-4 relative">

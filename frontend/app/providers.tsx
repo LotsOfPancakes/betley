@@ -1,12 +1,14 @@
-// frontend/app/providers.tsx - ACTUAL fix for WalletConnect initialization
+// Properly Fixed providers.tsx with Correct Wagmi v2 Configuration
+// File: frontend/app/providers.tsx
+
 'use client'
 
-import { WagmiProvider, createConfig, http } from 'wagmi'
+import { WagmiProvider, createConfig, http, createStorage, cookieStorage } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import { hyperevm } from '@/lib/chains'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
 import { 
   networkConfig, 
@@ -16,8 +18,7 @@ import {
   devConfig 
 } from '@/lib/config'
 
-// ✅ MOVE CONFIG CREATION OUTSIDE COMPONENT
-// This ensures it only runs once when the module is loaded
+// ✅ Proper Wagmi v2 configuration with state persistence
 const wagmiConfig = createConfig(
   getDefaultConfig({
     chains: [hyperevm],
@@ -28,32 +29,44 @@ const wagmiConfig = createConfig(
     appName: appConfig.name,
     appDescription: appConfig.description,
     appUrl: appConfig.url,
+    // ✅ Proper storage configuration for Wagmi v2
+    storage: createStorage({
+      storage: typeof window !== 'undefined' ? cookieStorage : undefined,
+    }),
+    // ✅ Enable SSR support
+    ssr: true,
   })
 )
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false)
+
+  // ✅ Handle client-side hydration
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Create optimized QueryClient with configurable timeouts
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        // Use configurable stale time
         staleTime: timeoutsConfig.queryStale,
-        // Data stays in cache for 5 minutes after component unmounts
         gcTime: 5 * 60 * 1000,
-        // Use configurable retry count
         retry: timeoutsConfig.mutationRetry,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-        // Don't refetch on window focus by default (can override per query)
         refetchOnWindowFocus: false,
-        // Refetch on reconnect
         refetchOnReconnect: true,
       },
       mutations: {
-        // Retry mutations once
         retry: 1,
       },
     },
   }))
+
+  // ✅ Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return null
+  }
 
   return (
     <WagmiProvider config={wagmiConfig}>
@@ -67,32 +80,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
               "--ck-connectbutton-font-size": "16px",
               "--ck-connectbutton-border-radius": "8px",
               "--ck-connectbutton-background": "#1F2937",
-              "--ck-connectbutton-color": "#FFFFFF",
-              "--ck-connectbutton-hover-background": "#374151",
-              "--ck-primary-button-background": "#2563EB",
-              "--ck-primary-button-hover-background": "#1D4ED8",
-              "--ck-secondary-button-background": "#374151",
-              "--ck-secondary-button-hover-background": "#4B5563",
-              "--ck-modal-background": "#111827",
-              "--ck-body-background": "#1F2937",
-              "--ck-body-background-secondary": "#111827",
-              "--ck-body-background-tertiary": "#374151",
-              "--ck-body-color": "#F3F4F6",
-              "--ck-body-color-muted": "#9CA3AF",
-              "--ck-body-color-muted-hover": "#D1D5DB",
-            }}
-            options={{
-              initialChainId: networkConfig.chainId,
-              enforceSupportedChains: false,
             }}
           >
             {children}
           </ConnectKitProvider>
-          {/* React Query DevTools - configurable visibility */}
-          {devConfig.enableDevtools && (
-            <ReactQueryDevtools initialIsOpen={false} />
-          )}
         </NotificationProvider>
+        {devConfig.enableDevtools && (
+          <ReactQueryDevtools initialIsOpen={false} />
+        )}
       </QueryClientProvider>
     </WagmiProvider>
   )

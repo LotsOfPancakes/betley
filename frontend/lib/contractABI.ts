@@ -3,7 +3,7 @@ import { config } from './config'
 
 // Contract addresses from config
 export const BETLEY_ADDRESS = config.contracts.betley as `0x${string}`
-export const HYPE_TOKEN_ADDRESS = config.contracts.hypeToken as `0x${string}`
+export const MOCKERC20_TOKEN_ADDRESS = config.contracts.mockERC20 as `0x${string}`
 
 export const BETLEY_ABI = [
   // ========== CORE BETTING FUNCTIONS ==========

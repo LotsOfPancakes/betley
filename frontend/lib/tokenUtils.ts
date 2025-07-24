@@ -58,7 +58,7 @@ export function getTokenConfig(tokenAddress: string) {
 export function getAvailableTokens() {
   return [
     getTokenConfig(ZERO_ADDRESS),           // Native HYPE
-    getTokenConfig(config.contracts.mockERC20)  // Mock HYPE ERC20
+    getTokenConfig(config.contracts.mockERC20)  // Mock ERC20
   ]
 }
 
