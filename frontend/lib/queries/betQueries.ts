@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useReadContract, useWriteContract } from 'wagmi'
 import { parseUnits } from 'viem'
-import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
+import { BETLEY_ABI, BETLEY_ADDRESS, MOCKERC20_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
 import { useNotification } from '@/lib/hooks/useNotification'
 
 type BetDetailsResult = readonly [string, readonly string[], `0x${string}`, bigint, boolean, number, readonly bigint[], `0x${string}`]
@@ -42,7 +42,7 @@ export function useUserBetsQuery(betId: number, address?: AddressType) {
 // User Balance Query
 export function useUserBalanceQuery(address?: AddressType) {
   return useReadContract({
-    address: HYPE_TOKEN_ADDRESS,
+    address: MOCKERC20_TOKEN_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: address ? [address as AddressType] : undefined,
@@ -57,7 +57,7 @@ export function useUserBalanceQuery(address?: AddressType) {
 // User Allowance Query
 export function useUserAllowanceQuery(address?: AddressType) {
   return useReadContract({
-    address: HYPE_TOKEN_ADDRESS,
+    address: MOCKERC20_TOKEN_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: address ? [address as AddressType, BETLEY_ADDRESS as AddressType] : undefined,
@@ -87,7 +87,7 @@ export function useUserClaimedQuery(betId: number, address?: AddressType) {
 // Token Decimals Query
 export function useTokenDecimalsQuery() {
   return useReadContract({
-    address: HYPE_TOKEN_ADDRESS,
+    address: MOCKERC20_TOKEN_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'decimals',
     query: {
@@ -140,7 +140,7 @@ export function useApproveMutation() {
       const amountWei = parseUnits(amount, decimals)
       
       return writeContract({
-        address: HYPE_TOKEN_ADDRESS,
+        address: MOCKERC20_TOKEN_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [BETLEY_ADDRESS as AddressType, amountWei],

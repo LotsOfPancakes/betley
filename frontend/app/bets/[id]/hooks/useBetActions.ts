@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { parseUnits } from 'viem'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useChainValidation } from '@/lib/hooks/useChainValidation' // ✅ ADD THIS
-import { BETLEY_ABI, BETLEY_ADDRESS, HYPE_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
+import { BETLEY_ABI, BETLEY_ADDRESS, MOCKERC20_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
 import { isNativeHype } from '@/lib/tokenUtils'
 
 type TransactionType = 'approve' | 'placeBet' | 'claimWinnings' | 'resolveBet'
@@ -54,7 +54,7 @@ export function useBetActions(betId: string, tokenAddress?: string) {
       const amountWei = parseUnits(betAmount, decimals)
       
       await writeContract({
-        address: HYPE_TOKEN_ADDRESS,
+        address: MOCKERC20_TOKEN_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [BETLEY_ADDRESS, amountWei],
