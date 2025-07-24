@@ -26,7 +26,7 @@ export function Footer() {
                 <p className="text-gray-400 text-sm mt-2">By <span className="hover:text-green-400 transition-colors"><a href="https://x.com/Jin_8315">@Jin</a></span></p>
             </div> */}
             <div>  
-                <p className="text-center text-green-400 mt-2">Follow <span className="hover:text-green-400 transition-colors"><a href="https://x.com/Jin_8315">Betley</a></span> on X ❤️</p>
+                <p className="text-center text-green-400 mt-2"><span className="hover:text-green-400 transition-colors"><a href="https://x.com/betleyxyz">Follow Betley on X ❤️</a></span></p>
                 <p className="text-center text-gray-400 text-sm mt-2">By <span className="hover:text-green-400 transition-colors"><a href="https://x.com/Jin_8315">@Jin</a></span></p>
             </div>
         </footer>
