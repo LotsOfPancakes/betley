@@ -25,8 +25,8 @@ export default function BetCard({ bet }: BetCardProps) { //removed BetCard({ bet
   // const totalPoolFormatted = formatUnits(totalPool, decimals)
 
   const isActive = Date.now() < Number(bet.endTime) * 1000
-  const status = bet.resolved ? 'Resolved' : (isActive ? 'Active' : 'Pending Resolution')
-  
+  //const status = bet.resolved ? 'Resolved' : (isActive ? 'Active' : 'Pending Resolution')
+
   const statusColor = bet.resolved ? 'bg-green-500' : (isActive ? 'bg-blue-500' : 'bg-yellow-600')
   
   const timeLeft = isActive ? Number(bet.endTime) * 1000 - Date.now() : 0
@@ -57,7 +57,7 @@ export default function BetCard({ bet }: BetCardProps) { //removed BetCard({ bet
         </div>
 
         {/* Bet Name */}
-        <h3 className="text-xl font-semibold text-white mb-3 line-clamp-2 group-hover:text-green-400 transition-colors">
+        <h3 className="text-xl font-semibold text-white mb-2 line-clamp-2 group-hover:text-green-400 transition-colors">
           {bet.name}
         </h3>
 
@@ -88,17 +88,29 @@ export default function BetCard({ bet }: BetCardProps) { //removed BetCard({ bet
             <span className="text-gray-400">Total Pool:</span>
             <span className="text-white font-medium">{totalPoolFormatted} HYPE</span>
           </div> */}
-          <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${statusColor}`}>
-            {status}
-          </span>
-          {isActive && (
-            <div className="flex justify-between">
+
+          {isActive && ( // if active, show  time left
+            <div className="mt-2 flex justify-between">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${statusColor}`}>
+                {status} • {hoursLeft > 0 ? `${hoursLeft}h ${minutesLeft}m` : `${minutesLeft}m`}
+              </span>
+            </div>
+          )}
+          {!isActive && ( // if not active (complete/pending resolution, don't show time)
+            <div className="mt-2 flex justify-between">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${statusColor}`}>
+                {status}
+              </span>
+            </div>
+          )}
+          {/* {isActive && (
+            <div className="mt-2 flex justify-between">
               <span className="text-gray-400">Time Left:</span>
               <span className="text-blue-400 font-medium">
                 {hoursLeft > 0 ? `${hoursLeft}h ${minutesLeft}m` : `${minutesLeft}m`}
               </span>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Call To Action */}

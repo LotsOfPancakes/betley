@@ -10,14 +10,18 @@ export function useBetsFiltering(bets: BetDetails[]) {
     return bets.filter(bet => {
       const now = Math.floor(Date.now() / 1000)
       const hasEnded = Number(bet.endTime) <= now
+      const resolutionDeadlinePassed = now > (Number(bet.endTime) + (48 * 60 * 60)) // 48 hours
+      const isRefundAvailable = hasEnded && !bet.resolved && resolutionDeadlinePassed
 
       switch (filter) {
         case 'active':
           return !hasEnded && !bet.resolved
         case 'pending':
-          return hasEnded && !bet.resolved
+          return hasEnded && !bet.resolved  && !resolutionDeadlinePassed // Exclude refunds
         case 'resolved':
-          return bet.resolved
+         return bet.resolved || isRefundAvailable // Include refunds here
+        case 'refund':
+          return isRefundAvailable
         default:
           return true
       }

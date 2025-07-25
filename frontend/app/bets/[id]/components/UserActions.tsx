@@ -78,7 +78,7 @@ const getTokenSymbol = (tokenAddress?: string, isNativeBet?: boolean): string =>
  * @returns Formatted string with amount and symbol
  */
 const formatTokenAmount = (amount: bigint, decimals: number, isNativeBet: boolean): string => 
-  `${formatUnits(amount, decimals)} ${getTokenSymbol(isNativeBet.toString())}`
+  `${formatUnits(amount, decimals)} ${getTokenConfig(isNativeBet ? ZERO_ADDRESS : config.contracts.mockERC20).symbol}`
 
 /**
  * Determine user's claim status based on bet state
