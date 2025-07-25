@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
     // ✅ SECURITY: Get client IP for rate limiting
     const clientIp = getClientIP(request)
 
-    // ✅ SECURITY: Check rate limit (10 requests per hour for bet creation)
-    const rateLimitOk = await checkRateLimit(clientIp, 'create-bet', 10, 60)
+    // ✅ SECURITY: Check rate limit (20 requests per hour for bet creation)
+    const rateLimitOk = await checkRateLimit(clientIp, 'create-bet', 20, 60)
     if (!rateLimitOk) {
       return Response.json(
         { error: 'Rate limit exceeded. Please try again later.' }, 

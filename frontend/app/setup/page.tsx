@@ -11,7 +11,7 @@ import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBou
 import BetNameInput from './components/BetNameInput'
 import OptionsManager from './components/OptionsManager'
 import DurationSelector from './components/DurationSelector'
-import PublicPrivateToggle from './components/PublicPrivateToggle'  // ✅ NEW IMPORT
+import BetVisibilitySelector from './components/BetVisibilitySelector'  // ✅ NEW IMPORT
 import SubmitSection from './components/SubmitSection'
 
 import { useBetForm } from './hooks/useBetForm'
@@ -138,7 +138,7 @@ function SetupPageContent() {
             {/* ✅ NEW: Public/Private Toggle */}
             <ComponentErrorBoundary>
               <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
-                <PublicPrivateToggle
+                <BetVisibilitySelector
                   isPublic={formData.isPublic}
                   onChange={updateIsPublic}
                 />

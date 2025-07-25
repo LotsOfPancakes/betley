@@ -1,5 +1,7 @@
 'use client'
 
+import { useRef } from 'react'
+
 interface Duration {
   hours: number
   minutes: number
@@ -17,6 +19,8 @@ const quickPresets = [
 ]
 
 export default function DurationSelector({ duration, onChange, error }: DurationSelectorProps) {
+  const hoursInputRef = useRef<HTMLInputElement>(null)
+
   const handleHoursChange = (hours: number) => {
     onChange({ ...duration, hours: Math.max(0, Math.min(168, hours)) })
   }
@@ -27,6 +31,25 @@ export default function DurationSelector({ duration, onChange, error }: Duration
 
   const setPreset = (preset: { hours: number; minutes: number }) => {
     onChange(preset)
+  }
+
+  const handleCustomClick = () => {
+    const totalMinutes = duration.hours * 60 + duration.minutes
+    
+    // If custom is already selected, do nothing (repeat clicks do nothing)
+    if (isCustomSelected) {
+      // Focus hours input for visual feedback
+      hoursInputRef.current?.select()
+      return
+    }
+    
+    // If not selected and current value is 0, set default and focus
+    if (totalMinutes === 0) {
+      onChange({ hours: 1, minutes: 0 })
+    }
+    
+    // Focus the hours input
+    hoursInputRef.current?.select()
   }
 
   const totalMinutes = duration.hours * 60 + duration.minutes
@@ -81,6 +104,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
         <div className="flex gap-4">
           <div className="flex-1">
             <input
+              ref={hoursInputRef}
               type="number"
               min="0"
               max="168"
@@ -108,13 +132,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
       <div className="grid grid-cols-3 gap-3">
         {/* Custom Option */}
         <button
-          onClick={() => {
-            // If custom is already selected, do nothing
-            // If not selected and current value is 0, set to 2h as default
-            if (!isCustomSelected && totalMinutes === 0) {
-              onChange({ hours: 1, minutes: 0 })
-            }
-          }}
+          onClick={handleCustomClick}
           className={`p-4 rounded-xl border-2 transition-all duration-300 text-left group hover:scale-105 ${
             isCustomSelected 
               ? 'border-green-500 bg-green-500/10 text-green-400' 
@@ -127,12 +145,12 @@ export default function DurationSelector({ duration, onChange, error }: Duration
               {/* <div className="text-xs opacity-75">Set custom time</div> */}
             </div>
             {isCustomSelected && (
-              <div>
-            {/* <div className="w-0 h-0 bg-green-500 rounded-full flex items-center justify-center"> 
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg> */}
-              </div>
+              // <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+              //   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              //     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              //   </svg>
+              // </div>
+              <div></div>
             )}
           </div>
         </button>
@@ -156,12 +174,12 @@ export default function DurationSelector({ duration, onChange, error }: Duration
                   <div className="text-xs opacity-75">{preset.description}</div>
                 </div>
                 {isSelected && (
-                  <div>
-                  {/* <div className="w-0 h-0 bg-green-500 rounded-full flex items-center justify-center"> 
-                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg> */}
-                  </div>
+                  // <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  //   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  //     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  //   </svg>
+                  // </div>
+                  <div></div>
                 )}
               </div>
             </button>
