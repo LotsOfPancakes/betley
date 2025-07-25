@@ -133,7 +133,7 @@ export function UnifiedBettingInterface({
         timeLeft={timeLeft}
         resolutionTimeLeft={resolutionTimeLeft}
         totalPool={totalPool}
-        decimals={safeDecimals}
+        decimals={safeDecimals} 
         isNativeBet={isNativeBet}
       />
 

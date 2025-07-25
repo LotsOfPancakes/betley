@@ -74,7 +74,7 @@ export default function OptionsManager({
         {options.map((option, index) => (
           <div key={index} className="relative group">
             <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mt-2">
+              <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mt-3">
                 <span className="text-white font-bold text-sm">{index + 1}</span>
               </div>
               
@@ -88,7 +88,7 @@ export default function OptionsManager({
                   maxLength={maxLength}
                 />
                 
-                {/* Status indicators - positioned to avoid collision */}
+                {/* Status indicators */}
                 <div className={`absolute ${options.length > minOptions ? 'right-12' : 'right-4'} top-3`}>
                   {option.trim().length > 0 && getDuplicateStatus(index, option) !== 'duplicate' && option.length <= maxLength && (
                     <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">

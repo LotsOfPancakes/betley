@@ -97,13 +97,14 @@ function SetupPageContent() {
       
       <div className="relative z-10 py-12">
         <div className="max-w-2xl mx-auto px-4">
+          
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl md:text-4xl font-bold text-white">Set up New Bet</h1>
-          </div>
+          </div>  
 
           {/* Always show the form - no wallet check */}
-          <div className="space-y-8">
+          <div className="space-y-5">
             {/* Bet Name Input */}
             <ComponentErrorBoundary>
               <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">

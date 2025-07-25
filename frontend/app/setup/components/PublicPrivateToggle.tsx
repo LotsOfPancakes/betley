@@ -10,7 +10,8 @@ export default function PublicPrivateToggle({ isPublic, onChange }: PublicPrivat
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Bet Visibility</h3>
+        <h3 className="block text-lg font-semibold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+          Bet Visibility</h3>
       </div>
 
       <div className="space-y-3">
