@@ -62,13 +62,13 @@ type ClaimStatus =
  * @param isNativeBet - Whether this is a native HYPE bet
  * @returns Token symbol string
  */
-const getTokenSymbol = (tokenAddress?: string, isNativeBet?: boolean): string => {
-  if (tokenAddress) {
-    return getTokenConfig(tokenAddress).symbol
-  }
-  // Fallback to isNativeBet if tokenAddress is not available
-  return getTokenConfig(isNativeBet ? ZERO_ADDRESS : config.contracts.mockERC20).symbol
-}
+// const getTokenSymbol = (tokenAddress?: string, isNativeBet?: boolean): string => {
+//   if (tokenAddress) {
+//     return getTokenConfig(tokenAddress).symbol
+//   }
+//   // Fallback to isNativeBet if tokenAddress is not available
+//   return getTokenConfig(isNativeBet ? ZERO_ADDRESS : config.contracts.mockERC20).symbol
+// }
 
 /**
  * Format amount with token symbol consistently
