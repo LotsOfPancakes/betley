@@ -25,13 +25,34 @@ export default function BetCard({ bet }: BetCardProps) { //removed BetCard({ bet
   // const totalPoolFormatted = formatUnits(totalPool, decimals)
 
   const isActive = Date.now() < Number(bet.endTime) * 1000
-  //const status = bet.resolved ? 'Resolved' : (isActive ? 'Active' : 'Pending Resolution')
-
-  const statusColor = bet.resolved ? 'bg-green-500' : (isActive ? 'bg-blue-500' : 'bg-yellow-600')
+  
+  // Add refund detection logic
+  const now = Date.now()
+  const hasEnded = now >= Number(bet.endTime) * 1000
+  const resolutionDeadlinePassed = hasEnded && now > (Number(bet.endTime) * 1000 + (72 * 60 * 60 * 1000)) // 72 hours after end time
+  
+  // Update status logic to include refund available
+  const getStatus = () => {
+    if (bet.resolved) return 'Resolved'
+    if (hasEnded && resolutionDeadlinePassed) return 'Refund Available'
+    if (hasEnded) return 'Pending Resolution'
+    return 'Active'
+  }
+  
+  const status = getStatus()
+  const statusColor = bet.resolved ? 'bg-green-600' : 
+                     (hasEnded && resolutionDeadlinePassed) ? 'bg-yellow-600' :
+                     (isActive ? 'bg-blue-600' : 'bg-yellow-600')
   
   const timeLeft = isActive ? Number(bet.endTime) * 1000 - Date.now() : 0
   const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60))
   const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
+  
+  // Calculate resolution time left for pending bets
+  const resolutionTimeLeft = hasEnded && !resolutionDeadlinePassed ? 
+    (Number(bet.endTime) * 1000 + (48 * 60 * 60 * 1000)) - now : 0 // 48 hours for bet end
+  const resolutionHoursLeft = Math.floor(resolutionTimeLeft / (1000 * 60 * 60))
+  const resolutionMinutesLeft = Math.floor((resolutionTimeLeft % (1000 * 60 * 60)) / (1000 * 60))
 
   const getRoleDisplay = () => {
     switch (bet.userRole) {
@@ -89,17 +110,32 @@ export default function BetCard({ bet }: BetCardProps) { //removed BetCard({ bet
             <span className="text-white font-medium">{totalPoolFormatted} HYPE</span>
           </div> */}
 
-          {isActive && ( // if active, show  time left
+          {isActive ? (
+            // Active bets: show time left for betting
             <div className="mt-2 flex justify-between">
               <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${statusColor}`}>
                 {status} • {hoursLeft > 0 ? `${hoursLeft}h ${minutesLeft}m` : `${minutesLeft}m`}
               </span>
             </div>
-          )}
-          {!isActive && ( // if not active (complete/pending resolution, don't show time)
+          ) : bet.resolved ? (
+            // Resolved bets: show status only
             <div className="mt-2 flex justify-between">
               <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${statusColor}`}>
                 {status}
+              </span>
+            </div>
+          ) : resolutionDeadlinePassed ? (
+            // Refund available: show status only
+            <div className="mt-2 flex justify-between">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${statusColor}`}>
+                {status}
+              </span>
+            </div>
+          ) : (
+            // Pending resolution: show time left for resolution
+            <div className="mt-2 flex justify-between">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${statusColor}`}>
+                {status} • {resolutionHoursLeft > 0 ? `${resolutionHoursLeft}h ${resolutionMinutesLeft}m` : `${resolutionMinutesLeft}m`}
               </span>
             </div>
           )}

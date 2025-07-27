@@ -1,0 +1,8 @@
+{
+  "cron": [
+    {
+      "path": "/api/analytics/daily-update",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

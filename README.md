@@ -6,7 +6,7 @@ A production-ready pari-mutuel style betting platform built on HyperEVM testnet 
 
 ## 🌟 Features
 - **Custom Bets**: Create bets with 2-4 custom options and flexible duration
-- **Dual Token Support**: Bet with native HYPE or mock HYPE (mHYPE) tokens
+- **Dual Token Support**: Bet with native HYPE or other ERC20 tokens (later phases)
 - **Pari-Mutuel Payouts**: Automatic fair distribution based on betting pools
 - **Privacy-First**: Random bet IDs prevent enumeration and protect user privacy
 - **Auto-Resolution**:48-hour resolution deadline with automatic refund system
@@ -17,7 +17,7 @@ A production-ready pari-mutuel style betting platform built on HyperEVM testnet 
 - **Production**: [https://www.betley.xyz](https://www.betley.xyz)
 - **Staging**: [https://betley.vercel.app](https://betley.vercel.app)
 - **Blockchain**: HyperEVM Testnet
-- **Contract**: `0x88598D1EfC9032318FB7B39DCdD9E5c2a7a4F8b9`
+- **Contract**: `0x3eB11c552cc4259730f14b8b88dEEF06f78A7913`
 
 ## 🛠️ Tech Stack
 - **Smart Contracts**: Solidity + Foundry
