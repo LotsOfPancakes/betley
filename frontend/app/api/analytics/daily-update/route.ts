@@ -10,17 +10,32 @@ const publicClient = createPublicClient({
   transport: http(process.env.NEXT_PUBLIC_RPC_URL)
 })
 
+// Handle GET requests from Vercel cron
+export async function GET(request: NextRequest) {
+  return handleAnalyticsUpdate(request)
+}
+
+// Handle POST requests for manual triggers
 export async function POST(request: NextRequest) {
-  // Validate cron secret
+  return handleAnalyticsUpdate(request)
+}
+
+async function handleAnalyticsUpdate(request: NextRequest) {
+  // Validate request - allow Vercel cron OR manual auth
+  const userAgent = request.headers.get('user-agent')
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  
+  const isValidCron = userAgent?.includes('vercel-cron/1.0')
+  const isValidManual = authHeader === `Bearer ${process.env.CRON_SECRET}`
+  
+  if (!isValidCron && !isValidManual) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
     console.log('Starting daily analytics update...')
     
-    // Update processing status
+    // Update processing status to running
     await supabase
       .from('stats_processing')
       .update({ processing_status: 'running' })
@@ -32,15 +47,20 @@ export async function POST(request: NextRequest) {
     
     console.log(`Processing blocks ${lastProcessedBlock + BigInt(1)} to ${currentBlock}`)
     
+    let eventsProcessed = 0
+    
     if (currentBlock > lastProcessedBlock) {
       const events = await getBlockchainEvents(lastProcessedBlock + BigInt(1), currentBlock)
       console.log(`Found ${events.length} events to process`)
       
       // 2. Process events and store in activities table
+      eventsProcessed = events.length
       await processEvents(events)
       
       // 3. Update last processed block
       await updateLastProcessedBlock(currentBlock)
+    } else {
+      console.log('No new blocks to process')
     }
     
     // 4. Recalculate user stats from activities
@@ -49,17 +69,30 @@ export async function POST(request: NextRequest) {
     // 5. Clean up old activities (30-day retention)
     await cleanupOldActivities()
     
+    // 6. Update processing status to idle with success metrics
+    await supabase
+      .from('stats_processing')
+      .update({ 
+        processing_status: 'idle',
+        blocks_processed_last_run: Number(currentBlock - lastProcessedBlock),
+        events_processed_last_run: eventsProcessed,
+        error_message: null
+      })
+      .eq('id', 1)
+    
     console.log('Daily analytics update completed successfully')
     
     return Response.json({ 
       success: true, 
       blocksProcessed: Number(currentBlock - lastProcessedBlock),
+      eventsProcessed,
       message: 'Analytics updated successfully'
     })
     
   } catch (error) {
     console.error('Daily analytics update failed:', error)
     
+    // Update processing status to error
     await supabase
       .from('stats_processing')
       .update({ 
@@ -76,6 +109,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function processEvents(events: ProcessedEvent[]): Promise<void> {
+  console.log(`Processing ${events.length} events...`)
+  
   for (const event of events) {
     try {
       if (event.type === 'BetCreated') {
@@ -117,18 +152,30 @@ async function processEvents(events: ProcessedEvent[]): Promise<void> {
     } catch (error) {
       // Skip duplicate events (unique constraint violations)
       if (error instanceof Error && error.message.includes('duplicate')) {
+        console.log(`Skipping duplicate event: ${event.transactionHash}`)
         continue
       }
+      console.error(`Error processing event ${event.transactionHash}:`, error)
       throw error
     }
   }
+  
+  console.log(`Successfully processed ${events.length} events`)
 }
 
 async function cleanupOldActivities(): Promise<void> {
+  console.log('Cleaning up old activities...')
+  
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   
-  await supabase
+  const { count, error } = await supabase
     .from('user_activities')
     .delete()
     .lt('created_at', thirtyDaysAgo.toISOString())
+  
+  if (error) {
+    console.error('Error cleaning up old activities:', error)
+  } else {
+    console.log(`Cleaned up ${count || 0} old activity records`)
+  }
 }
