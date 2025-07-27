@@ -67,6 +67,17 @@ export function Navigation() {
                 <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full" />
               )}
             </Link>
+            <Link 
+              href="/stats" 
+              className={`text-gray-300 hover:text-green-400 transition-colors relative ${
+                pathname === '/stats' ? 'text-green-400' : ''
+              }`}
+            >
+              Your Stats
+              {pathname === '/stats' && (
+                <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full" />
+              )}
+            </Link>
             <div className="transform hover:scale-105 transition-transform">
               <ConnectKitButton />
             </div>
@@ -114,6 +125,15 @@ export function Navigation() {
                 }`}
               >
                 Create Bet
+              </Link>
+              <Link 
+                href="/stats" 
+                onClick={() => setMobileMenuOpen(false)}
+                className={`text-gray-300 hover:text-green-400 transition-colors px-2 py-1 ${
+                  pathname === '/stats' ? 'text-green-400' : ''
+                }`}
+              >
+                Your Stats
               </Link>
             </div>
           </div>
