@@ -1,5 +1,9 @@
+// ============================================================================
+// File: frontend/lib/analytics/eventProcessor.ts
+// ============================================================================
+
 import { createPublicClient, http, parseAbi } from 'viem'
-import { supabase } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase'  
 import { hyperevm } from '@/lib/chains'
 
 const publicClient = createPublicClient({
@@ -61,8 +65,11 @@ export async function getBlockchainEvents(
   })
 }
 
+// ✅ FIXED: Use admin client internally, no parameters
 export async function getLastProcessedBlock(): Promise<bigint> {
-  const { data, error } = await supabase
+  const supabaseAdmin = createServerSupabaseClient()
+  
+  const { data, error } = await supabaseAdmin
     .from('stats_processing')
     .select('last_processed_block')
     .single()
@@ -71,8 +78,11 @@ export async function getLastProcessedBlock(): Promise<bigint> {
   return BigInt(data.last_processed_block)
 }
 
+// Use admin client internally, no parameters
 export async function updateLastProcessedBlock(blockNumber: bigint): Promise<void> {
-  const { error } = await supabase
+  const supabaseAdmin = createServerSupabaseClient()
+  
+  const { error } = await supabaseAdmin
     .from('stats_processing')
     .update({
       last_processed_block: Number(blockNumber),

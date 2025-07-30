@@ -1,4 +1,7 @@
-// frontend/app/api/bets/create/route.ts
+// ============================================================================
+// File: frontend/app/api/bets/create/route.ts
+// ============================================================================
+
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient, generateRandomId, checkRateLimit } from '@/lib/supabase'
 
@@ -68,12 +71,12 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Bet name too long' }, { status: 400 })
     }
 
-    // ✅ NEW: Validate isPublic parameter
+    // ✅ VALIDATION: Validate isPublic parameter
     if (typeof isPublic !== 'boolean') {
       return Response.json({ error: 'Invalid public flag' }, { status: 400 })
     }
 
-    // ✅ FIXED: Use server Supabase client with full permissions
+    // ✅ RLS FIX: Use server Supabase client with full permissions
     const supabase = createServerSupabaseClient()
 
     console.log('Using server Supabase client')
@@ -125,13 +128,13 @@ export async function POST(request: NextRequest) {
 
     console.log('Generated random ID:', randomId, 'after', attempts, 'attempts')
 
-    // ✅ UPDATED: Insert new mapping with isPublic flag
+    // ✅ COMPLETE: Insert new mapping with isPublic flag
     const insertData = {
       random_id: randomId,
       numeric_id: numericId,
       creator_address: creatorAddress.toLowerCase(), // Normalize case
       bet_name: betName.trim(),
-      is_public: isPublic  // ✅ NEW FIELD
+      is_public: isPublic  // ✅ PRESERVED: isPublic field support
     }
 
     console.log('Inserting data:', insertData)

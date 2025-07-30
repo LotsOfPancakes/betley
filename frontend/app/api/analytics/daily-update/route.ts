@@ -1,9 +1,14 @@
+// ============================================================================
+// File: frontend/app/api/analytics/daily-update/route.ts
+// ============================================================================
+
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase'  
 import { getBlockchainEvents, getLastProcessedBlock, updateLastProcessedBlock, ProcessedEvent } from '@/lib/analytics/eventProcessor'
 import { recalculateAllUserStats } from '@/lib/analytics/statsCalculator'
 import { createPublicClient, http } from 'viem'
 import { hyperevm } from '@/lib/chains'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const publicClient = createPublicClient({
   chain: hyperevm,
@@ -32,17 +37,20 @@ async function handleAnalyticsUpdate(request: NextRequest) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Create admin client once
+  const supabaseAdmin = createServerSupabaseClient()
+
   try {
     console.log('Starting daily analytics update...')
     
-    // Update processing status to running
-    await supabase
+    // Update processing status to running using admin client
+    await supabaseAdmin
       .from('stats_processing')
       .update({ processing_status: 'running' })
       .eq('id', 1)
 
     // 1. Get blockchain events since last processing
-    const lastProcessedBlock = await getLastProcessedBlock()
+    const lastProcessedBlock = await getLastProcessedBlock()  
     const currentBlock = await publicClient.getBlockNumber()
     
     console.log(`Processing blocks ${lastProcessedBlock + BigInt(1)} to ${currentBlock}`)
@@ -55,22 +63,22 @@ async function handleAnalyticsUpdate(request: NextRequest) {
       
       // 2. Process events and store in activities table
       eventsProcessed = events.length
-      await processEvents(events)
+      await processEvents(events, supabaseAdmin)  
       
       // 3. Update last processed block
-      await updateLastProcessedBlock(currentBlock)
+      await updateLastProcessedBlock(currentBlock)  
     } else {
       console.log('No new blocks to process')
     }
     
     // 4. Recalculate user stats from activities
-    await recalculateAllUserStats()
+    await recalculateAllUserStats()  
     
     // 5. Clean up old activities (30-day retention)
-    await cleanupOldActivities()
+    await cleanupOldActivities(supabaseAdmin)  
     
-    // 6. Update processing status to idle with success metrics
-    await supabase
+    // Update processing status to idle with success metrics using admin client
+    await supabaseAdmin
       .from('stats_processing')
       .update({ 
         processing_status: 'idle',
@@ -92,8 +100,8 @@ async function handleAnalyticsUpdate(request: NextRequest) {
   } catch (error) {
     console.error('Daily analytics update failed:', error)
     
-    // Update processing status to error
-    await supabase
+    // Update processing status to error using admin client
+    await supabaseAdmin
       .from('stats_processing')
       .update({ 
         processing_status: 'error',
@@ -108,14 +116,15 @@ async function handleAnalyticsUpdate(request: NextRequest) {
   }
 }
 
-async function processEvents(events: ProcessedEvent[]): Promise<void> {
+// Properly typed function with admin client parameter
+async function processEvents(events: ProcessedEvent[], supabaseAdmin: SupabaseClient): Promise<void> {
   console.log(`Processing ${events.length} events...`)
   
   for (const event of events) {
     try {
       if (event.type === 'BetCreated') {
-        // Store bet creation activity
-        await supabase
+        // Store bet creation activity using admin client
+        await supabaseAdmin
           .from('user_activities')
           .upsert({
             wallet_address: event.creator!.toLowerCase(),
@@ -127,8 +136,8 @@ async function processEvents(events: ProcessedEvent[]): Promise<void> {
           })
           
       } else if (event.type === 'BetPlaced') {
-        // Store betting activity
-        await supabase
+        // Store betting activity using admin client
+        await supabaseAdmin
           .from('user_activities')
           .upsert({
             wallet_address: event.user!.toLowerCase(),
@@ -139,8 +148,8 @@ async function processEvents(events: ProcessedEvent[]): Promise<void> {
             transaction_hash: event.transactionHash
           })
         
-        // Store bet participant for unique wallet calculation
-        await supabase
+        // Store bet participant for unique wallet calculation using admin client
+        await supabaseAdmin
           .from('bet_participants')
           .upsert({
             bet_id: event.betId,
@@ -163,12 +172,13 @@ async function processEvents(events: ProcessedEvent[]): Promise<void> {
   console.log(`Successfully processed ${events.length} events`)
 }
 
-async function cleanupOldActivities(): Promise<void> {
+// Properly typed function with admin client parameter
+async function cleanupOldActivities(supabaseAdmin: SupabaseClient): Promise<void> {
   console.log('Cleaning up old activities...')
   
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   
-  const { count, error } = await supabase
+  const { count, error } = await supabaseAdmin
     .from('user_activities')
     .delete()
     .lt('created_at', thirtyDaysAgo.toISOString())

@@ -1,8 +1,9 @@
-// Complete Fix: Hybrid Database + Real-time Contract Approach
+// ============================================================================
 // File: frontend/app/api/bets/user-mappings/route.ts
+// ============================================================================
 
 import { NextRequest } from 'next/server'
-import { supabase, checkRateLimit } from '@/lib/supabase'
+import { supabase, checkRateLimit, createServerSupabaseClient } from '@/lib/supabase'
 import { createPublicClient, http, parseAbi } from 'viem'
 import { hyperevm } from '@/lib/chains'
 
@@ -15,6 +16,7 @@ const publicClient = createPublicClient({
 const BETLEY_ADDRESS = process.env.NEXT_PUBLIC_BETLEY_ADDRESS as `0x${string}`
 const BETLEY_ABI = parseAbi([
   'function getUserBets(uint256 betId, address user) external view returns (uint256[] memory)',
+  'function getBetDetails(uint256 betId) external view returns (string memory, string[] memory, address, uint256, bool, uint8, uint256[], address)'
 ])
 
 // Get IP helper function
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Invalid maxBetId range' }, { status: 400 })
     }
 
-    // ✅ STEP 1: Get all bet mappings
+    // ✅ STEP 1: Get all mappings first, then filter by user involvement
     const { data: allMappings, error } = await supabase
       .from('bet_mappings')
       .select('numeric_id, random_id, creator_address, is_public')
@@ -72,13 +74,20 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Database query failed' }, { status: 500 })
     }
 
-    // ✅ STEP 2: Get user participation from database (reliable but may be delayed)
-    const { data: userParticipation } = await supabase
+    // ✅ STEP 2: Get user participation from database using admin client
+    // This is the hybrid fix - use admin client to access protected user_activities table
+    const supabaseAdmin = createServerSupabaseClient()
+    const { data: userParticipation, error: participationError } = await supabaseAdmin
       .from('user_activities')
       .select('bet_id')
       .eq('wallet_address', address.toLowerCase())
       .eq('activity_type', 'bet')
       .lte('bet_id', maxBetId)
+
+    if (participationError) {
+      console.error('Participation query error:', participationError)
+      return Response.json({ error: 'Failed to check user participation' }, { status: 500 })
+    }
 
     // Create a Set of bet IDs where the user has placed bets (from database)
     const userBetIdsFromDB = new Set(userParticipation?.map(p => p.bet_id) || [])

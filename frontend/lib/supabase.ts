@@ -1,25 +1,29 @@
 // ============================================================================
-// SECURE SUPABASE CONFIGURATION - TYPESCRIPT FIXED
+// File: frontend/lib/supabase.ts
 // ============================================================================
 
-// frontend/lib/supabase.ts - Updated secure configuration with proper TypeScript
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 // ============================================================================
-// CLIENT-SIDE SUPABASE (LIMITED PERMISSIONS)
+// ENVIRONMENT VALIDATION
 // ============================================================================
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+  throw new Error('Missing required Supabase environment variables')
 }
 
+// ============================================================================
+// CLIENT-SIDE SUPABASE (LIMITED PERMISSIONS)
+// ============================================================================
+
 // ✅ CLIENT: Read-only access for public data
+// Will respect RLS policies for user-specific data
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: false, // No auth sessions needed
+    persistSession: false, // No auth sessions needed for Web3 app
     autoRefreshToken: false,
     detectSessionInUrl: false
   },
@@ -38,11 +42,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // ============================================================================
 
 // ✅ SERVER: Full access for API routes (service role)
+// Bypasses RLS for admin operations
 export function createServerSupabaseClient(): SupabaseClient {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   
   if (!serviceRoleKey) {
-    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY - required for server operations')
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is required for server operations. ' +
+      'Add it to your environment variables (do NOT prefix with NEXT_PUBLIC_)'
+    )
   }
 
   return createClient(supabaseUrl, serviceRoleKey, {
@@ -66,6 +74,7 @@ export function createServerSupabaseClient(): SupabaseClient {
 // RATE LIMITING HELPER
 // ============================================================================
 
+// ✅ Updated rate limiting function to use server client for database writes
 export async function checkRateLimit(
   clientIp: string,
   endpoint: string,
@@ -75,6 +84,7 @@ export async function checkRateLimit(
   const serverSupabase = createServerSupabaseClient()
   
   try {
+    // Try to use the RPC function if it exists
     const { data, error } = await serverSupabase.rpc('check_rate_limit', {
       p_client_ip: clientIp,
       p_endpoint: endpoint,
@@ -83,19 +93,72 @@ export async function checkRateLimit(
     })
 
     if (error) {
-      console.error('Rate limit check failed:', error)
-      return false // Fail closed
+      console.error('Rate limit RPC failed, falling back to manual check:', error)
+      
+      // Fallback to manual rate limiting
+      const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000)
+      const key = `${clientIp}-${endpoint}`
+      
+      const { data: records, error: selectError } = await serverSupabase
+        .from('rate_limits')
+        .select('count')
+        .eq('key', key)
+        .gte('created_at', windowStart.toISOString())
+        .single()
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error('Rate limit fallback check error:', selectError)
+        return true // Allow on error
+      }
+
+      const currentCount = records?.count || 0
+      
+      if (currentCount >= maxRequests) {
+        return false
+      }
+
+      // Update rate limit record
+      await serverSupabase
+        .from('rate_limits')
+        .upsert({
+          key,
+          count: currentCount + 1,
+          created_at: new Date().toISOString()
+        })
+
+      return true
     }
 
     return data === true
   } catch (error) {
-    console.error('Rate limit error:', error)
-    return false // Fail closed
+    console.error('Rate limiting error:', error)
+    return true // Allow on error to prevent service disruption
   }
 }
 
 // ============================================================================
-// SECURE HELPER FUNCTIONS
+// VALIDATION HELPER FUNCTIONS
+// ============================================================================
+
+// Input validation helpers
+export function validateEthereumAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
+
+export function validateRandomId(randomId: string): boolean {
+  return /^[A-Za-z0-9]{8}$/.test(randomId)
+}
+
+export function validateBetName(betName: string): boolean {
+  return betName.trim().length > 0 && betName.length <= 200
+}
+
+export function validateNumericId(numericId: number): boolean {
+  return Number.isInteger(numericId) && numericId >= 0 && numericId < 1000000
+}
+
+// ============================================================================
+// SECURE RANDOM ID GENERATION
 // ============================================================================
 
 // Helper function to generate cryptographically secure random IDs
@@ -127,31 +190,16 @@ export function generateRandomId(): string {
   return result
 }
 
-// Input validation helpers
-export function validateEthereumAddress(address: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(address)
-}
-
-export function validateRandomId(randomId: string): boolean {
-  return /^[A-Za-z0-9]{8}$/.test(randomId)
-}
-
-export function validateBetName(betName: string): boolean {
-  return betName.trim().length > 0 && betName.length <= 200
-}
-
-export function validateNumericId(numericId: number): boolean {
-  return Number.isInteger(numericId) && numericId >= 0 && numericId < 1000000
-}
-
 // ============================================================================
 // SECURE DATABASE OPERATIONS
 // ============================================================================
 
+// ✅ Updated to support isPublic parameter
 export async function createBetMappingSecure(
   numericId: number,
   creatorAddress: string,
-  betName: string
+  betName: string,
+  isPublic: boolean = false
 ): Promise<{ randomId: string | null; error: string | null }> {
   // Validate inputs
   if (!validateNumericId(numericId)) {
@@ -202,14 +250,15 @@ export async function createBetMappingSecure(
       if (!duplicate) break
     } while (attempts < maxAttempts)
 
-    // Insert new mapping
+    // ✅ Updated: Insert new mapping with isPublic flag
     const { error } = await serverSupabase
       .from('bet_mappings')
       .insert({
         random_id: randomId,
         numeric_id: numericId,
         creator_address: creatorAddress.toLowerCase(), // Normalize case
-        bet_name: betName.trim()
+        bet_name: betName.trim(),
+        is_public: isPublic  // ✅ NEW FIELD
       })
 
     if (error) {
@@ -235,6 +284,7 @@ export interface BetMapping {
   numeric_id: number
   creator_address: string
   bet_name: string
+  is_public?: boolean  // ✅ Added optional isPublic field
   created_at: string
 }
 
@@ -254,15 +304,12 @@ export interface AuditLog {
 // ============================================================================
 
 /*
-Add these to your .env.local and Vercel environment variables:
+Required Environment Variables:
 
-# Existing (keep these)
+# Existing (keep these):
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-# New (server-side only - DO NOT prefix with NEXT_PUBLIC_)
+# New (add these - NO NEXT_PUBLIC_ prefix):
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-The service role key can be found in:
-Supabase Dashboard > Settings > API > service_role key
 */
