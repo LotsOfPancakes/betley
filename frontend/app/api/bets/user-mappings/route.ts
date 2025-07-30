@@ -1,4 +1,4 @@
-// Fixed Privacy-Preserving User Mappings API
+// Complete Fix: Hybrid Database + Real-time Contract Approach
 // File: frontend/app/api/bets/user-mappings/route.ts
 
 import { NextRequest } from 'next/server'
@@ -15,7 +15,6 @@ const publicClient = createPublicClient({
 const BETLEY_ADDRESS = process.env.NEXT_PUBLIC_BETLEY_ADDRESS as `0x${string}`
 const BETLEY_ABI = parseAbi([
   'function getUserBets(uint256 betId, address user) external view returns (uint256[] memory)',
-  'function getBetDetails(uint256 betId) external view returns (string memory, string[] memory, address, uint256, bool, uint8, uint256[], address)'
 ])
 
 // Get IP helper function
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Invalid maxBetId range' }, { status: 400 })
     }
 
-    // ✅ PRIVACY FIX: Get all mappings first, then filter by user involvement
+    // ✅ STEP 1: Get all bet mappings
     const { data: allMappings, error } = await supabase
       .from('bet_mappings')
       .select('numeric_id, random_id, creator_address, is_public')
@@ -72,6 +71,17 @@ export async function POST(request: NextRequest) {
       console.error('Database error:', error)
       return Response.json({ error: 'Database query failed' }, { status: 500 })
     }
+
+    // ✅ STEP 2: Get user participation from database (reliable but may be delayed)
+    const { data: userParticipation } = await supabase
+      .from('user_activities')
+      .select('bet_id')
+      .eq('wallet_address', address.toLowerCase())
+      .eq('activity_type', 'bet')
+      .lte('bet_id', maxBetId)
+
+    // Create a Set of bet IDs where the user has placed bets (from database)
+    const userBetIdsFromDB = new Set(userParticipation?.map(p => p.bet_id) || [])
 
     const userMappings: Record<number, string> = {}
     
@@ -93,7 +103,15 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // For private bets where user is not creator, check if they've bet
+        // ✅ STEP 3: For private bets, use hybrid approach
+        // First check database (fast and reliable for older bets)
+        if (userBetIdsFromDB.has(numericId)) {
+          userMappings[numericId] = mapping.random_id
+          continue
+        }
+
+        // ✅ STEP 4: If not in database, check contract (catches recent bets)
+        // This handles the timing gap between bet placement and cron job
         try {
           const userBets = await publicClient.readContract({
             address: BETLEY_ADDRESS,
@@ -108,8 +126,9 @@ export async function POST(request: NextRequest) {
             userMappings[numericId] = mapping.random_id
           }
         } catch (contractError) {
-          console.error(`Error checking bets for ${numericId}:`, contractError)
-          // Skip this bet if contract call fails
+          console.error(`Contract call failed for bet ${numericId}:`, contractError)
+          // Don't include this bet if contract call fails
+          // This is acceptable since we already checked the database
         }
       }
     }
