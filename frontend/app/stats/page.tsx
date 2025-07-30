@@ -24,6 +24,9 @@ function useUserStats(address: string | undefined) {
 
 // GET Symbol for Native HYPE
 const nativeToken = getTokenConfig(ZERO_ADDRESS)
+// for ERC20 token (if we use it)
+// const erc20Token = getTokenConfig(config.contracts.mockERC20)
+// const tokenSymbol = erc20Token.symbol // This would be "mockERC"
 
 
 // Utility functions
@@ -188,6 +191,8 @@ export default function UserStatsPage() {
           </div>
         </div>
 
+                
+
         {/* Stats Grid */}
         <div className="max-w-6xl mx-auto px-4 py-8">
           {isLoading && <LoadingStats />}
@@ -214,6 +219,7 @@ export default function UserStatsPage() {
                 <StatCard
                   title="Volume Generated"
                   value={`${formatHype(stats.total_volume_created)} ${nativeToken.symbol}`}
+                  // value={`${formatHype(stats.total_volume_created)} ${tokenSymbol}`} for ERC20 token symbol
                   subtitle="Others bet on your bets"
                   icon="💰"
                   gradient="from-green-500 to-green-600"
@@ -237,7 +243,7 @@ export default function UserStatsPage() {
               </div>
 
               {/* Empty state for new users */}
-              {stats.bets_created === 0 && (
+              {/* {stats.bets_created === 0 && (
                 <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-gray-700/50 rounded-3xl p-8 text-center">
                   <div className="text-gray-400 text-4xl mb-3">🚀</div>
                   <h3 className="text-lg font-medium text-white mb-2">Stats are empty for now</h3>
@@ -249,7 +255,7 @@ export default function UserStatsPage() {
                     Create Your First Bet
                   </button>
                 </div>
-              )}
+              )} */}
             </>
           )}
         </div>
