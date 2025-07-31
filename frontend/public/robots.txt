@@ -1,0 +1,17 @@
+# Betley - Decentralized Betting Platform
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Block API routes from being crawled
+Disallow: /api/
+
+# Block internal Next.js files
+Disallow: /_next/
+
+# Allow sitemap
+Sitemap: https://betley.xyz/sitemap.xml
+
+# Crawl delay (optional - helps with server load)
+Crawl-delay: 1
