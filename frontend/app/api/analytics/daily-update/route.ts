@@ -125,7 +125,8 @@ async function handleAnalyticsUpdate(request: NextRequest) {
           console.error('Error during blockchain event processing:', error)
           
           // For partial processing errors, still try to update the block if we got some data
-          if (error.message && !error.message.includes('All') && !error.message.includes('chunks failed')) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          if (errorMessage && !errorMessage.includes('All') && !errorMessage.includes('chunks failed')) {
             console.log('Attempting to update last processed block despite partial errors')
             try {
               await updateLastProcessedBlock(toBlock)
