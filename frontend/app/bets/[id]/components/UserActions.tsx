@@ -112,10 +112,22 @@ const determineClaimStatus = (
   if (hasClaimed) {
     const userWon = resolved && winningOption !== undefined && hasUserWon(userBets, winningOption)
     const claimType = userWon ? 'winnings' : (isCreator ? 'creator fees' : 'refund')
+    
+    // For refunds, use totalBet; for winnings, use breakdown amount
+    let amount: bigint | undefined
+    if (claimType === 'refund') {
+      amount = totalBet
+    } else if (claimType === 'winnings') {
+      amount = breakdown?.totalWinnings
+    } else {
+      // creator fees - could add logic here if needed
+      amount = breakdown?.totalWinnings
+    }
+    
     return { 
       type: 'already-claimed', 
       claimType,
-      amount: breakdown?.totalWinnings 
+      amount
     }
   }
 
