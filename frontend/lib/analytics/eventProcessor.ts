@@ -113,7 +113,25 @@ export async function getLastProcessedBlock(): Promise<bigint> {
     .single()
   
   if (error) throw error
-  return BigInt(data.last_processed_block)
+  
+  const lastProcessedBlock = BigInt(data.last_processed_block)
+  
+  // If this is the first run (block 0 or very low), initialize to recent block
+  if (lastProcessedBlock < BigInt(1000)) {
+    console.log(`Last processed block is ${lastProcessedBlock}, initializing to recent block`)
+    
+    // Get current block and start from 1000 blocks ago for safety
+    const currentBlock = await publicClient.getBlockNumber()
+    const recentBlock = currentBlock - BigInt(1000)
+    
+    console.log(`Initializing last_processed_block to ${recentBlock} (current: ${currentBlock})`)
+    
+    // Update the database with the recent block
+    await updateLastProcessedBlock(recentBlock)
+    return recentBlock
+  }
+  
+  return lastProcessedBlock
 }
 
 // Use admin client internally, no parameters

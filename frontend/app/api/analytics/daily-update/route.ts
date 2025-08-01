@@ -85,7 +85,7 @@ async function handleAnalyticsUpdate(request: NextRequest) {
       
       // Skip if trying to process too many blocks at once (safety check)
       const blockRange = toBlock - fromBlock + BigInt(1)
-      if (blockRange > BigInt(100000)) {
+      if (blockRange > BigInt(50000)) {
         console.log(`Block range too large: ${blockRange} blocks. Limiting to recent 10000 blocks.`)
         const limitedFromBlock = toBlock - BigInt(10000) + BigInt(1)
         const events = await getBlockchainEvents(limitedFromBlock, toBlock)
