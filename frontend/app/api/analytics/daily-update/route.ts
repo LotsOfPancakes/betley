@@ -67,20 +67,39 @@ async function handleAnalyticsUpdate(request: NextRequest) {
     const lastProcessedBlock = await getLastProcessedBlock()  
     const currentBlock = await publicClient.getBlockNumber()
     
-    console.log(`Processing blocks ${lastProcessedBlock + BigInt(1)} to ${currentBlock}`)
+    console.log(`Current block: ${currentBlock}, Last processed: ${lastProcessedBlock}`)
     
     let eventsProcessed = 0
     
     if (currentBlock > lastProcessedBlock) {
-      const events = await getBlockchainEvents(lastProcessedBlock + BigInt(1), currentBlock)
-      console.log(`Found ${events.length} events to process`)
+      const fromBlock = lastProcessedBlock + BigInt(1)
+      const toBlock = currentBlock
       
-      // 2. Process events and store in activities table
-      eventsProcessed = events.length
-      await processEvents(events, supabaseAdmin)  
+      console.log(`Processing blocks ${fromBlock} to ${toBlock}`)
       
-      // 3. Update last processed block
-      await updateLastProcessedBlock(currentBlock)  
+      // Validate block range
+      if (fromBlock > toBlock) {
+        console.log('Invalid block range: fromBlock > toBlock')
+        throw new Error(`Invalid block range: ${fromBlock} > ${toBlock}`)
+      }
+      
+      // Skip if trying to process too many blocks at once (safety check)
+      const blockRange = toBlock - fromBlock + BigInt(1)
+      if (blockRange > BigInt(100000)) {
+        console.log(`Block range too large: ${blockRange} blocks. Limiting to recent 10000 blocks.`)
+        const limitedFromBlock = toBlock - BigInt(10000) + BigInt(1)
+        const events = await getBlockchainEvents(limitedFromBlock, toBlock)
+        console.log(`Found ${events.length} events to process (limited range)`)
+        eventsProcessed = events.length
+        await processEvents(events, supabaseAdmin)
+        await updateLastProcessedBlock(toBlock)
+      } else {
+        const events = await getBlockchainEvents(fromBlock, toBlock)
+        console.log(`Found ${events.length} events to process`)
+        eventsProcessed = events.length
+        await processEvents(events, supabaseAdmin)
+        await updateLastProcessedBlock(toBlock)
+      }
     } else {
       console.log('No new blocks to process')
     }

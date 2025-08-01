@@ -32,6 +32,16 @@ export async function getBlockchainEvents(
   fromBlock: bigint,
   toBlock: bigint
 ): Promise<ProcessedEvent[]> {
+  // Validate inputs
+  if (fromBlock > toBlock) {
+    throw new Error(`Invalid block range: fromBlock (${fromBlock}) > toBlock (${toBlock})`)
+  }
+  
+  if (fromBlock < BigInt(1)) {
+    console.log(`Adjusting fromBlock from ${fromBlock} to 1`)
+    fromBlock = BigInt(1)
+  }
+  
   const MAX_BLOCK_RANGE = BigInt(1000)
   const allLogs: ProcessedEvent[] = []
   
@@ -44,12 +54,22 @@ export async function getBlockchainEvents(
     
     console.log(`Fetching events from block ${currentFromBlock} to ${currentToBlock}`)
     
-    const logs = await publicClient.getLogs({
-      address: BETLEY_ADDRESS,
-      events: BETLEY_EVENTS_ABI,
-      fromBlock: currentFromBlock,
-      toBlock: currentToBlock
-    })
+    let logs
+    try {
+      logs = await publicClient.getLogs({
+        address: BETLEY_ADDRESS,
+        events: BETLEY_EVENTS_ABI,
+        fromBlock: currentFromBlock,
+        toBlock: currentToBlock
+      })
+      
+      console.log(`Found ${logs.length} logs in range ${currentFromBlock}-${currentToBlock}`)
+    } catch (error) {
+      console.error(`Error fetching logs for range ${currentFromBlock}-${currentToBlock}:`, error)
+      // Skip this range and continue with next
+      currentFromBlock = currentToBlock + BigInt(1)
+      continue
+    }
 
     const processedLogs = logs.map(log => {
       const { eventName, args } = log
