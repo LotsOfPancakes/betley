@@ -44,6 +44,9 @@ export async function getBlockchainEvents(
   
   const MAX_BLOCK_RANGE = BigInt(1000)
   const allLogs: ProcessedEvent[] = []
+  const failedRanges: Array<{from: bigint, to: bigint, error: string}> = []
+  let successfulChunks = 0
+  let totalChunks = 0
   
   let currentFromBlock = fromBlock
   
@@ -52,7 +55,8 @@ export async function getBlockchainEvents(
       ? toBlock 
       : currentFromBlock + MAX_BLOCK_RANGE - BigInt(1)
     
-    console.log(`Fetching events from block ${currentFromBlock} to ${currentToBlock}`)
+    totalChunks++
+    console.log(`Fetching events from block ${currentFromBlock} to ${currentToBlock} (chunk ${totalChunks})`)
     
     let logs
     try {
@@ -63,9 +67,19 @@ export async function getBlockchainEvents(
         toBlock: currentToBlock
       })
       
-      console.log(`Found ${logs.length} logs in range ${currentFromBlock}-${currentToBlock}`)
+      console.log(`✅ Found ${logs.length} logs in range ${currentFromBlock}-${currentToBlock}`)
+      successfulChunks++
     } catch (error) {
-      console.error(`Error fetching logs for range ${currentFromBlock}-${currentToBlock}:`, error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error(`❌ Error fetching logs for range ${currentFromBlock}-${currentToBlock}:`, errorMessage)
+      
+      // Track failed range for reporting
+      failedRanges.push({
+        from: currentFromBlock,
+        to: currentToBlock,
+        error: errorMessage
+      })
+      
       // Skip this range and continue with next
       currentFromBlock = currentToBlock + BigInt(1)
       continue
@@ -100,11 +114,33 @@ export async function getBlockchainEvents(
     currentFromBlock = currentToBlock + BigInt(1)
   }
   
+  // Log processing summary
+  console.log(`=== BLOCKCHAIN EVENT PROCESSING SUMMARY ===`)
+  console.log(`Total chunks: ${totalChunks}`)
+  console.log(`Successful chunks: ${successfulChunks}`)
+  console.log(`Failed chunks: ${failedRanges.length}`)
+  console.log(`Total events found: ${allLogs.length}`)
+  
+  if (failedRanges.length > 0) {
+    console.log(`Failed ranges:`)
+    failedRanges.forEach((range, index) => {
+      console.log(`  ${index + 1}. Blocks ${range.from}-${range.to}: ${range.error}`)
+    })
+  }
+  
+  // If we have some successful chunks, continue with partial data
+  // Only throw error if ALL chunks failed
+  if (successfulChunks === 0 && totalChunks > 0) {
+    throw new Error(`All ${totalChunks} chunks failed to process. Last error: ${failedRanges[failedRanges.length - 1]?.error}`)
+  }
+  
   return allLogs
 }
 
 // ✅ FIXED: Use admin client internally, no parameters
 export async function getLastProcessedBlock(): Promise<bigint> {
+  console.log('=== BLOCK INITIALIZATION DEBUG ===')
+  
   const supabaseAdmin = createServerSupabaseClient()
   
   const { data, error } = await supabaseAdmin
@@ -112,25 +148,68 @@ export async function getLastProcessedBlock(): Promise<bigint> {
     .select('last_processed_block')
     .single()
   
-  if (error) throw error
+  if (error) {
+    console.error('Database query error:', error)
+    throw error
+  }
   
+  console.log('Raw database value:', data.last_processed_block)
   const lastProcessedBlock = BigInt(data.last_processed_block)
+  console.log('Converted to BigInt:', lastProcessedBlock)
+  console.log('Is less than 1000?', lastProcessedBlock < BigInt(1000))
   
   // If this is the first run (block 0 or very low), initialize to recent block
   if (lastProcessedBlock < BigInt(1000)) {
     console.log(`Last processed block is ${lastProcessedBlock}, initializing to recent block`)
     
-    // Get current block and start from 1000 blocks ago for safety
-    const currentBlock = await publicClient.getBlockNumber()
-    const recentBlock = currentBlock - BigInt(1000)
-    
-    console.log(`Initializing last_processed_block to ${recentBlock} (current: ${currentBlock})`)
-    
-    // Update the database with the recent block
-    await updateLastProcessedBlock(recentBlock)
-    return recentBlock
+    try {
+      // Get current block and start from 1000 blocks ago for safety
+      console.log('Attempting to get current block number from RPC...')
+      const currentBlock = await publicClient.getBlockNumber()
+      console.log('Current block from RPC:', currentBlock)
+      
+      const recentBlock = currentBlock - BigInt(1000)
+      console.log('Calculated recent block:', recentBlock)
+      
+      // Update the database with the recent block
+      console.log('Attempting to update database...')
+      await updateLastProcessedBlock(recentBlock)
+      
+      // Verify the database update actually worked
+      const { data: verification, error: verifyError } = await supabaseAdmin
+        .from('stats_processing')
+        .select('last_processed_block')
+        .single()
+      
+      if (verifyError) {
+        console.error('Database verification error:', verifyError)
+        throw verifyError
+      }
+      
+      console.log('Database after update:', verification.last_processed_block)
+      console.log('Update successful:', BigInt(verification.last_processed_block) === recentBlock)
+      
+      return recentBlock
+      
+    } catch (rpcError) {
+      console.error('RPC call failed during initialization:', rpcError)
+      
+      // Fallback: Use a reasonable recent block number
+      console.log('Using fallback block number due to RPC failure')
+      const fallbackBlock = BigInt(9926000) // Conservative fallback
+      
+      try {
+        await updateLastProcessedBlock(fallbackBlock)
+        console.log('Fallback block set successfully:', fallbackBlock)
+        return fallbackBlock
+      } catch (dbError) {
+        console.error('Database update failed even with fallback:', dbError)
+        throw new Error(`Both RPC and database operations failed: RPC=${rpcError.message}, DB=${dbError.message}`)
+      }
+    }
   }
   
+  console.log('Using existing last_processed_block:', lastProcessedBlock)
   return lastProcessedBlock
 }
 

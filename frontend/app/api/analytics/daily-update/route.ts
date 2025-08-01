@@ -64,6 +64,7 @@ async function handleAnalyticsUpdate(request: NextRequest) {
       .eq('id', 1)
 
     // 1. Get blockchain events since last processing
+    console.log('=== DAILY UPDATE BLOCK PROCESSING ===')
     const lastProcessedBlock = await getLastProcessedBlock()  
     const currentBlock = await publicClient.getBlockNumber()
     
@@ -74,8 +75,10 @@ async function handleAnalyticsUpdate(request: NextRequest) {
     if (currentBlock > lastProcessedBlock) {
       const fromBlock = lastProcessedBlock + BigInt(1)
       const toBlock = currentBlock
+      const blockRange = toBlock - fromBlock + BigInt(1)
       
       console.log(`Processing blocks ${fromBlock} to ${toBlock}`)
+      console.log(`Total blocks to process: ${blockRange}`)
       
       // Validate block range
       if (fromBlock > toBlock) {
@@ -83,22 +86,56 @@ async function handleAnalyticsUpdate(request: NextRequest) {
         throw new Error(`Invalid block range: ${fromBlock} > ${toBlock}`)
       }
       
+      // Log if this seems like an unusually large range
+      if (blockRange > BigInt(100000)) {
+        console.log(`⚠️  WARNING: Large block range detected (${blockRange} blocks)`)
+      }
+      
       // Skip if trying to process too many blocks at once (safety check)
-      const blockRange = toBlock - fromBlock + BigInt(1)
       if (blockRange > BigInt(50000)) {
-        console.log(`Block range too large: ${blockRange} blocks. Limiting to recent 10000 blocks.`)
+        console.log(`⚠️  Block range too large: ${blockRange} blocks. Limiting to recent 10000 blocks.`)
         const limitedFromBlock = toBlock - BigInt(10000) + BigInt(1)
-        const events = await getBlockchainEvents(limitedFromBlock, toBlock)
-        console.log(`Found ${events.length} events to process (limited range)`)
-        eventsProcessed = events.length
-        await processEvents(events, supabaseAdmin)
-        await updateLastProcessedBlock(toBlock)
+        
+        try {
+          const events = await getBlockchainEvents(limitedFromBlock, toBlock)
+          console.log(`Found ${events.length} events to process (limited range)`)
+          eventsProcessed = events.length
+          await processEvents(events, supabaseAdmin)
+          await updateLastProcessedBlock(toBlock)
+        } catch (error) {
+          console.error('Error processing limited range:', error)
+          throw error
+        }
       } else {
-        const events = await getBlockchainEvents(fromBlock, toBlock)
-        console.log(`Found ${events.length} events to process`)
-        eventsProcessed = events.length
-        await processEvents(events, supabaseAdmin)
-        await updateLastProcessedBlock(toBlock)
+        try {
+          const events = await getBlockchainEvents(fromBlock, toBlock)
+          console.log(`Found ${events.length} events to process`)
+          eventsProcessed = events.length
+          
+          if (events.length > 0) {
+            await processEvents(events, supabaseAdmin)
+          } else {
+            console.log('No events to process, skipping processEvents')
+          }
+          
+          // Always update the last processed block, even if no events found
+          await updateLastProcessedBlock(toBlock)
+          
+        } catch (error) {
+          console.error('Error during blockchain event processing:', error)
+          
+          // For partial processing errors, still try to update the block if we got some data
+          if (error.message && !error.message.includes('All') && !error.message.includes('chunks failed')) {
+            console.log('Attempting to update last processed block despite partial errors')
+            try {
+              await updateLastProcessedBlock(toBlock)
+            } catch (updateError) {
+              console.error('Failed to update last processed block:', updateError)
+            }
+          }
+          
+          throw error
+        }
       }
     } else {
       console.log('No new blocks to process')
@@ -151,7 +188,11 @@ async function handleAnalyticsUpdate(request: NextRequest) {
 
 // Properly typed function with admin client parameter
 async function processEvents(events: ProcessedEvent[], supabaseAdmin: SupabaseClient): Promise<void> {
-  console.log(`Processing ${events.length} events...`)
+  console.log(`=== PROCESSING ${events.length} EVENTS ===`)
+  
+  let successfulEvents = 0
+  let skippedEvents = 0
+  let failedEvents = 0
   
   for (const event of events) {
     try {
@@ -167,6 +208,7 @@ async function processEvents(events: ProcessedEvent[], supabaseAdmin: SupabaseCl
             block_number: Number(event.blockNumber),
             transaction_hash: event.transactionHash
           })
+        successfulEvents++
           
       } else if (event.type === 'BetPlaced') {
         // Store betting activity using admin client
@@ -190,19 +232,33 @@ async function processEvents(events: ProcessedEvent[], supabaseAdmin: SupabaseCl
             first_bet_amount: event.amount!.toString(),
             block_number: Number(event.blockNumber)
           })
+        successfulEvents++
       }
     } catch (error) {
       // Skip duplicate events (unique constraint violations)
       if (error instanceof Error && error.message.includes('duplicate')) {
-        console.log(`Skipping duplicate event: ${event.transactionHash}`)
+        console.log(`⏭️  Skipping duplicate event: ${event.transactionHash}`)
+        skippedEvents++
         continue
       }
-      console.error(`Error processing event ${event.transactionHash}:`, error)
-      throw error
+      console.error(`❌ Error processing event ${event.transactionHash}:`, error)
+      failedEvents++
+      
+      // Continue processing other events instead of throwing immediately
+      continue
     }
   }
   
-  console.log(`Successfully processed ${events.length} events`)
+  console.log(`=== EVENT PROCESSING SUMMARY ===`)
+  console.log(`✅ Successful: ${successfulEvents}`)
+  console.log(`⏭️  Skipped (duplicates): ${skippedEvents}`)
+  console.log(`❌ Failed: ${failedEvents}`)
+  console.log(`📊 Total processed: ${successfulEvents + skippedEvents}/${events.length}`)
+  
+  // Only throw error if more than 50% of events failed
+  if (failedEvents > events.length / 2) {
+    throw new Error(`Too many event processing failures: ${failedEvents}/${events.length} events failed`)
+  }
 }
 
 // Properly typed function with admin client parameter
