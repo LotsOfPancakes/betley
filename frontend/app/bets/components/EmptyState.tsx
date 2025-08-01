@@ -26,7 +26,12 @@ export default function EmptyState({ filter }: EmptyStateProps) {
       case 'resolved':
         return {
           title: 'No resolved bets found',
-          description: 'You have no completed bets'
+          description: 'You have no completed bets or refunds available'
+        }
+      case 'expired':
+        return {
+          title: 'No expired bets found',
+          description: 'You have no bets that expired without participants'
         }
       default:
         return {

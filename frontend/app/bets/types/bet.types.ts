@@ -16,4 +16,4 @@ export interface BetDetails {
   isPublic?: boolean //checks if bet type is public
 }
 
-export type FilterType = 'all' | 'active' | 'pending' | 'resolved' | 'refund'
+export type FilterType = 'all' | 'active' | 'pending' | 'resolved' | 'expired'

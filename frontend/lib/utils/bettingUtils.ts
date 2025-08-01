@@ -41,6 +41,7 @@ export interface BetStatusDisplay {
  * @param resolutionDeadlinePassed - Whether resolution deadline has passed
  * @param timeLeft - Time left for betting (seconds)
  * @param resolutionTimeLeft - Time left for resolution (seconds)
+ * @param isEmpty - Whether bet has no participants (optional)
  * @returns Status display configuration
  */
 export function getBetStatusDisplay(
@@ -48,7 +49,8 @@ export function getBetStatusDisplay(
   resolved: boolean,
   resolutionDeadlinePassed: boolean,
   timeLeft: number,
-  resolutionTimeLeft: number
+  resolutionTimeLeft: number,
+  isEmpty?: boolean
 ): BetStatusDisplay {
   if (resolved) {
     return {
@@ -61,6 +63,17 @@ export function getBetStatusDisplay(
   }
   
   if (resolutionDeadlinePassed) {
+    // Show "Expired" for empty bets instead of "Refund Available"
+    if (isEmpty) {
+      return {
+        text: 'Expired',
+        color: 'bg-gradient-to-r from-gray-500 to-gray-600',
+        textColor: 'text-white',
+        timeInfo: null,
+        icon: '⏰'
+      }
+    }
+    
     return {
       text: 'Refund Available',
       color: 'bg-gradient-to-r from-yellow-500 to-orange-500',
@@ -168,4 +181,22 @@ export function hasWalletBalance(betAmount: string, balance: bigint, decimals: n
  */
 export function canUserBet(address: string | undefined, isActive: boolean, resolved: boolean): boolean {
   return Boolean(address && isActive && !resolved)
+}
+
+/**
+ * Check if a bet has no participants (empty bet)
+ * @param totalAmounts - Array of total amounts per option
+ * @returns True if bet has no participants
+ */
+export function isBetEmpty(totalAmounts: readonly bigint[]): boolean {
+  return totalAmounts.reduce((sum, amount) => sum + amount, BigInt(0)) === BigInt(0)
+}
+
+/**
+ * Check if user has any bets to refund
+ * @param userBets - Array of user's bet amounts per option
+ * @returns True if user has bets that can be refunded
+ */
+export function hasRefundableBets(userBets: readonly bigint[]): boolean {
+  return userBets.reduce((sum, amount) => sum + amount, BigInt(0)) > BigInt(0)
 }

@@ -14,6 +14,7 @@ import {
   hasUserWon,
   type WinningsBreakdown,
 } from '@/lib/utils'
+import { hasRefundableBets, isBetEmpty } from '@/lib/utils/bettingUtils'
 import { config } from '@/lib/config'
 
 
@@ -89,6 +90,7 @@ const formatTokenAmount = (amount: bigint, decimals: number, isNativeBet: boolea
  * @param hasClaimed - Whether user already claimed
  * @param isCreator - Whether user is the bet creator
  * @param breakdown - Winnings breakdown if available
+ * @param totalAmounts - Total amounts per option (to check if bet is empty)
  * @returns Structured claim status
  */
 const determineClaimStatus = (
@@ -98,7 +100,8 @@ const determineClaimStatus = (
   resolutionDeadlinePassed: boolean,
   hasClaimed: boolean,
   isCreator: boolean,
-  breakdown: WinningsBreakdown | null
+  breakdown: WinningsBreakdown | null,
+  totalAmounts?: readonly bigint[]
 ): ClaimStatus => {
   const totalBet = calculateUserTotalBet(userBets)
   
@@ -124,7 +127,10 @@ const determineClaimStatus = (
   }
 
   if (resolutionDeadlinePassed && !resolved) {
-    return { type: 'can-claim-refund', amount: totalBet }
+    // Only show refund if user has refundable bets AND bet is not empty
+    if (hasRefundableBets(userBets) && totalAmounts && !isBetEmpty(totalAmounts)) {
+      return { type: 'can-claim-refund', amount: totalBet }
+    }
   }
 
   return { type: 'none' }
@@ -329,9 +335,10 @@ export function UserActions({
       resolutionDeadlinePassed,
       hasClaimed || false,
       isCreator,
-      winningsBreakdown
+      winningsBreakdown,
+      totalAmounts
     ),
-    [userBets, resolved, winningOption, resolutionDeadlinePassed, hasClaimed, isCreator, winningsBreakdown]
+    [userBets, resolved, winningOption, resolutionDeadlinePassed, hasClaimed, isCreator, winningsBreakdown, totalAmounts]
   )
 
   // Use the fee data from winnings breakdown if available, fallback to calculated
@@ -378,10 +385,22 @@ export function UserActions({
   // RENDER - Clean JSX with clear structure
   // ============================================================================
   
+  // Check if this is an empty expired bet
+  const isEmptyExpiredBet = resolutionDeadlinePassed && !resolved && totalAmounts && isBetEmpty(totalAmounts)
+  
   return (
     <div className="space-y-4">
+      {/* Special case: Empty expired bet */}
+      {isEmptyExpiredBet && (
+        <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-sm rounded-3xl p-6">
+          <p className="text-gray-400">
+            This bet expired without any participants. No action needed.
+          </p>
+        </div>
+      )}
+      
       {/* Main Claim Status Section */}
-      {(() => {
+      {!isEmptyExpiredBet && (() => {
         switch (claimStatus.type) {
           case 'already-claimed':
             return (
@@ -455,8 +474,8 @@ export function UserActions({
         }
       })()}
 
-      {/* Creator Fee Section */}
-      {hasCreatorFees && !hasClaimedCreatorFees ? (
+      {/* Creator Fee Section - only show if not empty expired bet */}
+      {!isEmptyExpiredBet && hasCreatorFees && !hasClaimedCreatorFees ? (
         <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm rounded-3xl p-6">
           <p className="text-yellow-300 mb-4">
             Creator Fees available: {formatTokenAmount(actualCreatorFeeAmount, decimals, isNativeBet)}

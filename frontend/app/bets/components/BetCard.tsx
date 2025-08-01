@@ -4,6 +4,7 @@
 import Link from 'next/link'
 // import { formatUnits } from 'viem'
 import { BetDetails } from '../types/bet.types'
+import { isBetEmpty } from '@/lib/utils/bettingUtils'
 
 interface BetCardProps {
   bet: BetDetails
@@ -29,18 +30,22 @@ export default function BetCard({ bet }: BetCardProps) { //removed BetCard({ bet
   // Add refund detection logic
   const now = Date.now()
   const hasEnded = now >= Number(bet.endTime) * 1000
-  const resolutionDeadlinePassed = hasEnded && now > (Number(bet.endTime) * 1000 + (72 * 60 * 60 * 1000)) // 72 hours after end time
+  const resolutionDeadlinePassed = hasEnded && now > (Number(bet.endTime) * 1000 + (48 * 60 * 60 * 1000)) // 48 hours after end time
+  const isEmpty = isBetEmpty(bet.totalAmounts)
   
-  // Update status logic to include refund available
+  // Update status logic to handle empty bets
   const getStatus = () => {
     if (bet.resolved) return 'Resolved'
-    if (hasEnded && resolutionDeadlinePassed) return 'Refund Available'
+    if (hasEnded && resolutionDeadlinePassed) {
+      return isEmpty ? 'Expired' : 'Refund Available'
+    }
     if (hasEnded) return 'Pending Resolution'
     return 'Active'
   }
   
   const status = getStatus()
   const statusColor = bet.resolved ? 'bg-green-600' : 
+                     (hasEnded && resolutionDeadlinePassed && isEmpty) ? 'bg-gray-600' :
                      (hasEnded && resolutionDeadlinePassed) ? 'bg-yellow-600' :
                      (isActive ? 'bg-blue-600' : 'bg-yellow-600')
   
