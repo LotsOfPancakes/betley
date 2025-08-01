@@ -4,6 +4,10 @@
     {
       "path": "/api/analytics/daily-update",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/analytics/daily-update",
+      "schedule": "0 18 * * *"
     }
   ]
 }

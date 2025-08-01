@@ -35,10 +35,15 @@ async function handleAnalyticsUpdate(request: NextRequest) {
   const userAgent = request.headers.get('user-agent')
   const authHeader = request.headers.get('authorization')
   
+  const currentHour = new Date().getUTCHours()
+  const cronType = currentHour === 6 ? 'PRIMARY (6 AM UTC)' : currentHour === 18 ? 'SECONDARY (6 PM UTC)' : 'MANUAL/OTHER'
+  
   console.log('Cron request received:', {
     userAgent,
     hasAuthHeader: !!authHeader,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cronType,
+    utcHour: currentHour
   })
 
   // More flexible validation
@@ -70,15 +75,34 @@ async function handleAnalyticsUpdate(request: NextRequest) {
     
     console.log(`Current block: ${currentBlock}, Last processed: ${lastProcessedBlock}`)
     
+    // Gap detection logic
+    const blockRange = currentBlock - lastProcessedBlock
+    const EXPECTED_12H_BLOCKS = BigInt(43200) // 12 hours * 3600 seconds * 1 block/second
+    const EXPECTED_24H_BLOCKS = BigInt(86400) // 24 hours * 3600 seconds * 1 block/second
+    
+    let processingMode = 'normal'
+    if (blockRange > EXPECTED_24H_BLOCKS * BigInt(2)) {
+      processingMode = 'large_gap' // More than 48 hours
+      console.log(`🚨 LARGE GAP DETECTED: ${blockRange} blocks (>48h). Using large gap mode.`)
+    } else if (blockRange > EXPECTED_24H_BLOCKS) {
+      processingMode = 'medium_gap' // 24-48 hours  
+      console.log(`⚠️  MEDIUM GAP DETECTED: ${blockRange} blocks (24-48h). Using medium gap mode.`)
+    } else if (blockRange > EXPECTED_12H_BLOCKS * BigInt(2)) {
+      processingMode = 'small_gap' // 12-24 hours
+      console.log(`ℹ️  SMALL GAP DETECTED: ${blockRange} blocks (12-24h). Using small gap mode.`)
+    } else {
+      console.log(`✅ NORMAL PROCESSING: ${blockRange} blocks (<24h).`)
+    }
+    
     let eventsProcessed = 0
     
     if (currentBlock > lastProcessedBlock) {
       const fromBlock = lastProcessedBlock + BigInt(1)
       const toBlock = currentBlock
-      const blockRange = toBlock - fromBlock + BigInt(1)
       
       console.log(`Processing blocks ${fromBlock} to ${toBlock}`)
       console.log(`Total blocks to process: ${blockRange}`)
+      console.log(`Processing mode: ${processingMode}`)
       
       // Validate block range
       if (fromBlock > toBlock) {
@@ -86,24 +110,52 @@ async function handleAnalyticsUpdate(request: NextRequest) {
         throw new Error(`Invalid block range: ${fromBlock} > ${toBlock}`)
       }
       
-      // Log if this seems like an unusually large range
-      if (blockRange > BigInt(100000)) {
-        console.log(`⚠️  WARNING: Large block range detected (${blockRange} blocks)`)
-      }
-      
-      // Skip if trying to process too many blocks at once (safety check)
-      if (blockRange > BigInt(50000)) {
-        console.log(`⚠️  Block range too large: ${blockRange} blocks. Limiting to recent 10000 blocks.`)
-        const limitedFromBlock = toBlock - BigInt(10000) + BigInt(1)
+      // Adaptive processing based on gap size
+      if (processingMode === 'large_gap') {
+        // For very large gaps, process only recent blocks to get system back on track
+        console.log(`🚨 Large gap mode: Processing only recent 24h blocks`)
+        const limitedFromBlock = toBlock - EXPECTED_24H_BLOCKS + BigInt(1)
         
         try {
           const events = await getBlockchainEvents(limitedFromBlock, toBlock)
-          console.log(`Found ${events.length} events to process (limited range)`)
+          console.log(`Found ${events.length} events to process (large gap recovery)`)
           eventsProcessed = events.length
           await processEvents(events, supabaseAdmin)
           await updateLastProcessedBlock(toBlock)
         } catch (error) {
-          console.error('Error processing limited range:', error)
+          console.error('Error processing large gap recovery:', error)
+          throw error
+        }
+      } else if (processingMode === 'medium_gap') {
+        // For medium gaps, process in two phases: recent priority, then fill gap
+        console.log(`⚠️  Medium gap mode: Processing recent blocks first, then filling gap`)
+        const recentFromBlock = toBlock - EXPECTED_12H_BLOCKS + BigInt(1)
+        
+        try {
+          // Phase 1: Process recent 12 hours first (priority)
+          const recentEvents = await getBlockchainEvents(recentFromBlock, toBlock)
+          console.log(`Found ${recentEvents.length} recent events (priority processing)`)
+          
+          if (recentEvents.length > 0) {
+            await processEvents(recentEvents, supabaseAdmin)
+          }
+          
+          // Phase 2: Fill the gap (older blocks)
+          if (fromBlock < recentFromBlock) {
+            const gapEvents = await getBlockchainEvents(fromBlock, recentFromBlock - BigInt(1))
+            console.log(`Found ${gapEvents.length} gap events (backfill processing)`)
+            
+            if (gapEvents.length > 0) {
+              await processEvents(gapEvents, supabaseAdmin)
+            }
+            eventsProcessed = recentEvents.length + gapEvents.length
+          } else {
+            eventsProcessed = recentEvents.length
+          }
+          
+          await updateLastProcessedBlock(toBlock)
+        } catch (error) {
+          console.error('Error processing medium gap:', error)
           throw error
         }
       } else {
@@ -236,12 +288,23 @@ async function processEvents(events: ProcessedEvent[], supabaseAdmin: SupabaseCl
         successfulEvents++
       }
     } catch (error) {
-      // Skip duplicate events (unique constraint violations)
-      if (error instanceof Error && error.message.includes('duplicate')) {
-        console.log(`⏭️  Skipping duplicate event: ${event.transactionHash}`)
-        skippedEvents++
-        continue
+      // Handle different types of database conflicts
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase()
+        
+        if (errorMsg.includes('duplicate') || errorMsg.includes('unique') || errorMsg.includes('conflict')) {
+          console.log(`⏭️  Skipping duplicate event: ${event.transactionHash} (${event.type}, bet ${event.betId})`)
+          skippedEvents++
+          continue
+        }
+        
+        if (errorMsg.includes('foreign key') || errorMsg.includes('constraint')) {
+          console.log(`🔗 Constraint violation for event: ${event.transactionHash} (${event.type}, bet ${event.betId})`)
+          skippedEvents++
+          continue
+        }
       }
+      
       console.error(`❌ Error processing event ${event.transactionHash}:`, error)
       failedEvents++
       
