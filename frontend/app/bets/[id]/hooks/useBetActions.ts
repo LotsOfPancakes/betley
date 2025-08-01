@@ -8,9 +8,9 @@ import { useChainValidation } from '@/lib/hooks/useChainValidation' // ✅ ADD T
 import { BETLEY_ABI, BETLEY_ADDRESS, MOCKERC20_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
 import { isNativeHype } from '@/lib/tokenUtils'
 
-type TransactionType = 'approve' | 'placeBet' | 'claimWinnings' | 'resolveBet'
+type TransactionType = 'approve' | 'placeBet' | 'claimWinnings' | 'claimRefund' | 'resolveBet'
 
-export function useBetActions(betId: string, tokenAddress?: string) {
+export function useBetActions(betId: string, tokenAddress?: string, resolved?: boolean, resolutionDeadlinePassed?: boolean) {
   const [justPlacedBet, setJustPlacedBet] = useState(false)
   const [betAmount, setBetAmount] = useState('')
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
@@ -138,12 +138,18 @@ export function useBetActions(betId: string, tokenAddress?: string) {
     
     try {
       setIsSubmitting(true)
-      setCurrentTxType('claimWinnings')
+      
+      // Determine if this is a refund claim or winnings claim
+      const isRefundClaim = !resolved && resolutionDeadlinePassed
+      const functionName = isRefundClaim ? 'claimRefund' : 'claimWinnings'
+      const txType = isRefundClaim ? 'claimRefund' : 'claimWinnings'
+      
+      setCurrentTxType(txType)
       
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
-        functionName: 'claimWinnings',
+        functionName,
         args: [BigInt(numericBetId)],
       })
       
@@ -159,7 +165,8 @@ export function useBetActions(betId: string, tokenAddress?: string) {
         return
       }
       
-      showError('Failed to claim winnings. Please try again.')
+      const actionType = (!resolved && resolutionDeadlinePassed) ? 'refund' : 'winnings'
+      showError(`Failed to claim ${actionType}. Please try again.`)
       setIsSubmitting(false)
       setCurrentTxType(null)
     }

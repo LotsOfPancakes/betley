@@ -142,7 +142,9 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     isApproving,
   } = useBetActions(
     numericBetId ? numericBetId.toString() : '0',
-    tokenAddress || ''
+    tokenAddress || '',
+    resolved,
+    resolutionDeadlinePassed
   )
   
   // Loading states with bento styling
