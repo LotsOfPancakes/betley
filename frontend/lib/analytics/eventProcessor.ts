@@ -32,37 +32,55 @@ export async function getBlockchainEvents(
   fromBlock: bigint,
   toBlock: bigint
 ): Promise<ProcessedEvent[]> {
-  const logs = await publicClient.getLogs({
-    address: BETLEY_ADDRESS,
-    events: BETLEY_EVENTS_ABI,
-    fromBlock,
-    toBlock
-  })
+  const MAX_BLOCK_RANGE = 1000n
+  const allLogs: ProcessedEvent[] = []
+  
+  let currentFromBlock = fromBlock
+  
+  while (currentFromBlock <= toBlock) {
+    const currentToBlock = currentFromBlock + MAX_BLOCK_RANGE - 1n > toBlock 
+      ? toBlock 
+      : currentFromBlock + MAX_BLOCK_RANGE - 1n
+    
+    console.log(`Fetching events from block ${currentFromBlock} to ${currentToBlock}`)
+    
+    const logs = await publicClient.getLogs({
+      address: BETLEY_ADDRESS,
+      events: BETLEY_EVENTS_ABI,
+      fromBlock: currentFromBlock,
+      toBlock: currentToBlock
+    })
 
-  return logs.map(log => {
-    const { eventName, args } = log
-    
-    if (eventName === 'BetCreated') {
-      return {
-        type: 'BetCreated' as const,
-        betId: Number(args.betId),
-        creator: args.creator,
-        blockNumber: log.blockNumber,
-        transactionHash: log.transactionHash
+    const processedLogs = logs.map(log => {
+      const { eventName, args } = log
+      
+      if (eventName === 'BetCreated') {
+        return {
+          type: 'BetCreated' as const,
+          betId: Number(args.betId),
+          creator: args.creator,
+          blockNumber: log.blockNumber,
+          transactionHash: log.transactionHash
+        }
+      } else if (eventName === 'BetPlaced') {
+        return {
+          type: 'BetPlaced' as const,
+          betId: Number(args.betId),
+          user: args.user,
+          amount: args.amount,
+          blockNumber: log.blockNumber,
+          transactionHash: log.transactionHash
+        }
       }
-    } else if (eventName === 'BetPlaced') {
-      return {
-        type: 'BetPlaced' as const,
-        betId: Number(args.betId),
-        user: args.user,
-        amount: args.amount,
-        blockNumber: log.blockNumber,
-        transactionHash: log.transactionHash
-      }
-    }
+      
+      throw new Error(`Unknown event: ${eventName}`)
+    })
     
-    throw new Error(`Unknown event: ${eventName}`)
-  })
+    allLogs.push(...processedLogs)
+    currentFromBlock = currentToBlock + 1n
+  }
+  
+  return allLogs
 }
 
 // ✅ FIXED: Use admin client internally, no parameters
