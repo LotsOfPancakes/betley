@@ -406,11 +406,11 @@ export function UserActions({
             return (
               <div className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 backdrop-blur-sm rounded-3xl p-6">
                 <p className="text-blue-300">
-                  You have already claimed {claimStatus.claimType} o
+                  You have already claimed {claimStatus.claimType}
                   {claimStatus.amount && (
-                  <span>
-                  f {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
-                  </span>
+                    <span>
+                      {' '}of {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
+                    </span>
                   )}
                 </p>
               </div>
