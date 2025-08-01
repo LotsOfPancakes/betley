@@ -32,15 +32,15 @@ export async function getBlockchainEvents(
   fromBlock: bigint,
   toBlock: bigint
 ): Promise<ProcessedEvent[]> {
-  const MAX_BLOCK_RANGE = 1000n
+  const MAX_BLOCK_RANGE = BigInt(1000)
   const allLogs: ProcessedEvent[] = []
   
   let currentFromBlock = fromBlock
   
   while (currentFromBlock <= toBlock) {
-    const currentToBlock = currentFromBlock + MAX_BLOCK_RANGE - 1n > toBlock 
+    const currentToBlock = currentFromBlock + MAX_BLOCK_RANGE - BigInt(1) > toBlock 
       ? toBlock 
-      : currentFromBlock + MAX_BLOCK_RANGE - 1n
+      : currentFromBlock + MAX_BLOCK_RANGE - BigInt(1)
     
     console.log(`Fetching events from block ${currentFromBlock} to ${currentToBlock}`)
     
@@ -77,7 +77,7 @@ export async function getBlockchainEvents(
     })
     
     allLogs.push(...processedLogs)
-    currentFromBlock = currentToBlock + 1n
+    currentFromBlock = currentToBlock + BigInt(1)
   }
   
   return allLogs
