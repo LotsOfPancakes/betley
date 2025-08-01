@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/analytics/daily-update",
-      "schedule": "5 22 * * *"
+      "schedule": "5 10 * * *"
     }
   ]
 }

@@ -15,6 +15,11 @@ const publicClient = createPublicClient({
   transport: http(process.env.NEXT_PUBLIC_RPC_URL)
 })
 
+// force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const maxDuration = 300 // 5 minutes - adjust based on your needs
+
 // Handle GET requests from Vercel cron
 export async function GET(request: NextRequest) {
   return handleAnalyticsUpdate(request)
@@ -25,15 +30,24 @@ export async function POST(request: NextRequest) {
   return handleAnalyticsUpdate(request)
 }
 
+// Auth logic
 async function handleAnalyticsUpdate(request: NextRequest) {
-  // Validate request - allow Vercel cron OR manual auth
   const userAgent = request.headers.get('user-agent')
   const authHeader = request.headers.get('authorization')
   
-  const isValidCron = userAgent?.includes('vercel-cron/1.0')
-  const isValidManual = authHeader === `Bearer ${process.env.CRON_SECRET}`
+  console.log('Cron request received:', {
+    userAgent,
+    hasAuthHeader: !!authHeader,
+    timestamp: new Date().toISOString()
+  })
+
+  // More flexible validation
+  const isValidCron = userAgent?.includes('vercel-cron') || userAgent?.includes('vercel')
+  const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
+  const isValidManual = authHeader === expectedAuth && process.env.CRON_SECRET
   
   if (!isValidCron && !isValidManual) {
+    console.log('Unauthorized cron request:', { userAgent, authHeader: authHeader?.substring(0, 20) + '...' })
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
