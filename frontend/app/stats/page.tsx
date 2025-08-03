@@ -5,7 +5,7 @@ import { useAccount } from 'wagmi'
 import { useQuery } from '@tanstack/react-query'
 import { formatEther } from 'viem'
 import { ConnectKitButton } from 'connectkit'
-import { getTokenConfig, ZERO_ADDRESS } from '@/lib/tokenUtils'
+import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 
 // Custom hook for fetching user stats
 function useUserStats(address: string | undefined) {
@@ -23,10 +23,9 @@ function useUserStats(address: string | undefined) {
 }
 
 // GET Symbol for Native HYPE
-const nativeToken = getTokenConfig(ZERO_ADDRESS)
+const nativeTokenSymbol = getTokenSymbol(true)
 // for ERC20 token (if we use it)
-// const erc20Token = getTokenConfig(config.contracts.mockERC20)
-// const tokenSymbol = erc20Token.symbol // This would be "mockERC"
+// const erc20TokenSymbol = getTokenSymbol(false)
 
 
 // Utility functions
@@ -218,7 +217,7 @@ export default function UserStatsPage() {
                 
                 <StatCard
                   title="Volume Generated"
-                  value={`${formatHype(stats.total_volume_created)} ${nativeToken.symbol}`}
+                  value={`${formatHype(stats.total_volume_created)} ${nativeTokenSymbol}`}
                   // value={`${formatHype(stats.total_volume_created)} ${tokenSymbol}`} for ERC20 token symbol
                   subtitle="Others bet on your bets"
                   icon="💰"
@@ -227,7 +226,7 @@ export default function UserStatsPage() {
                 
                 <StatCard
                   title="Personal Betting"
-                  value={`${formatHype(stats.total_volume_bet)} ${nativeToken.symbol}`}
+                  value={`${formatHype(stats.total_volume_bet)} ${nativeTokenSymbol}`}
                   subtitle="Your total wagered"
                   icon="🎲"
                   gradient="from-purple-500 to-purple-600"

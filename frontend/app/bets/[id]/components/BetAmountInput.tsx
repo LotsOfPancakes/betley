@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { formatUnits, parseUnits } from 'viem'
 import { formatDynamicDecimals, isValidBetAmount, hasWalletBalance } from '@/lib/utils/bettingUtils'
 import { calculatePotentialWinningsPreview } from '@/lib/utils/winningsCalculator'
-import { getTokenConfig, ZERO_ADDRESS } from '@/lib/tokenUtils'
+import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 
 interface BetAmountInputProps {
   betAmount: string
@@ -45,7 +45,7 @@ export function BetAmountInput({
 }: BetAmountInputProps) {
 
   // Get token symbol
-  const tokenSymbol = getTokenConfig(isNativeBet ? ZERO_ADDRESS : '0x1234567890123456789012345678901234567890').symbol
+  const tokenSymbol = getTokenSymbol(isNativeBet)
 
   // Validation logic
   const isValidAmount = isValidBetAmount(betAmount)

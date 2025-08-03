@@ -1,13 +1,11 @@
 // frontend/app/bets/[id]/components/UserActions.tsx
 'use client'
 
-import { formatUnits } from 'viem'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useBetFeeData, type FeeBreakdown } from '../hooks/useBetFeeData'
-import { getTokenConfig, ZERO_ADDRESS } from '@/lib/tokenUtils'
 import { 
   calculateWinningsBreakdown, 
   calculateUserTotalBet,
@@ -15,7 +13,7 @@ import {
   type WinningsBreakdown,
 } from '@/lib/utils'
 import { hasRefundableBets, isBetEmpty } from '@/lib/utils/bettingUtils'
-import { config } from '@/lib/config'
+import { formatTokenAmount } from '@/lib/utils/tokenFormatting'
 
 
 // ============================================================================
@@ -58,28 +56,7 @@ type ClaimStatus =
 // UTILITY FUNCTIONS - Pure functions, easily testable
 // ============================================================================
 
-/**
- * Get token symbol using existing utility
- * @param isNativeBet - Whether this is a native HYPE bet
- * @returns Token symbol string
- */
-// const getTokenSymbol = (tokenAddress?: string, isNativeBet?: boolean): string => {
-//   if (tokenAddress) {
-//     return getTokenConfig(tokenAddress).symbol
-//   }
-//   // Fallback to isNativeBet if tokenAddress is not available
-//   return getTokenConfig(isNativeBet ? ZERO_ADDRESS : config.contracts.mockERC20).symbol
-// }
 
-/**
- * Format amount with token symbol consistently
- * @param amount - Amount in wei
- * @param decimals - Token decimals
- * @param isNativeBet - Whether this is native HYPE
- * @returns Formatted string with amount and symbol
- */
-const formatTokenAmount = (amount: bigint, decimals: number, isNativeBet: boolean): string => 
-  `${formatUnits(amount, decimals)} ${getTokenConfig(isNativeBet ? ZERO_ADDRESS : config.contracts.mockERC20).symbol}`
 
 /**
  * Determine user's claim status based on bet state
@@ -241,6 +218,33 @@ function CollapsibleDetails({ data, type, decimals, isNativeBet }: CollapsibleDe
 }
 
 /**
+ * Reusable status card wrapper with consistent styling
+ */
+function StatusCard({ 
+  variant, 
+  children, 
+  className = "" 
+}: {
+  variant: 'success' | 'warning' | 'info' | 'error' | 'neutral'
+  children: React.ReactNode
+  className?: string
+}) {
+  const variants = {
+    success: 'from-green-900/40 to-emerald-900/40',
+    warning: 'from-yellow-900/40 to-orange-900/40', 
+    info: 'from-orange-900/40 to-yellow-900/40',
+    error: 'from-red-900/40 to-red-800/40',
+    neutral: 'from-blue-900/40 to-indigo-900/40'
+  }
+
+  return (
+    <div className={`bg-gradient-to-br ${variants[variant]} backdrop-blur-sm rounded-3xl p-6 ${className}`}>
+      {children}
+    </div>
+  )
+}
+
+/**
  * Reusable claim button with consistent styling and variants
  */
 function ClaimButton({ 
@@ -268,6 +272,137 @@ function ClaimButton({
     >
       {children}
     </button>
+  )
+}
+
+// ============================================================================
+// STATUS COMPONENTS - Extracted from switch statement
+// ============================================================================
+
+/**
+ * Component for displaying already claimed status
+ */
+function AlreadyClaimedStatus({ 
+  claimStatus, 
+  decimals, 
+  isNativeBet 
+}: {
+  claimStatus: Extract<ClaimStatus, { type: 'already-claimed' }>
+  decimals: number
+  isNativeBet: boolean
+}) {
+  return (
+    <StatusCard variant="neutral">
+      <p className="text-blue-300">
+        You have already claimed {claimStatus.claimType}
+        {claimStatus.amount && (
+          <span>
+            {' '}of {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
+          </span>
+        )}
+      </p>
+    </StatusCard>
+  )
+}
+
+/**
+ * Component for claiming winnings
+ */
+function WinningsClaimable({ 
+  claimStatus, 
+  handleClaimWinnings, 
+  isPending, 
+  decimals, 
+  isNativeBet 
+}: {
+  claimStatus: Extract<ClaimStatus, { type: 'can-claim-winnings' }>
+  handleClaimWinnings: () => void
+  isPending: boolean
+  decimals: number
+  isNativeBet: boolean
+}) {
+  return (
+    <StatusCard variant="success">
+      <p className="text-green-300 mb-4">
+        🎉 Congratulations! You won {formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)}
+      </p>
+      
+      <ClaimButton
+        onClick={handleClaimWinnings}
+        disabled={isPending}
+        variant="success"
+      >
+        {isPending ? 'Claiming...' : `Claim ${formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)} Winnings`}
+      </ClaimButton>
+
+      <CollapsibleDetails
+        data={claimStatus.breakdown}
+        type="winnings"
+        decimals={decimals}
+        isNativeBet={isNativeBet}
+      />
+    </StatusCard>
+  )
+}
+
+/**
+ * Component for claiming refunds
+ */
+function RefundClaimable({ 
+  claimStatus, 
+  handleClaimWinnings, 
+  isPending, 
+  decimals, 
+  isNativeBet 
+}: {
+  claimStatus: Extract<ClaimStatus, { type: 'can-claim-refund' }>
+  handleClaimWinnings: () => void
+  isPending: boolean
+  decimals: number
+  isNativeBet: boolean
+}) {
+  return (
+    <StatusCard variant="info">
+      <p className="text-orange-300 mb-4">
+        The bet resolution deadline has passed without resolution.
+        You can claim a refund.
+      </p>
+      <p className="text-sm text-orange-200 mb-3">
+        Your total bet: {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
+      </p>
+      <ClaimButton
+        onClick={handleClaimWinnings}
+        disabled={isPending}
+        variant="info"
+      >
+        {isPending ? 'Claiming Refund...' : 'Claim Refund'}
+      </ClaimButton>
+    </StatusCard>
+  )
+}
+
+/**
+ * Component for displaying user lost status
+ */
+function UserLostStatus({ 
+  claimStatus, 
+  decimals, 
+  isNativeBet,
+  isCreator 
+}: {
+  claimStatus: Extract<ClaimStatus, { type: 'user-lost' }>
+  decimals: number
+  isNativeBet: boolean
+  isCreator: boolean
+}) {
+  if (isCreator) return null
+  
+  return (
+    <StatusCard variant="error">
+      <p className="text-red-300">
+        You lost {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)} this bet. Better luck next time!
+      </p>
+    </StatusCard>
   )
 }
 
@@ -416,70 +551,44 @@ export function UserActions({
         switch (claimStatus.type) {
           case 'already-claimed':
             return (
-              <div className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 backdrop-blur-sm rounded-3xl p-6">
-                <p className="text-blue-300">
-                  You have already claimed {claimStatus.claimType}
-                  {claimStatus.amount && (
-                    <span>
-                      {' '}of {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
-                    </span>
-                  )}
-                </p>
-              </div>
+              <AlreadyClaimedStatus
+                claimStatus={claimStatus}
+                decimals={decimals}
+                isNativeBet={isNativeBet}
+              />
             )
 
           case 'can-claim-winnings':
             return (
-              <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm rounded-3xl p-6">
-                <p className="text-green-300 mb-4">
-                  🎉 Congratulations! You won {formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)}
-                </p>
-                
-                <ClaimButton
-                  onClick={handleClaimWinnings}
-                  disabled={isPending}
-                  variant="success"
-                >
-                  {isPending ? 'Claiming...' : `Claim ${formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)} Winnings`}
-                </ClaimButton>
-
-                <CollapsibleDetails
-                  data={claimStatus.breakdown}
-                  type="winnings"
-                  decimals={decimals}
-                  isNativeBet={isNativeBet}
-                />
-              </div>
+              <WinningsClaimable
+                claimStatus={claimStatus}
+                handleClaimWinnings={handleClaimWinnings}
+                isPending={isPending}
+                decimals={decimals}
+                isNativeBet={isNativeBet}
+              />
             )
 
           case 'can-claim-refund':
             return (
-              <div className="bg-gradient-to-br from-orange-900/40 to-yellow-900/40 backdrop-blur-sm rounded-3xl p-6">
-                <p className="text-orange-300 mb-4">
-                  The bet resolution deadline has passed without resolution.
-                  You can claim a refund.
-                </p>
-                <p className="text-sm text-orange-200 mb-3">
-                  Your total bet: {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
-                </p>
-                <ClaimButton
-                  onClick={handleClaimWinnings}
-                  disabled={isPending}
-                  variant="info"
-                >
-                  {isPending ? 'Claiming Refund...' : 'Claim Refund'}
-                </ClaimButton>
-              </div>
+              <RefundClaimable
+                claimStatus={claimStatus}
+                handleClaimWinnings={handleClaimWinnings}
+                isPending={isPending}
+                decimals={decimals}
+                isNativeBet={isNativeBet}
+              />
             )
 
           case 'user-lost':
-            return !isCreator ? (
-              <div className="bg-gradient-to-br from-red-900/40 to-red-800/40 backdrop-blur-sm rounded-3xl p-6">
-                <p className="text-red-300">
-                  You lost {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)} this bet. Better luck next time!
-                </p>
-              </div>
-            ) : null
+            return (
+              <UserLostStatus
+                claimStatus={claimStatus}
+                decimals={decimals}
+                isNativeBet={isNativeBet}
+                isCreator={isCreator}
+              />
+            )
 
           default:
             return null
