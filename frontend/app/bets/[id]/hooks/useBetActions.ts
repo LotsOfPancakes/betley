@@ -53,7 +53,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
       const decimals = 18
       const amountWei = parseUnits(betAmount, decimals)
       
-      await writeContract({
+      writeContract({
         address: MOCKERC20_TOKEN_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'approve',
@@ -101,7 +101,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
         ...(isNativeBet && { value: amountWei })
       }
       
-      await writeContract(txArgs)
+      writeContract(txArgs)
       
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -146,7 +146,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
       
       setCurrentTxType(txType)
       
-      await writeContract({
+      writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName,
@@ -182,7 +182,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
       setIsSubmitting(true)
       setCurrentTxType('resolveBet')
       
-      await writeContract({
+      writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'resolveBet',

@@ -126,7 +126,7 @@ export function useBetCreation() {
       
       // ✅ NOTE: Smart contract function signature remains unchanged
       // isPublic is only stored in database, not on-chain
-      await writeContract({
+      writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'createBet',

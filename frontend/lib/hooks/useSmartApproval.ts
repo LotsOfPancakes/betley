@@ -93,7 +93,7 @@ export function useSmartApproval({
       setError(null)
       const amountWei = parseUnits(amount, 18)
       
-      await writeContract({
+      writeContract({
         address: tokenAddress as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'approve',

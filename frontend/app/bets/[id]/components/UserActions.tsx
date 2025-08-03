@@ -516,7 +516,7 @@ export function UserActions({
     if (!betId || isCreatorClaimPending) return
     
     try {
-      await writeCreatorClaim({
+      writeCreatorClaim({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'claimCreatorFees',
