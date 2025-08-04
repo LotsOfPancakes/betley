@@ -1,8 +1,7 @@
 // Temporary endpoint to see all bets in database for debugging
-import { NextRequest } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get all bet mappings to see what's in the database
     const { data: allBets, error } = await supabase

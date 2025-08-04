@@ -12,7 +12,6 @@ import { hyperevm } from '@/lib/chains'
 import { useState, useEffect } from 'react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
 import { 
-  networkConfig, 
   appConfig, 
   walletConnectConfig, 
   timeoutsConfig, 
