@@ -1,7 +1,6 @@
 // frontend/app/api/bets/public/route.ts
 import { NextRequest } from 'next/server'
 import { supabase, checkRateLimit } from '@/lib/supabase'
-import { formatTimeRemaining } from '@/lib/utils/bettingUtils'
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -56,93 +55,28 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ✅ DEBUG: Log database query results
-    console.log('=== PUBLIC BETS DEBUG ===')
-    console.log(`Database query returned ${data?.length || 0} total bets`)
-    const publicBets = data?.filter(bet => bet.is_public) || []
-    console.log(`Found ${publicBets.length} bets marked as is_public=true`)
-    console.log('Public bets:', publicBets.map(bet => ({ 
-      id: bet.numeric_id, 
-      name: bet.bet_name, 
-      creator: bet.creator_address.slice(0, 8) + '...' 
-    })))
+    // ✅ Transform data for frontend consumption
+    const publicBets = (data || []).map(bet => ({
+      randomId: bet.random_id,
+      numericId: bet.numeric_id,
+      name: bet.bet_name,
+      creator: bet.creator_address,
+      createdAt: bet.created_at,
+      isPublic: bet.is_public,
+      endTime: '0', // Placeholder - no active filtering for now
+      timeRemaining: 'Public Bet' // Simple indicator
+    }))
 
-    // ✅ Filter to only active bets by checking contract data
-    const activeBets = []
-    
-    for (const bet of data || []) {
-      console.log(`\n--- Processing bet ${bet.numeric_id}: "${bet.bet_name}" ---`)
-      console.log(`Is public: ${bet.is_public}`)
-      
-      try {
-        // Dynamic import to avoid build-time evaluation
-        const { getBetEndTime } = await import('@/lib/contractHelpers')
-        
-        console.log(`Calling contract for bet ${bet.numeric_id}...`)
-        
-        // Get bet end time and resolved status from contract
-        const contractData = await getBetEndTime(bet.numeric_id)
-        
-        console.log(`Contract response for bet ${bet.numeric_id}:`, contractData)
-        
-        if (contractData) {
-          const now = Math.floor(Date.now() / 1000)
-          const endTime = Number(contractData.endTime)
-          const isActive = !contractData.resolved && now < endTime
-          
-          console.log(`Active check for bet ${bet.numeric_id}:`)
-          console.log(`  - Current time: ${now} (${new Date(now * 1000).toISOString()})`)
-          console.log(`  - End time: ${endTime} (${new Date(endTime * 1000).toISOString()})`)
-          console.log(`  - Resolved: ${contractData.resolved}`)
-          console.log(`  - Is active: ${isActive}`)
-          
-          if (isActive) {
-            // Calculate time remaining for display
-            const timeLeft = endTime - now
-            const timeRemaining = formatTimeRemaining(timeLeft)
-            
-            console.log(`  - Time remaining: ${timeLeft}s (${timeRemaining})`)
-            console.log(`  ✅ BET ${bet.numeric_id} INCLUDED (active)`)
-            
-            activeBets.push({
-              randomId: bet.random_id,
-              numericId: bet.numeric_id,
-              name: bet.bet_name,
-              creator: bet.creator_address,
-              createdAt: bet.created_at,
-              isPublic: bet.is_public,
-              endTime: contractData.endTime.toString(), // Convert bigint to string for JSON
-              timeRemaining
-            })
-          } else {
-            const reason = contractData.resolved ? 'resolved' : 'expired'
-            console.log(`  ❌ BET ${bet.numeric_id} FILTERED OUT (${reason})`)
-          }
-        } else {
-          console.log(`  ❌ BET ${bet.numeric_id} FILTERED OUT (no contract data)`)
-        }
-      } catch (error) {
-        console.error(`  💥 ERROR checking bet ${bet.numeric_id} status:`, error)
-        console.log(`  ❌ BET ${bet.numeric_id} FILTERED OUT (contract error)`)
-        // Skip this bet if we can't determine its status
-      }
-    }
-
-    console.log(`\n=== FINAL RESULTS ===`)
-    console.log(`Active public bets found: ${activeBets.length}`)
-    console.log('Active bets:', activeBets.map(bet => ({ id: bet.numericId, name: bet.name })))
-    console.log('========================')
-
-    // ✅ Return clean response with caching (reduced cache time due to time-sensitive data)
+    // ✅ Return clean response with caching
     return Response.json(
       { 
-        bets: activeBets,
-        count: activeBets.length,
-        hasMore: false // Since we're filtering, we can't determine if there are more active bets
+        bets: publicBets,
+        count: publicBets.length,
+        hasMore: publicBets.length === limit
       },
       {
         headers: {
-          'Cache-Control': 'public, max-age=30, s-maxage=60', // Reduced cache time for active bets
+          'Cache-Control': 'public, max-age=60, s-maxage=120', // Standard cache time
           'X-Content-Type-Options': 'nosniff'
         }
       }

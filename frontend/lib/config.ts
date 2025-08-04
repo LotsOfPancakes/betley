@@ -27,32 +27,6 @@ function getBooleanEnv(key: string, fallback: boolean): boolean {
   return value.toLowerCase() === 'true'
 }
 
-// ✅ DEBUG: Log environment variables during config initialization
-console.log('=== CONFIG INITIALIZATION DEBUG ===')
-console.log('NODE_ENV:', process.env.NODE_ENV)
-console.log('Environment variables available:')
-console.log('  NEXT_PUBLIC_BETLEY_ADDRESS:', process.env.NEXT_PUBLIC_BETLEY_ADDRESS)
-console.log('  NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS:', process.env.NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS)
-console.log('  NEXT_PUBLIC_RPC_URL:', process.env.NEXT_PUBLIC_RPC_URL)
-console.log('  NEXT_PUBLIC_CHAIN_ID:', process.env.NEXT_PUBLIC_CHAIN_ID)
-
-// Test the helper functions
-console.log('Testing getRequiredEnv for BETLEY_ADDRESS...')
-const betleyAddress = getRequiredEnv(
-  'NEXT_PUBLIC_BETLEY_ADDRESS',
-  '0x3eB11c552cc4259730f14b8b88dEEF06f78A7913'
-)
-console.log('  Result:', betleyAddress)
-
-console.log('Testing getRequiredEnv for MOCKERC20_ADDRESS...')
-const mockERC20Address = getRequiredEnv(
-  'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS',
-  '0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C'
-)
-console.log('  Result:', mockERC20Address)
-
-console.log('Creating config object...')
-
 // Centralized configuration object
 export const config = {
   network: {
@@ -72,8 +46,14 @@ export const config = {
   },
   
   contracts: {
-    betley: betleyAddress as `0x${string}`,
-    mockERC20: mockERC20Address as `0x${string}`,
+    betley: getRequiredEnv(
+      'NEXT_PUBLIC_BETLEY_ADDRESS',
+      '0x3eB11c552cc4259730f14b8b88dEEF06f78A7913'
+    ) as `0x${string}`,
+    mockERC20: getRequiredEnv(
+      'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // this is mock ERC20 token
+      '0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C'
+    ) as `0x${string}`,
   },
   
   app: {
@@ -111,11 +91,6 @@ export const config = {
     enableConsoleLogging: getBooleanEnv('NEXT_PUBLIC_ENABLE_CONSOLE_LOGGING', process.env.NODE_ENV === 'development'),
   },
 }
-
-console.log('Config object created successfully!')
-console.log('Final config.contracts:', config.contracts)
-console.log('Final config.contracts.betley:', config.contracts.betley)
-console.log('=====================================')
 
 // Export individual configs for convenience
 export const networkConfig = config.network

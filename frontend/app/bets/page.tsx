@@ -108,7 +108,7 @@ export default function BetsPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white">
-              {activeTab === 'my' ? 'My Bets' : 'Active Public Bets'}
+              {activeTab === 'my' ? 'My Bets' : 'Public Bets'}
             </h1>
             <button
               onClick={() => router.push('/setup')}
@@ -138,7 +138,7 @@ export default function BetsPage() {
                   : 'text-gray-300 hover:text-white hover:bg-gray-700'
               }`}
             >
-              Active Public
+              Public
             </button>
           </div>
 
@@ -190,10 +190,10 @@ export default function BetsPage() {
                   // Custom empty state for public bets
                   <div className="text-center py-12">
                     <h3 className="text-xl font-semibold text-white mb-4">
-                      No active public bets found
+                      No public bets found
                     </h3>
                     <p className="text-gray-300 mb-6">
-                      There are currently no public bets accepting wagers. Check back later or create your own!
+                      There are currently no public bets available. Check back later or create your own!
                     </p>
                     <button
                       onClick={() => router.push('/setup')}

@@ -43,14 +43,9 @@ export default function PublicBetCard({ bet }: PublicBetCardProps) {
   return (
     <Link href={betUrl} className="block group">
       <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 hover:border-green-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/10 hover:scale-[1.02]">
-        {/* Active Badge and Time Remaining */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full flex items-center gap-1">
-            🎯 Active
-          </span>
-          <span className="text-sm text-blue-400">
-            {bet.timeRemaining}
-          </span>
+        {/* Public Badge */}
+        <div className="flex items-center gap-1 text-sm text-green-400 mb-3">
+          <span>🌍 Public</span>
         </div>
 
         {/* Bet Name */}
