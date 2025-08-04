@@ -39,8 +39,8 @@ export function getServerConfig(): Config {
       
     } catch (error) {
       console.error('💥 ERROR creating server config:', error)
-      console.error('Error stack:', error.stack)
-      throw new Error(`Server configuration failed: ${error.message}`)
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+      throw new Error(`Server configuration failed: ${error instanceof Error ? error.message : String(error)}`)
     }
   } else {
     console.log('Using existing server config')
@@ -140,9 +140,9 @@ export async function getBetEndTime(betId: number, config?: Config): Promise<{ e
     }
   } catch (error) {
     console.error(`💥 ERROR in getBetEndTime for bet ${betId}:`, error)
-    console.error('Error type:', error.constructor.name)
-    console.error('Error message:', error.message)
-    console.error('Error stack:', error.stack)
+    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
+    console.error('Error message:', error instanceof Error ? error.message : String(error))
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return null
   }
 }
