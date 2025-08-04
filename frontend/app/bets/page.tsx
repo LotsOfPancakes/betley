@@ -26,6 +26,8 @@ interface PublicBet {
   creator: string
   createdAt: string
   isPublic: boolean
+  endTime: string // NEW: Contract end time as string
+  timeRemaining: string // NEW: Formatted time remaining
 }
 
 // Custom loading component specifically for bets search
@@ -106,7 +108,7 @@ export default function BetsPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white">
-              {activeTab === 'my' ? 'My Bets' : 'Public Bets'}
+              {activeTab === 'my' ? 'My Bets' : 'Active Public Bets'}
             </h1>
             <button
               onClick={() => router.push('/setup')}
@@ -136,7 +138,7 @@ export default function BetsPage() {
                   : 'text-gray-300 hover:text-white hover:bg-gray-700'
               }`}
             >
-              Public
+              Active Public
             </button>
           </div>
 
@@ -182,7 +184,25 @@ export default function BetsPage() {
               {isLoading ? (
                 <BetsSearchLoading />
               ) : hasNoBets ? (
-                <EmptyState filter={activeTab === 'my' ? filter : 'all'} />
+                activeTab === 'my' ? (
+                  <EmptyState filter={filter} />
+                ) : (
+                  // Custom empty state for public bets
+                  <div className="text-center py-12">
+                    <h3 className="text-xl font-semibold text-white mb-4">
+                      No active public bets found
+                    </h3>
+                    <p className="text-gray-300 mb-6">
+                      There are currently no public bets accepting wagers. Check back later or create your own!
+                    </p>
+                    <button
+                      onClick={() => router.push('/setup')}
+                      className="bg-gradient-to-r from-green-500/80 to-emerald-400/70 hover:from-green-400 hover:to-emerald-400 text-gray-100 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30"
+                    >
+                      Create Public Bet
+                    </button>
+                  </div>
+                )
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {activeTab === 'my' ? (

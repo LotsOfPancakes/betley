@@ -1,6 +1,7 @@
 // frontend/app/api/bets/public/route.ts
 import { NextRequest } from 'next/server'
 import { supabase, checkRateLimit } from '@/lib/supabase'
+import { formatTimeRemaining } from '@/lib/utils/bettingUtils'
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -55,26 +56,83 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ✅ Transform data for frontend consumption
-    const publicBets = (data || []).map(bet => ({
-      randomId: bet.random_id,
-      numericId: bet.numeric_id,
-      name: bet.bet_name,
-      creator: bet.creator_address,
-      createdAt: bet.created_at,
-      isPublic: bet.is_public
-    }))
+    // ✅ NEW: Filter to only active bets by checking contract data
+    const activeBets = []
+    
+    // Skip contract calls during build time or if no runtime environment
+    if (typeof window === 'undefined' && !process.env.VERCEL && !process.env.RAILWAY_ENVIRONMENT) {
+      // During build or in environments without proper runtime, return all public bets without filtering
+      const publicBets = (data || []).map(bet => ({
+        randomId: bet.random_id,
+        numericId: bet.numeric_id,
+        name: bet.bet_name,
+        creator: bet.creator_address,
+        createdAt: bet.created_at,
+        isPublic: bet.is_public,
+        endTime: '0', // Placeholder during build
+        timeRemaining: 'Loading...' // Placeholder during build
+      }))
+      
+      return Response.json(
+        { 
+          bets: publicBets,
+          count: publicBets.length,
+          hasMore: false
+        },
+        {
+          headers: {
+            'Cache-Control': 'public, max-age=30, s-maxage=60',
+            'X-Content-Type-Options': 'nosniff'
+          }
+        }
+      )
+    }
+    
+    for (const bet of data || []) {
+      try {
+        // Dynamic import to avoid build-time evaluation
+        const { getBetEndTime } = await import('@/lib/contractHelpers')
+        
+        // Get bet end time and resolved status from contract
+        const contractData = await getBetEndTime(bet.numeric_id)
+        
+        if (contractData) {
+          const now = Math.floor(Date.now() / 1000)
+          const isActive = !contractData.resolved && now < Number(contractData.endTime)
+          
+          if (isActive) {
+            // Calculate time remaining for display
+            const timeLeft = Number(contractData.endTime) - now
+            const timeRemaining = formatTimeRemaining(timeLeft)
+            
+            activeBets.push({
+              randomId: bet.random_id,
+              numericId: bet.numeric_id,
+              name: bet.bet_name,
+              creator: bet.creator_address,
+              createdAt: bet.created_at,
+              isPublic: bet.is_public,
+              endTime: contractData.endTime.toString(), // Convert bigint to string for JSON
+              timeRemaining
+            })
+          }
+        }
+      } catch (error) {
+        console.error(`Error checking bet ${bet.numeric_id} status:`, error)
+        // Skip this bet if we can't determine its status
+      }
+    }
 
-    // ✅ SECURITY: Return clean response with caching
+    // ✅ SECURITY: Return clean response with caching (reduced cache time due to time-sensitive data)
     return Response.json(
       { 
-        bets: publicBets,
-        count: publicBets.length,
-        hasMore: publicBets.length === limit
+        bets: activeBets,
+        count: activeBets.length,
+        hasMore: false // Since we're filtering, we can't determine if there are more active bets
       },
       {
         headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=120', // 1min browser, 2min CDN
+          'Cache-Control': 'public, max-age=30, s-maxage=60', // Reduced cache time for active bets
           'X-Content-Type-Options': 'nosniff'
         }
       }
