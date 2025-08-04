@@ -68,7 +68,7 @@ export const config = {
   walletConnect: {
     projectId: getRequiredEnv(
       'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID', 
-      'a7b53d050fbc92b0e503d20e293d6ff5'
+      '3631ce78fe91dacd79be36cf1db10400'
     ),
   },
   

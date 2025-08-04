@@ -40,6 +40,8 @@ createAppKit({
     email: true,                    // 🎉 Enable email signup
     socials: ['google', 'apple', 'x', 'discord'], // 🎉 Enable social login
     analytics: devConfig.enableDevtools, // Optional analytics
+    onramp: false, // disable buying crypto
+    swaps: false, // Disable swaps
   },
   themeMode: 'dark',               // Match your app's dark theme
   themeVariables: {
