@@ -4,7 +4,7 @@ import React from 'react'
 import { useAccount } from 'wagmi'
 import { useQuery } from '@tanstack/react-query'
 import { formatEther } from 'viem'
-import { ConnectKitButton } from 'connectkit'
+// AppKit buttons are web components - no import needed
 import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 
 // Custom hook for fetching user stats
@@ -139,7 +139,7 @@ export default function UserStatsPage() {
             Connect your wallet to view your betting statistics and track your performance on Betley.
           </p> */}
             <div className="flex justify-center"> 
-              <ConnectKitButton />
+              <appkit-button />
             </div>
         </div>
       </div>

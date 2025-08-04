@@ -1,12 +1,13 @@
-// Properly Fixed providers.tsx with Correct Wagmi v2 Configuration
+// Reown AppKit Configuration for Betley
 // File: frontend/app/providers.tsx
 
 'use client'
 
-import { WagmiProvider, createConfig, http, createStorage, cookieStorage } from 'wagmi'
+import { createAppKit } from '@reown/appkit/react'
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import { hyperevm } from '@/lib/chains'
 import { useState, useEffect } from 'react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
@@ -18,25 +19,35 @@ import {
   devConfig 
 } from '@/lib/config'
 
-// ✅ Proper Wagmi v2 configuration with state persistence
-const wagmiConfig = createConfig(
-  getDefaultConfig({
-    chains: [hyperevm],
-    transports: {
-      [hyperevm.id]: http(networkConfig.rpcUrl),
-    },
-    walletConnectProjectId: walletConnectConfig.projectId,
-    appName: appConfig.name,
-    appDescription: appConfig.description,
-    appUrl: appConfig.url,
-    // ✅ Proper storage configuration for Wagmi v2
-    storage: createStorage({
-      storage: typeof window !== 'undefined' ? cookieStorage : undefined,
-    }),
-    // ✅ Enable SSR support
-    ssr: true,
-  })
-)
+// ✅ Create Wagmi Adapter for AppKit
+const wagmiAdapter = new WagmiAdapter({
+  networks: [hyperevm],
+  projectId: walletConnectConfig.projectId,
+  ssr: true
+})
+
+// ✅ Create AppKit with email and social login support
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks: [hyperevm],
+  projectId: walletConnectConfig.projectId,
+  metadata: {
+    name: appConfig.name,
+    description: appConfig.description,
+    url: appConfig.url,
+    icons: ['https://betley.vercel.app/images/betley-logo-128.png']
+  },
+  features: {
+    email: true,                    // 🎉 Enable email signup
+    socials: ['google', 'apple', 'x', 'discord'], // 🎉 Enable social login
+    analytics: devConfig.enableDevtools, // Optional analytics
+  },
+  themeMode: 'dark',               // Match your app's dark theme
+  themeVariables: {
+    '--w3m-accent': '#10b981',     // Green accent to match your brand
+    '--w3m-border-radius-master': '12px'
+  }
+})
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
@@ -69,21 +80,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <NotificationProvider>
-          <ConnectKitProvider 
-            theme="midnight"
-            customTheme={{
-              "--ck-font-family": '"Inter", sans-serif',
-              "--ck-border-radius": "12px",
-              "--ck-connectbutton-font-size": "16px",
-              "--ck-connectbutton-border-radius": "8px",
-              "--ck-connectbutton-background": "#1F2937",
-            }}
-          >
-            {children}
-          </ConnectKitProvider>
+          {children}
         </NotificationProvider>
         {devConfig.enableDevtools && (
           <ReactQueryDevtools initialIsOpen={false} />

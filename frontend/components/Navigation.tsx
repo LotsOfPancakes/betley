@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { ConnectKitButton } from 'connectkit'
+// AppKit buttons are web components - no import needed
 import { useState } from 'react'
 
 export function Navigation() {
@@ -79,14 +79,14 @@ export function Navigation() {
               )}
             </Link>
             <div className="transform hover:scale-105 transition-transform">
-              <ConnectKitButton />
+              <appkit-button />
             </div>
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-3">
             <div className="transform hover:scale-105 transition-transform">
-              <ConnectKitButton />
+              <appkit-button />
             </div>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

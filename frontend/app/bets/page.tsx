@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { ConnectKitButton } from 'connectkit'
+// AppKit buttons are web components - no import needed
 import Image from 'next/image'
 
 // Import our extracted components and hooks
@@ -167,7 +167,7 @@ export default function BetsPage() {
             </div>
               <h1 className="text-2xl font-bold text-white mb-4">Looking for your Bets?</h1>
               <div className="flex justify-center mb-4"> 
-                <ConnectKitButton />
+                <appkit-button />
               </div>
             </div>
           </div>

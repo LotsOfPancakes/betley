@@ -56,87 +56,43 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ✅ NEW: Filter to only active bets by checking contract data
-    const activeBets = []
+    // ✅ TEMPORARY DEBUG: Return all public bets without active filtering to debug
+    console.log('Public bets API debug:', {
+      dataCount: data?.length || 0,
+      publicBetsFound: data?.filter(bet => bet.is_public).length || 0,
+      allBets: data?.map(bet => ({ id: bet.numeric_id, name: bet.bet_name, isPublic: bet.is_public })) || []
+    })
     
-    // Skip contract calls during build time or if no runtime environment
-    if (typeof window === 'undefined' && !process.env.VERCEL && !process.env.RAILWAY_ENVIRONMENT) {
-      // During build or in environments without proper runtime, return all public bets without filtering
-      const publicBets = (data || []).map(bet => ({
-        randomId: bet.random_id,
-        numericId: bet.numeric_id,
-        name: bet.bet_name,
-        creator: bet.creator_address,
-        createdAt: bet.created_at,
-        isPublic: bet.is_public,
-        endTime: '0', // Placeholder during build
-        timeRemaining: 'Loading...' // Placeholder during build
-      }))
-      
-      return Response.json(
-        { 
-          bets: publicBets,
-          count: publicBets.length,
-          hasMore: false
-        },
-        {
-          headers: {
-            'Cache-Control': 'public, max-age=30, s-maxage=60',
-            'X-Content-Type-Options': 'nosniff'
-          }
-        }
-      )
-    }
+    // TEMPORARY: Return all public bets without contract filtering for debugging
+    const publicBets = (data || []).map(bet => ({
+      randomId: bet.random_id,
+      numericId: bet.numeric_id,
+      name: bet.bet_name,
+      creator: bet.creator_address,
+      createdAt: bet.created_at,
+      isPublic: bet.is_public,
+      endTime: '999999999999', // Fake future time for debugging
+      timeRemaining: 'Debug Mode' // Debug indicator
+    }))
     
-    for (const bet of data || []) {
-      try {
-        // Dynamic import to avoid build-time evaluation
-        const { getBetEndTime } = await import('@/lib/contractHelpers')
-        
-        // Get bet end time and resolved status from contract
-        const contractData = await getBetEndTime(bet.numeric_id)
-        
-        if (contractData) {
-          const now = Math.floor(Date.now() / 1000)
-          const isActive = !contractData.resolved && now < Number(contractData.endTime)
-          
-          if (isActive) {
-            // Calculate time remaining for display
-            const timeLeft = Number(contractData.endTime) - now
-            const timeRemaining = formatTimeRemaining(timeLeft)
-            
-            activeBets.push({
-              randomId: bet.random_id,
-              numericId: bet.numeric_id,
-              name: bet.bet_name,
-              creator: bet.creator_address,
-              createdAt: bet.created_at,
-              isPublic: bet.is_public,
-              endTime: contractData.endTime.toString(), // Convert bigint to string for JSON
-              timeRemaining
-            })
-          }
-        }
-      } catch (error) {
-        console.error(`Error checking bet ${bet.numeric_id} status:`, error)
-        // Skip this bet if we can't determine its status
-      }
-    }
-
-    // ✅ SECURITY: Return clean response with caching (reduced cache time due to time-sensitive data)
     return Response.json(
       { 
-        bets: activeBets,
-        count: activeBets.length,
-        hasMore: false // Since we're filtering, we can't determine if there are more active bets
+        bets: publicBets,
+        count: publicBets.length,
+        hasMore: false
       },
       {
         headers: {
-          'Cache-Control': 'public, max-age=30, s-maxage=60', // Reduced cache time for active bets
+          'Cache-Control': 'no-cache', // No cache for debugging
           'X-Content-Type-Options': 'nosniff'
         }
       }
     )
+    
+    // ✅ COMMENTED OUT: Original active filtering logic
+    /*
+    const activeBets = []
+    */
 
   } catch (error) {
     console.error('Public bets API error:', error)

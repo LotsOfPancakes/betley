@@ -2,7 +2,7 @@
 'use client'
 
 import { formatUnits } from 'viem'
-import { ConnectKitButton } from 'connectkit'
+// AppKit buttons are web components - no import needed
 import { 
   formatDynamicDecimals, 
   calculateOptionPercentage, 
@@ -54,7 +54,7 @@ export function BetOptionsGrid({
       <div className="flex justify-center mb-6 p-6 bg-gray-800/40 rounded-2xl">
         <div className="text-center">
           <p className="text-gray-300 mb-4">Connect your wallet to start Betting</p>
-          <ConnectKitButton />
+          <appkit-button />
         </div>
       </div>
     )

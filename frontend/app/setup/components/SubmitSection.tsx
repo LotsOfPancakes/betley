@@ -1,7 +1,7 @@
 // frontend/app/setup/components/SubmitSection.tsx
 'use client'
 
-import { ConnectKitButton } from 'connectkit'
+import { useAppKit } from '@reown/appkit/react'
 import { BetCreationState } from '../types/setup.types'
 
 interface SubmitSectionProps {
@@ -21,6 +21,7 @@ export default function SubmitSection({
   onClearError,
   isPublic = false  
 }: SubmitSectionProps) {
+  const { open } = useAppKit()
   
   // Dynamic button text based on public/private
   const getButtonText = () => {
@@ -65,18 +66,14 @@ export default function SubmitSection({
         </div>
       )}
 
-      {/* Submit Button - ConnectKit Integration */}
-      <ConnectKitButton.Custom>
-        {({ show }) => (
-          <button
-            onClick={isConnected ? onSubmit : show}
-            disabled={getButtonDisabled()}
-            className={`w-full py-3 rounded-2xl font-semibold transition-all duration-300 ${getButtonStyle()}`}
-          >
-            {getButtonText()}
-          </button>
-        )}
-      </ConnectKitButton.Custom>
+      {/* Submit Button - AppKit Integration */}
+      <button
+        onClick={isConnected ? onSubmit : () => open()}
+        disabled={getButtonDisabled()}
+        className={`w-full py-3 rounded-2xl font-semibold transition-all duration-300 ${getButtonStyle()}`}
+      >
+        {getButtonText()}
+      </button>
 
       {/*  removed info text, since private/public info already mentioned in publicprivatetoggle component */}
       <div className="text-sm text-gray-400">
