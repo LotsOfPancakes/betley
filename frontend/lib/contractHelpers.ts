@@ -8,19 +8,44 @@ import { hyperevm } from './chains'
 let _serverConfig: Config | null = null
 
 export function getServerConfig(): Config {
+  console.log('=== WAGMI SERVER CONFIG INVESTIGATION ===')
+  
   if (!_serverConfig) {
     try {
+      console.log('Creating new server config...')
+      
+      // Check imports
+      console.log('hyperevm chain:', hyperevm)
+      console.log('hyperevm.id:', hyperevm.id)
+      console.log('hyperevm.rpcUrls:', hyperevm.rpcUrls)
+      
+      // Check if createConfig and http are available
+      console.log('createConfig function:', typeof createConfig)
+      console.log('http function:', typeof http)
+      
+      // Try creating the config step by step
+      console.log('Creating transports...')
+      const transports = {
+        [hyperevm.id]: http()
+      }
+      console.log('Transports created:', transports)
+      
+      console.log('Creating wagmi config...')
       _serverConfig = createConfig({
         chains: [hyperevm],
-        transports: {
-          [hyperevm.id]: http(),
-        },
+        transports: transports,
       })
+      console.log('Server config created successfully:', !!_serverConfig)
+      
     } catch (error) {
-      console.error('Failed to create server config:', error)
-      throw new Error('Server configuration failed - check environment variables')
+      console.error('💥 ERROR creating server config:', error)
+      console.error('Error stack:', error.stack)
+      throw new Error(`Server configuration failed: ${error.message}`)
     }
+  } else {
+    console.log('Using existing server config')
   }
+  
   return _serverConfig
 }
 
@@ -87,8 +112,19 @@ export async function checkIfBetIsActive(betId: number, config?: Config): Promis
 
 // ✅ NEW: Lightweight function to get just endTime for active filtering
 export async function getBetEndTime(betId: number, config?: Config): Promise<{ endTime: bigint; resolved: boolean } | null> {
+  console.log(`=== CONTRACT CALL INVESTIGATION (Bet ${betId}) ===`)
+  
   try {
+    console.log('Getting config...')
     const configToUse = config || getServerConfig()
+    console.log('Config obtained:', !!configToUse)
+    
+    console.log('Contract details:')
+    console.log('  BETLEY_ADDRESS:', BETLEY_ADDRESS)
+    console.log('  BETLEY_ABI length:', BETLEY_ABI.length)
+    console.log('  Bet ID:', betId, typeof betId)
+    
+    console.log('Calling readContract...')
     const betDetails = await readContract(configToUse, {
       address: BETLEY_ADDRESS,
       abi: BETLEY_ABI,
@@ -96,12 +132,17 @@ export async function getBetEndTime(betId: number, config?: Config): Promise<{ e
       args: [BigInt(betId)],
     }) as BetDetailsReturn
     
+    console.log('Contract call successful, processing response...')
+    
     return {
       endTime: betDetails[3],
       resolved: betDetails[4]
     }
   } catch (error) {
-    console.error(`Error fetching bet ${betId} end time:`, error)
+    console.error(`💥 ERROR in getBetEndTime for bet ${betId}:`, error)
+    console.error('Error type:', error.constructor.name)
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
     return null
   }
 }
