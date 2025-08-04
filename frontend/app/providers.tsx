@@ -37,8 +37,8 @@ createAppKit({
     icons: ['https://betley.vercel.app/images/betley-logo-128.png']
   },
   features: {
-    email: true,                    // 🎉 Enable email signup
-    socials: ['google', 'apple', 'x', 'discord'], // 🎉 Enable social login
+    email: true,                    // Enable email signup
+    socials: ['google', 'apple', 'x', 'discord'], // Enable social login
     analytics: devConfig.enableDevtools, // Optional analytics
     onramp: false, // disable buying crypto
     swaps: false, // Disable swaps

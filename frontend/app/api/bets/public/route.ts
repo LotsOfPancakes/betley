@@ -56,25 +56,53 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // ✅ DEBUG: Log database query results
+    console.log('=== PUBLIC BETS DEBUG ===')
+    console.log(`Database query returned ${data?.length || 0} total bets`)
+    const publicBets = data?.filter(bet => bet.is_public) || []
+    console.log(`Found ${publicBets.length} bets marked as is_public=true`)
+    console.log('Public bets:', publicBets.map(bet => ({ 
+      id: bet.numeric_id, 
+      name: bet.bet_name, 
+      creator: bet.creator_address.slice(0, 8) + '...' 
+    })))
+
     // ✅ Filter to only active bets by checking contract data
     const activeBets = []
     
     for (const bet of data || []) {
+      console.log(`\n--- Processing bet ${bet.numeric_id}: "${bet.bet_name}" ---`)
+      console.log(`Is public: ${bet.is_public}`)
+      
       try {
         // Dynamic import to avoid build-time evaluation
         const { getBetEndTime } = await import('@/lib/contractHelpers')
         
+        console.log(`Calling contract for bet ${bet.numeric_id}...`)
+        
         // Get bet end time and resolved status from contract
         const contractData = await getBetEndTime(bet.numeric_id)
         
+        console.log(`Contract response for bet ${bet.numeric_id}:`, contractData)
+        
         if (contractData) {
           const now = Math.floor(Date.now() / 1000)
-          const isActive = !contractData.resolved && now < Number(contractData.endTime)
+          const endTime = Number(contractData.endTime)
+          const isActive = !contractData.resolved && now < endTime
+          
+          console.log(`Active check for bet ${bet.numeric_id}:`)
+          console.log(`  - Current time: ${now} (${new Date(now * 1000).toISOString()})`)
+          console.log(`  - End time: ${endTime} (${new Date(endTime * 1000).toISOString()})`)
+          console.log(`  - Resolved: ${contractData.resolved}`)
+          console.log(`  - Is active: ${isActive}`)
           
           if (isActive) {
             // Calculate time remaining for display
-            const timeLeft = Number(contractData.endTime) - now
+            const timeLeft = endTime - now
             const timeRemaining = formatTimeRemaining(timeLeft)
+            
+            console.log(`  - Time remaining: ${timeLeft}s (${timeRemaining})`)
+            console.log(`  ✅ BET ${bet.numeric_id} INCLUDED (active)`)
             
             activeBets.push({
               randomId: bet.random_id,
@@ -86,13 +114,24 @@ export async function GET(request: NextRequest) {
               endTime: contractData.endTime.toString(), // Convert bigint to string for JSON
               timeRemaining
             })
+          } else {
+            const reason = contractData.resolved ? 'resolved' : 'expired'
+            console.log(`  ❌ BET ${bet.numeric_id} FILTERED OUT (${reason})`)
           }
+        } else {
+          console.log(`  ❌ BET ${bet.numeric_id} FILTERED OUT (no contract data)`)
         }
       } catch (error) {
-        console.error(`Error checking bet ${bet.numeric_id} status:`, error)
+        console.error(`  💥 ERROR checking bet ${bet.numeric_id} status:`, error)
+        console.log(`  ❌ BET ${bet.numeric_id} FILTERED OUT (contract error)`)
         // Skip this bet if we can't determine its status
       }
     }
+
+    console.log(`\n=== FINAL RESULTS ===`)
+    console.log(`Active public bets found: ${activeBets.length}`)
+    console.log('Active bets:', activeBets.map(bet => ({ id: bet.numericId, name: bet.name })))
+    console.log('========================')
 
     // ✅ Return clean response with caching (reduced cache time due to time-sensitive data)
     return Response.json(
