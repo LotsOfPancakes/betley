@@ -16,7 +16,7 @@ export async function trackBetCreation(creatorAddress: string, betId: number): P
       activity_type: 'create',
       amount: null,
       block_number: 0, // Use 0 for real-time activities (not from blockchain scan)
-      transaction_hash: null,
+      transaction_hash: '', // Use empty string for bet creation (no tx hash yet)
       created_at: new Date().toISOString()
     }
 
