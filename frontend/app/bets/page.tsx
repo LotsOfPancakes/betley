@@ -12,6 +12,8 @@ import BetCard from './components/BetCard'
 import BetFilters from './components/BetFilters'
 import EmptyState from './components/EmptyState'
 import PublicBetCard from './components/PublicBetCard' 
+import BetsSearchLoading from './components/BetsSearchLoading'
+import LoadingOverlay from './components/LoadingOverlay'
 import { useBetsList } from './hooks/useBetsList'
 import { useBetsFiltering } from './hooks/useBetsFiltering'
 import { usePublicBets } from '@/lib/hooks/usePublicBets'
@@ -30,34 +32,7 @@ interface PublicBet {
   timeRemaining: string // NEW: Formatted time remaining
 }
 
-// Custom loading component specifically for bets search
-function BetsSearchLoading() {
-  return (
-    <div className="text-center py-12">
-      <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 max-w-md mx-auto">
-        <div className="w-16 h-16 mx-auto mb-4 relative">
-          <Image
-            src="/images/betley-searching.png"
-            alt="Searching for bets"
-            width={64}
-            height={64}
-            className="object-contain animate-pulse"
-            style={{
-              animation: 'pulse 2s infinite, float 3s ease-in-out infinite'
-            }}
-            priority={false}
-            quality={90}
-          />
-          <div 
-            className="w-16 h-16 absolute inset-0 bg-green-500/20 rounded-full blur-lg animate-pulse"
-            style={{ zIndex: -1 }}
-          />
-        </div>
-        <p className="text-white">Betley is looking around for bets...</p>
-      </div>
-    </div>
-  )
-}
+
 
 export default function BetsPage() {
   const router = useRouter()
@@ -67,11 +42,24 @@ export default function BetsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('my')
 
   // My Bets (existing logic)
-  const { bets: myBets, loading: myBetsLoading, error: myBetsError, decimals } = useBetsList()
+  const { 
+    bets: myBets, 
+    loading: myBetsLoading, 
+    fetching: myBetsFetching, 
+    error: myBetsError, 
+    decimals,
+    retryAttempt: myBetsRetryAttempt 
+  } = useBetsList()
   const { filter, setFilter, filteredBets: filteredMyBets } = useBetsFiltering(myBets)
 
   // Public Bets
-  const { data: publicBetsData, isLoading: publicBetsLoading, error: publicBetsError } = usePublicBets({
+  const { 
+    data: publicBetsData, 
+    isLoading: publicBetsLoading, 
+    isFetching: publicBetsFetching,
+    error: publicBetsError,
+    failureCount: publicBetsRetryAttempt
+  } = usePublicBets({
     enabled: activeTab === 'public'
   })
 
@@ -88,9 +76,12 @@ export default function BetsPage() {
   }, [publicBetsData?.bets])
 
   // Determine what to show based on active tab
-  const isLoading = activeTab === 'my' ? myBetsLoading : publicBetsLoading
+  const isInitialLoading = activeTab === 'my' ? myBetsLoading : publicBetsLoading
+  const isFetching = activeTab === 'my' ? myBetsFetching : publicBetsFetching
   const error = activeTab === 'my' ? myBetsError : publicBetsError?.message
+  const retryAttempt = activeTab === 'my' ? myBetsRetryAttempt : publicBetsRetryAttempt
   const hasNoBets = activeTab === 'my' ? filteredMyBets.length === 0 : filteredPublicBets.length === 0
+  const hasExistingData = activeTab === 'my' ? myBets.length > 0 : (publicBetsData?.bets?.length || 0) > 0
 
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
@@ -190,8 +181,12 @@ export default function BetsPage() {
               )}
 
               {/* Loading state */}
-              {isLoading ? (
-                <BetsSearchLoading />
+              {isInitialLoading ? (
+                <BetsSearchLoading 
+                  variant={retryAttempt > 0 ? 'retry' : 'initial'}
+                  retryAttempt={retryAttempt}
+                  maxRetries={5}
+                />
               ) : hasNoBets ? (
                 activeTab === 'my' ? (
                   <EmptyState filter={filter} />
@@ -213,7 +208,14 @@ export default function BetsPage() {
                   </div>
                 )
               ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="relative">
+                  {/* Loading overlay for background refetches */}
+                  <LoadingOverlay 
+                    isVisible={isFetching && hasExistingData}
+                    message={activeTab === 'my' ? 'Refreshing your bets...' : 'Refreshing public bets...'}
+                  />
+                  
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {activeTab === 'my' ? (
                     // Render My Bets (existing BetCard)
                     filteredMyBets.map((bet) => (
@@ -225,6 +227,7 @@ export default function BetsPage() {
                       <PublicBetCard key={bet.randomId} bet={bet} />
                     ))
                   )}
+                  </div>
                 </div>
               )}
             </>

@@ -14,7 +14,9 @@ export function useBetsList() {
   const { address } = useAccount()
   const [bets, setBets] = useState<BetDetails[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetching, setFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [retryAttempt, setRetryAttempt] = useState(0)
 
   // Read total number of bets
   const { data: betCounter } = useReadContract({
@@ -85,11 +87,18 @@ export function useBetsList() {
     async function fetchMyBets() {
       if (!address || betCounter === undefined || !decimals) {
         setLoading(false)
+        setFetching(false)
         return
       }
 
-      setLoading(true)
+      const isInitialLoad = bets.length === 0
+      if (isInitialLoad) {
+        setLoading(true)
+      } else {
+        setFetching(true)
+      }
       setError(null)
+      setRetryAttempt(0)
       
       try {
         const betCount = Number(betCounter)
@@ -150,15 +159,18 @@ export function useBetsList() {
         }
 
         setBets(fetchedBets)
+        setRetryAttempt(0)
       } catch {
+        setRetryAttempt(prev => prev + 1)
         setError('Failed to load bets. Please try again.')
       } finally {
         setLoading(false)
+        setFetching(false)
       }
     }
 
     fetchMyBets()
-  }, [address, betCounter, decimals, config, fetchAllMappings, fetchBetDataParallel])
+  }, [address, betCounter, decimals, config, fetchAllMappings, fetchBetDataParallel, bets.length])
 
   // Refresh function for manual updates
   const refreshBets = () => {
@@ -171,8 +183,10 @@ export function useBetsList() {
   return {
     bets,
     loading,
+    fetching,
     error,
     decimals,
+    retryAttempt,
     refreshBets
   }
 }
