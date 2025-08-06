@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
 
       const stats = userStats.get(activity.wallet_address);
 
-      if (activity.activity_type === 'bet_created') {
+      if (activity.activity_type === 'create') {
         stats.bets_created += 1;
         stats.total_volume_generated += activity.amount || 0;
-      } else if (activity.activity_type === 'bet_placed') {
+      } else if (activity.activity_type === 'bet') {
         stats.total_amount_bet += activity.amount || 0;
         stats.wallets_attracted.add(activity.wallet_address);
       }

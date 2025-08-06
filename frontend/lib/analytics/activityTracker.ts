@@ -13,7 +13,7 @@ export async function trackBetCreation(creatorAddress: string, betId: number): P
     const insertData = {
       wallet_address: creatorAddress.toLowerCase(),
       bet_id: betId,
-      activity_type: 'bet_created',
+      activity_type: 'create',
       amount: null,
       block_number: 0, // Use 0 for real-time activities (not from blockchain scan)
       transaction_hash: null,
@@ -51,7 +51,7 @@ export async function trackBetPlacement(
     const insertData = {
       wallet_address: userAddress.toLowerCase(),
       bet_id: betId,
-      activity_type: 'bet_placed',
+      activity_type: 'bet',
       amount: amount,
       block_number: 0, // Use 0 for real-time activities (not from blockchain scan)
       transaction_hash: txHash,
