@@ -14,7 +14,7 @@ import EmptyState from './components/EmptyState'
 import PublicBetCard from './components/PublicBetCard' 
 import BetsSearchLoading from './components/BetsSearchLoading'
 import LoadingOverlay from './components/LoadingOverlay'
-import { useBetsList } from './hooks/useBetsList'
+import { useBetsListDatabase } from './hooks/useBetsListV2'
 import { useBetsFiltering } from './hooks/useBetsFiltering'
 import { usePublicBets } from '@/lib/hooks/usePublicBets'
 
@@ -41,15 +41,15 @@ export default function BetsPage() {
   // Tab state management
   const [activeTab, setActiveTab] = useState<TabType>('my')
 
-  // My Bets (existing logic)
+  // My Bets (database-first approach - Phase 2)
   const { 
     bets: myBets, 
     loading: myBetsLoading, 
     fetching: myBetsFetching, 
     error: myBetsError, 
     decimals,
-    retryAttempt: myBetsRetryAttempt 
-  } = useBetsList()
+    retryAttempt: myBetsRetryAttempt
+  } = useBetsListDatabase()
   const { filter, setFilter, filteredBets: filteredMyBets } = useBetsFiltering(myBets)
 
   // Public Bets
@@ -109,6 +109,11 @@ export default function BetsPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white">
               {activeTab === 'my' ? 'My Bets' : 'Public Bets'}
+              {activeTab === 'my' && process.env.NODE_ENV === 'development' && (
+                <span className="ml-2 text-xs bg-green-600 text-white px-2 py-1 rounded">
+                  DB-First v2
+                </span>
+              )}
             </h1>
             <button
               onClick={() => router.push('/setup')}
