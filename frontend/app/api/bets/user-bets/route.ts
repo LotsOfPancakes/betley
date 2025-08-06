@@ -139,12 +139,12 @@ export async function POST(request: NextRequest) {
         name: bet.bet_name,
         options: bet.bet_options || [],
         creator: bet.creator_address,
-        endTime: bet.end_time ? BigInt(bet.end_time) : BigInt(0),
+        endTime: bet.end_time || 0, // Keep as number for JSON serialization
         resolved: bet.resolved || false,
         winningOption: bet.winning_option || 0,
-        totalAmounts: bet.total_amounts?.map((amount: number) => BigInt(amount)) || [],
+        totalAmounts: bet.total_amounts || [], // Keep as number array
         userRole,
-        userTotalBet: BigInt(0), // TODO: Calculate from user_activities
+        userTotalBet: 0, // TODO: Calculate from user_activities
         isPublic: bet.is_public || false,
         cachedAt: bet.cached_at
       }
