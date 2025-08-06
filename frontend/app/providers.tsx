@@ -64,9 +64,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       queries: {
         staleTime: timeoutsConfig.queryStale,
         gcTime: 5 * 60 * 1000,
-        retry: timeoutsConfig.mutationRetry,
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-        refetchOnWindowFocus: false,
+        retry: 5, // Increased from 3 to 5 for better resilience on unstable testnet
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff: 1s, 2s, 4s, 8s, 16s, max 30s
+        refetchOnWindowFocus: true, // Enable refetch when user returns to tab
         refetchOnReconnect: true,
       },
       mutations: {
