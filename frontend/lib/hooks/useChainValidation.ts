@@ -21,21 +21,6 @@ export function useChainValidation() {
 
   const isCorrectChain = isConnected ? chainId === networkConfig.chainId : true
 
-  // Auto-switch on wallet connection if on wrong chain
-  useEffect(() => {
-    if (isConnected && !isCorrectChain && !hasAttemptedAutoSwitch && !isSwitching) {
-      setHasAttemptedAutoSwitch(true)
-      switchToCorrectChain()
-    }
-  }, [isConnected, isCorrectChain, hasAttemptedAutoSwitch, isSwitching, switchToCorrectChain])
-
-  // Reset auto-switch flag when user disconnects
-  useEffect(() => {
-    if (!isConnected) {
-      setHasAttemptedAutoSwitch(false)
-    }
-  }, [isConnected])
-
   const switchToCorrectChain = useCallback(async () => {
     if (!switchChain) {
       showError('Chain switching not supported by your wallet', 'Switch Network')
@@ -55,6 +40,21 @@ export function useChainValidation() {
       return false
     }
   }, [switchChain, showError, showSuccess])
+
+  // Auto-switch on wallet connection if on wrong chain
+  useEffect(() => {
+    if (isConnected && !isCorrectChain && !hasAttemptedAutoSwitch && !isSwitching) {
+      setHasAttemptedAutoSwitch(true)
+      switchToCorrectChain()
+    }
+  }, [isConnected, isCorrectChain, hasAttemptedAutoSwitch, isSwitching, switchToCorrectChain])
+
+  // Reset auto-switch flag when user disconnects
+  useEffect(() => {
+    if (!isConnected) {
+      setHasAttemptedAutoSwitch(false)
+    }
+  }, [isConnected])
 
   const validateChain = (): boolean => {
     // If not connected, let the wallet connection flow handle it
