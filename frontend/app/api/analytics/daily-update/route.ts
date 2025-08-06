@@ -75,24 +75,58 @@ async function handleAnalyticsUpdate(request: NextRequest) {
     
     console.log(`Current block: ${currentBlock}, Last processed: ${lastProcessedBlock}`)
     
-    // Gap detection logic
+    // Gap detection logic with timeout protection
     const blockRange = currentBlock - lastProcessedBlock
     const EXPECTED_12H_BLOCKS = BigInt(43200) // 12 hours * 3600 seconds * 1 block/second
     const EXPECTED_24H_BLOCKS = BigInt(86400) // 24 hours * 3600 seconds * 1 block/second
     
+    // Calculate safe processing limits (blocks per RPC call = 500)
+    const MAX_SAFE_CALLS_NORMAL = 15    // 15 × 4s = 60s
+    const MAX_SAFE_CALLS_SMALL = 70     // 70 × 3s = 210s  
+    const MAX_SAFE_CALLS_TIMEOUT = 60   // 60 × 3s = 180s
+    const BLOCKS_PER_CALL = 500
+    
+    const estimatedCalls = Number(blockRange) / BLOCKS_PER_CALL
+    
     let processingMode = 'normal'
+    let delayBetweenCalls = 4000  // Default 4s for normal operations
+    let maxBlocksToProcess = blockRange
+    
     if (blockRange > EXPECTED_24H_BLOCKS * BigInt(2)) {
       processingMode = 'large_gap' // More than 48 hours
-      console.log(`🚨 LARGE GAP DETECTED: ${blockRange} blocks (>48h). Using large gap mode.`)
+      console.log(`🚨 LARGE GAP DETECTED: ${blockRange} blocks (>48h). Using timeout protection.`)
+      maxBlocksToProcess = BigInt(MAX_SAFE_CALLS_TIMEOUT * BLOCKS_PER_CALL) // 30,000 blocks
+      delayBetweenCalls = 3000
+      processingMode = 'timeout_protection'
     } else if (blockRange > EXPECTED_24H_BLOCKS) {
       processingMode = 'medium_gap' // 24-48 hours  
-      console.log(`⚠️  MEDIUM GAP DETECTED: ${blockRange} blocks (24-48h). Using medium gap mode.`)
+      console.log(`⚠️  MEDIUM GAP DETECTED: ${blockRange} blocks (24-48h). Using timeout protection.`)
+      maxBlocksToProcess = BigInt(MAX_SAFE_CALLS_TIMEOUT * BLOCKS_PER_CALL) // 30,000 blocks
+      delayBetweenCalls = 3000
+      processingMode = 'timeout_protection'
     } else if (blockRange > EXPECTED_12H_BLOCKS * BigInt(2)) {
       processingMode = 'small_gap' // 12-24 hours
-      console.log(`ℹ️  SMALL GAP DETECTED: ${blockRange} blocks (12-24h). Using small gap mode.`)
+      delayBetweenCalls = 3000  // 3s delay for small gaps
+      
+      if (estimatedCalls > MAX_SAFE_CALLS_SMALL) {
+        console.log(`ℹ️  SMALL GAP: ${blockRange} blocks would take too long, using timeout protection.`)
+        maxBlocksToProcess = BigInt(MAX_SAFE_CALLS_SMALL * BLOCKS_PER_CALL) // 35,000 blocks
+        processingMode = 'timeout_protection'
+      } else {
+        console.log(`ℹ️  SMALL GAP DETECTED: ${blockRange} blocks (12-24h). Using small gap mode.`)
+      }
     } else {
-      console.log(`✅ NORMAL PROCESSING: ${blockRange} blocks (<24h).`)
+      if (estimatedCalls > MAX_SAFE_CALLS_NORMAL) {
+        console.log(`✅ NORMAL: ${blockRange} blocks would take too long, using timeout protection.`)
+        maxBlocksToProcess = BigInt(MAX_SAFE_CALLS_NORMAL * BLOCKS_PER_CALL) // 7,500 blocks
+        delayBetweenCalls = 3000
+        processingMode = 'timeout_protection'
+      } else {
+        console.log(`✅ NORMAL PROCESSING: ${blockRange} blocks (<12h).`)
+      }
     }
+    
+    console.log(`📊 Processing config: mode=${processingMode}, delay=${delayBetweenCalls}ms, maxBlocks=${maxBlocksToProcess}, estimatedCalls=${Math.ceil(Number(maxBlocksToProcess) / BLOCKS_PER_CALL)}`)
     
     let eventsProcessed = 0
     
@@ -110,57 +144,30 @@ async function handleAnalyticsUpdate(request: NextRequest) {
         throw new Error(`Invalid block range: ${fromBlock} > ${toBlock}`)
       }
       
-      // Adaptive processing based on gap size
-      if (processingMode === 'large_gap') {
-        // For very large gaps, process only recent blocks to get system back on track
-        console.log(`🚨 Large gap mode: Processing only recent 24h blocks`)
-        const limitedFromBlock = toBlock - EXPECTED_24H_BLOCKS + BigInt(1)
+      // Adaptive processing based on gap size and timeout protection
+      if (processingMode === 'timeout_protection') {
+        const recentFromBlock = toBlock - maxBlocksToProcess + BigInt(1)
+        console.log(`⏰ Timeout protection: Processing recent ${maxBlocksToProcess} blocks (${recentFromBlock} to ${toBlock})`)
+        console.log(`⚠️  Skipping ${blockRange - maxBlocksToProcess} older blocks to avoid timeout`)
         
         try {
-          const events = await getBlockchainEvents(limitedFromBlock, toBlock)
-          console.log(`Found ${events.length} events to process (large gap recovery)`)
+          const events = await getBlockchainEvents(recentFromBlock, toBlock, delayBetweenCalls)
+          console.log(`Found ${events.length} events to process (timeout protection mode)`)
           eventsProcessed = events.length
-          await processEvents(events, supabaseAdmin)
-          await updateLastProcessedBlock(toBlock)
-        } catch (error) {
-          console.error('Error processing large gap recovery:', error)
-          throw error
-        }
-      } else if (processingMode === 'medium_gap') {
-        // For medium gaps, process in two phases: recent priority, then fill gap
-        console.log(`⚠️  Medium gap mode: Processing recent blocks first, then filling gap`)
-        const recentFromBlock = toBlock - EXPECTED_12H_BLOCKS + BigInt(1)
-        
-        try {
-          // Phase 1: Process recent 12 hours first (priority)
-          const recentEvents = await getBlockchainEvents(recentFromBlock, toBlock)
-          console.log(`Found ${recentEvents.length} recent events (priority processing)`)
           
-          if (recentEvents.length > 0) {
-            await processEvents(recentEvents, supabaseAdmin)
-          }
-          
-          // Phase 2: Fill the gap (older blocks)
-          if (fromBlock < recentFromBlock) {
-            const gapEvents = await getBlockchainEvents(fromBlock, recentFromBlock - BigInt(1))
-            console.log(`Found ${gapEvents.length} gap events (backfill processing)`)
-            
-            if (gapEvents.length > 0) {
-              await processEvents(gapEvents, supabaseAdmin)
-            }
-            eventsProcessed = recentEvents.length + gapEvents.length
-          } else {
-            eventsProcessed = recentEvents.length
+          if (events.length > 0) {
+            await processEvents(events, supabaseAdmin)
           }
           
           await updateLastProcessedBlock(toBlock)
         } catch (error) {
-          console.error('Error processing medium gap:', error)
+          console.error('Error processing timeout protection mode:', error)
           throw error
         }
       } else {
+        // Normal processing with appropriate delays
         try {
-          const events = await getBlockchainEvents(fromBlock, toBlock)
+          const events = await getBlockchainEvents(fromBlock, toBlock, delayBetweenCalls)
           console.log(`Found ${events.length} events to process`)
           eventsProcessed = events.length
           

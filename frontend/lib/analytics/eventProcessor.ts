@@ -28,9 +28,15 @@ export interface ProcessedEvent {
   transactionHash: string
 }
 
+// Sleep function for rate limiting
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 export async function getBlockchainEvents(
   fromBlock: bigint,
-  toBlock: bigint
+  toBlock: bigint,
+  delayMs: number = 0
 ): Promise<ProcessedEvent[]> {
   // Validate inputs
   if (fromBlock > toBlock) {
@@ -42,13 +48,15 @@ export async function getBlockchainEvents(
     fromBlock = BigInt(1)
   }
   
-  const MAX_BLOCK_RANGE = BigInt(1000)
+  const MAX_BLOCK_RANGE = BigInt(500)  // Reduced from 1000 for better rate limiting
   const allLogs: ProcessedEvent[] = []
   const failedRanges: Array<{from: bigint, to: bigint, error: string}> = []
   let successfulChunks = 0
   let totalChunks = 0
   
   let currentFromBlock = fromBlock
+  
+  console.log(`🔄 Processing with ${delayMs}ms delays between RPC calls`)
   
   while (currentFromBlock <= toBlock) {
     const currentToBlock = currentFromBlock + MAX_BLOCK_RANGE - BigInt(1) > toBlock 
@@ -58,60 +66,94 @@ export async function getBlockchainEvents(
     totalChunks++
     console.log(`Fetching events from block ${currentFromBlock} to ${currentToBlock} (chunk ${totalChunks})`)
     
-    let logs
-    try {
-      logs = await publicClient.getLogs({
-        address: BETLEY_ADDRESS,
-        events: BETLEY_EVENTS_ABI,
-        fromBlock: currentFromBlock,
-        toBlock: currentToBlock
-      })
-      
-      console.log(`✅ Found ${logs.length} logs in range ${currentFromBlock}-${currentToBlock}`)
-      successfulChunks++
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error(`❌ Error fetching logs for range ${currentFromBlock}-${currentToBlock}:`, errorMessage)
-      
-      // Track failed range for reporting
-      failedRanges.push({
-        from: currentFromBlock,
-        to: currentToBlock,
-        error: errorMessage
-      })
-      
-      // Skip this range and continue with next
-      currentFromBlock = currentToBlock + BigInt(1)
-      continue
-    }
-
-    const processedLogs = logs.map(log => {
-      const { eventName, args } = log
-      
-      if (eventName === 'BetCreated') {
-        return {
-          type: 'BetCreated' as const,
-          betId: Number(args.betId),
-          creator: args.creator,
-          blockNumber: log.blockNumber,
-          transactionHash: log.transactionHash
+    let logs: Awaited<ReturnType<typeof publicClient.getLogs>> = []
+    let retryCount = 0
+    const maxRetries = 3
+    
+    while (retryCount < maxRetries) {
+      try {
+        logs = await publicClient.getLogs({
+          address: BETLEY_ADDRESS,
+          events: BETLEY_EVENTS_ABI,
+          fromBlock: currentFromBlock,
+          toBlock: currentToBlock
+        })
+        
+        console.log(`✅ Found ${logs.length} logs in range ${currentFromBlock}-${currentToBlock}`)
+        successfulChunks++
+        break // Success, exit retry loop
+        
+      } catch (error) {
+        retryCount++
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        const isRateLimit = errorMessage.toLowerCase().includes('rate limit') || 
+                           errorMessage.includes('429') || 
+                           errorMessage.includes('too many requests')
+        
+        if (isRateLimit) {
+          console.log(`🚫 Rate limited (attempt ${retryCount}/${maxRetries}): ${errorMessage}`)
+        } else {
+          console.error(`❌ Error fetching logs (attempt ${retryCount}/${maxRetries}): ${errorMessage}`)
         }
-      } else if (eventName === 'BetPlaced') {
-        return {
-          type: 'BetPlaced' as const,
-          betId: Number(args.betId),
-          user: args.user,
-          amount: args.amount,
-          blockNumber: log.blockNumber,
-          transactionHash: log.transactionHash
+        
+        if (retryCount < maxRetries) {
+          // Exponential backoff with longer delays for rate limits
+          const baseDelay = isRateLimit ? delayMs * 3 : delayMs
+          const backoffDelay = baseDelay * Math.pow(2, retryCount - 1)
+          console.log(`⏳ Retrying in ${backoffDelay}ms...`)
+          await sleep(backoffDelay)
+        } else {
+          // Max retries exceeded, track as failed
+          console.error(`💥 Max retries exceeded for range ${currentFromBlock}-${currentToBlock}`)
+          failedRanges.push({
+            from: currentFromBlock,
+            to: currentToBlock,
+            error: errorMessage
+          })
+          logs = [] // Set empty logs to continue processing
+          break
         }
       }
+    }
+
+    if (logs && logs.length > 0) {
+      const processedLogs = logs.map(log => {
+        // Type assertion for viem log structure
+        const typedLog = log as typeof log & { eventName: string; args: Record<string, unknown> }
+        const { eventName, args } = typedLog
+        
+        if (eventName === 'BetCreated') {
+          return {
+            type: 'BetCreated' as const,
+            betId: Number(args.betId),
+            creator: args.creator as string,
+            blockNumber: log.blockNumber || BigInt(0),
+            transactionHash: log.transactionHash || '0x'
+          }
+        } else if (eventName === 'BetPlaced') {
+          return {
+            type: 'BetPlaced' as const,
+            betId: Number(args.betId),
+            user: args.user as string,
+            amount: args.amount as bigint,
+            blockNumber: log.blockNumber || BigInt(0),
+            transactionHash: log.transactionHash || '0x'
+          }
+        }
+        
+        throw new Error(`Unknown event: ${eventName}`)
+      })
       
-      throw new Error(`Unknown event: ${eventName}`)
-    })
+      allLogs.push(...processedLogs)
+    }
     
-    allLogs.push(...processedLogs)
     currentFromBlock = currentToBlock + BigInt(1)
+    
+    // Rate limiting delay between chunks (except for last chunk)
+    if (delayMs > 0 && currentFromBlock <= toBlock) {
+      console.log(`⏳ Waiting ${delayMs}ms before next RPC call...`)
+      await sleep(delayMs)
+    }
   }
   
   // Log processing summary
