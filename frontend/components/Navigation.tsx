@@ -5,10 +5,14 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 // AppKit buttons are web components - no import needed
 import { useState } from 'react'
+import { useChainValidation } from '@/lib/hooks/useChainValidation'
+import { useAccount } from 'wagmi'
 
 export function Navigation() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { isConnected } = useAccount()
+  const { isCorrectChain, switchToCorrectChain, isSwitching, networkName } = useChainValidation()
 
   return (
     <nav className="border-b border-green-500/20 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
@@ -78,6 +82,19 @@ export function Navigation() {
                 <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full" />
               )}
             </Link>
+            
+            {/* Network Status Indicator */}
+            {isConnected && !isCorrectChain && (
+              <button
+                onClick={switchToCorrectChain}
+                disabled={isSwitching}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition-colors text-sm disabled:opacity-50"
+              >
+                <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+                {isSwitching ? 'Switching...' : `Switch to ${networkName}`}
+              </button>
+            )}
+            
             <div className="transform hover:scale-105 transition-transform">
               <appkit-button />
             </div>
@@ -85,6 +102,18 @@ export function Navigation() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-3">
+            {/* Mobile Network Status */}
+            {isConnected && !isCorrectChain && (
+              <button
+                onClick={switchToCorrectChain}
+                disabled={isSwitching}
+                className="flex items-center gap-1 px-2 py-1 bg-red-500/20 border border-red-500/30 rounded text-red-300 text-xs disabled:opacity-50"
+              >
+                <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse" />
+                {isSwitching ? 'Switching...' : 'Switch Network'}
+              </button>
+            )}
+            
             <div className="transform hover:scale-105 transition-transform">
               <appkit-button />
             </div>
