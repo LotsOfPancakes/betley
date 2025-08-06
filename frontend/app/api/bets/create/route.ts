@@ -4,6 +4,7 @@
 
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient, generateRandomId, checkRateLimit } from '@/lib/supabase'
+import { trackBetCreation } from '@/lib/analytics/activityTracker'
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -156,6 +157,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Successfully inserted:', insertResult)
+
+    // ✅ REAL-TIME ANALYTICS: Track bet creation activity
+    await trackBetCreation(creatorAddress, numericId)
 
     // ✅ SECURITY: Return minimal response
     return Response.json({ randomId }, {

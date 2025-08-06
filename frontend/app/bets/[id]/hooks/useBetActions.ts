@@ -1,6 +1,6 @@
 // frontend/app/bets/[id]/hooks/useBetActions.ts - Updated with chain validation
 import { useState, useEffect } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { parseUnits } from 'viem'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -21,6 +21,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
   const queryClient = useQueryClient()
   const { showError, showSuccess } = useNotification()
   const { validateChain } = useChainValidation() // ✅ ADD THIS
+  const { address: userAddress } = useAccount()
 
   // Determine if this bet uses native HYPE
   const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : true
@@ -230,6 +231,30 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
           break
         case 'placeBet':
           showSuccess('Bet placed successfully!')
+          
+          // ✅ REAL-TIME ANALYTICS: Track bet placement
+          if (userAddress && receipt?.transactionHash) {
+            // Use async IIFE to handle the API call
+            (async () => {
+              try {
+                await fetch('/api/bets/place', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    betId: numericBetId,
+                    userAddress: userAddress,
+                    amount: parseUnits(betAmount, 18).toString(),
+                    txHash: receipt.transactionHash
+                  })
+                })
+                console.log('Bet placement analytics tracked successfully')
+              } catch (error) {
+                console.error('Failed to track bet placement analytics:', error)
+                // Don't show error to user - analytics failure shouldn't affect UX
+              }
+            })()
+          }
+          
           setBetAmount('')
           setJustPlacedBet(true)
           setTimeout(() => setJustPlacedBet(false), 5000)
@@ -244,7 +269,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
       
       setCurrentTxType(null)
     }
-  }, [isConfirmed, receipt, currentTxType, queryClient, numericBetId, showSuccess])
+  }, [isConfirmed, receipt, currentTxType, queryClient, numericBetId, showSuccess, betAmount, userAddress])
 
   // Handle write errors
   useEffect(() => {
