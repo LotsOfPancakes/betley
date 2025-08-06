@@ -22,6 +22,8 @@ export function useBetCreation() {
   })
   const [lastBetName, setLastBetName] = useState<string>('')
   const [lastIsPublic, setLastIsPublic] = useState<boolean>(false)  // ✅ NEW STATE
+  const [lastBetOptions, setLastBetOptions] = useState<string[]>([]) // ✅ NEW STATE
+  const [lastDurationInSeconds, setLastDurationInSeconds] = useState<number>(0) // ✅ NEW STATE
   const [betCounterWhenStarted, setBetCounterWhenStarted] = useState<number | null>(null)
   
   const router = useRouter()
@@ -63,12 +65,14 @@ export function useBetCreation() {
           // The bet ID is the counter value when we started
           const newBetId = betCounterWhenStarted
           
-          // ✅ UPDATED: Pass isPublic to mapping creation
+          // ✅ UPDATED: Pass complete bet details for Phase 2
           const randomId = await UnifiedBetMapper.createMapping(
             newBetId,
             lastBetName,
             address,
-            lastIsPublic  // ✅ NEW PARAMETER
+            lastIsPublic,
+            lastBetOptions, // ✅ NEW: Pass bet options
+            lastDurationInSeconds // ✅ NEW: Pass duration
           )
           
           // Invalidate React Query cache
@@ -95,7 +99,7 @@ export function useBetCreation() {
       
       createMappingAndRedirect()
     }
-  }, [isSuccess, receipt, betCounterWhenStarted, address, lastBetName, lastIsPublic, queryClient, showSuccess, showError, router])
+  }, [isSuccess, receipt, betCounterWhenStarted, address, lastBetName, lastIsPublic, lastBetOptions, lastDurationInSeconds, queryClient, showSuccess, showError, router])
 
   // ✅ UPDATED: Main create bet function with isPublic parameter
   const createBet = async (
@@ -122,6 +126,8 @@ export function useBetCreation() {
       setState({ isLoading: true, error: null })
       setLastBetName(betName.trim())
       setLastIsPublic(isPublic)  // ✅ NEW: Store isPublic state
+      setLastBetOptions(options.filter(opt => opt.trim())) // ✅ NEW: Store bet options
+      setLastDurationInSeconds(durationInSeconds) // ✅ NEW: Store duration
       setBetCounterWhenStarted(Number(betCounter))
       
       // ✅ NOTE: Smart contract function signature remains unchanged

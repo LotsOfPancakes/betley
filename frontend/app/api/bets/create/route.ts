@@ -51,9 +51,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { numericId, creatorAddress, betName, isPublic = false } = body
+    const { 
+      numericId, 
+      creatorAddress, 
+      betName, 
+      isPublic = false,
+      betOptions = [],
+      durationInSeconds = 0
+    } = body
 
-    console.log('Create bet request:', { numericId, creatorAddress, betName, isPublic })
+    console.log('Create bet request:', { numericId, creatorAddress, betName, isPublic, betOptions, durationInSeconds })
 
     // ✅ VALIDATION: Check all inputs
     if (typeof numericId !== 'number' || numericId < 0) {
@@ -75,6 +82,16 @@ export async function POST(request: NextRequest) {
     // ✅ VALIDATION: Validate isPublic parameter
     if (typeof isPublic !== 'boolean') {
       return Response.json({ error: 'Invalid public flag' }, { status: 400 })
+    }
+
+    // ✅ VALIDATION: Validate bet options (Phase 2)
+    if (betOptions && (!Array.isArray(betOptions) || betOptions.length < 2)) {
+      return Response.json({ error: 'Invalid bet options - need at least 2 options' }, { status: 400 })
+    }
+
+    // ✅ VALIDATION: Validate duration (Phase 2)
+    if (durationInSeconds && (typeof durationInSeconds !== 'number' || durationInSeconds <= 0)) {
+      return Response.json({ error: 'Invalid duration' }, { status: 400 })
     }
 
     // ✅ RLS FIX: Use server Supabase client with full permissions
@@ -129,13 +146,19 @@ export async function POST(request: NextRequest) {
 
     console.log('Generated random ID:', randomId, 'after', attempts, 'attempts')
 
-    // ✅ COMPLETE: Insert new mapping with isPublic flag
+    // ✅ COMPLETE: Insert new mapping with complete bet details (Phase 2)
     const insertData = {
       random_id: randomId,
       numeric_id: numericId,
       creator_address: creatorAddress.toLowerCase(), // Normalize case
       bet_name: betName.trim(),
-      is_public: isPublic  // ✅ PRESERVED: isPublic field support
+      is_public: isPublic,  // ✅ PRESERVED: isPublic field support
+      bet_options: betOptions.length > 0 ? betOptions : null, // ✅ NEW: Store bet options
+      end_time: durationInSeconds > 0 ? Math.floor(Date.now() / 1000) + durationInSeconds : null, // ✅ NEW: Calculate end time
+      total_amounts: betOptions.length > 0 ? new Array(betOptions.length).fill(0) : null, // ✅ NEW: Initialize amounts
+      resolved: false, // ✅ NEW: Default to unresolved
+      winning_option: null, // ✅ NEW: No winner yet
+      cached_at: new Date().toISOString() // ✅ NEW: Cache timestamp
     }
 
     console.log('Inserting data:', insertData)

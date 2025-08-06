@@ -12,14 +12,16 @@ export interface BetMapping {
 
 export class UnifiedBetMapper {
   /**
-   * Create new mapping for a bet
-   * ✅ UPDATED: Now accepts isPublic parameter
+   * Create new mapping for a bet with complete details
+   * ✅ UPDATED: Now accepts complete bet details for Phase 2
    */
   static async createMapping(
     numericId: number, 
     name: string, 
     creator: string,
-    isPublic: boolean = false  // ✅ NEW PARAMETER
+    isPublic: boolean = false,
+    options?: string[],
+    durationInSeconds?: number
   ): Promise<string> {
     try {
       const response = await fetch('/api/bets/create', {
@@ -29,7 +31,9 @@ export class UnifiedBetMapper {
           numericId, 
           creatorAddress: creator, 
           betName: name,
-          isPublic  // ✅ NEW FIELD
+          isPublic,
+          betOptions: options, // ✅ NEW: Complete bet options
+          durationInSeconds // ✅ NEW: Bet duration
         })
       })
       
