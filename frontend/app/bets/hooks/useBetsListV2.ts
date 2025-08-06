@@ -15,6 +15,22 @@ interface DatabaseBetsResponse {
   message?: string
 }
 
+interface ApiBetResponse {
+  id: number
+  randomId: string
+  name: string
+  options: string[]
+  creator: string
+  endTime: number
+  resolved: boolean
+  winningOption: number
+  totalAmounts: number[]
+  userRole: 'creator' | 'bettor' | 'both'
+  userTotalBet: number
+  isPublic: boolean
+  cachedAt: string
+}
+
 export function useBetsListV2() {
   const { address } = useAccount()
 
@@ -35,7 +51,20 @@ export function useBetsListV2() {
         throw new Error(`Failed to fetch user bets: ${response.status}`)
       }
 
-      return response.json()
+      const data = await response.json()
+
+      // Convert numbers back to BigInt for frontend compatibility
+      const transformedBets = data.bets.map((bet: ApiBetResponse) => ({
+        ...bet,
+        endTime: BigInt(bet.endTime || 0),
+        totalAmounts: (bet.totalAmounts || []).map((amount: number) => BigInt(amount)),
+        userTotalBet: BigInt(bet.userTotalBet || 0)
+      }))
+
+      return {
+        ...data,
+        bets: transformedBets
+      }
     },
     enabled: !!address,
     staleTime: 30 * 1000, // 30 seconds (database is fast, can refresh more often)
