@@ -8,7 +8,7 @@ interface LoadingProps {
 }
 
 export default function Loading({ 
-  message = 'Loading...', 
+  message = 'Betley is looking...', 
   size = 'md',
   fullScreen = false 
 }: LoadingProps) {

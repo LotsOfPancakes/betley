@@ -170,7 +170,7 @@ export default function SetupPage() {
     <PageErrorBoundary>
       <Suspense fallback={
         <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-          <div className="text-white">Loading...</div>
+          <div className="text-white">Betley is loading...</div>
         </div>
       }>
         <SetupPageContent />

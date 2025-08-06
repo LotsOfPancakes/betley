@@ -8,7 +8,7 @@ interface LoadingOverlayProps {
 
 export default function LoadingOverlay({ 
   isVisible, 
-  message = 'Refreshing...' 
+  message = 'Betley is looking...' 
 }: LoadingOverlayProps) {
   if (!isVisible) return null
 

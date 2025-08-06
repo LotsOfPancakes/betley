@@ -17,9 +17,9 @@ export default function BetsSearchLoading({
   const getLoadingMessage = () => {
     switch (variant) {
       case 'refetch':
-        return 'Refreshing bets...'
+        return 'Betley is looking for updates...'
       case 'retry':
-        return `Retrying connection... (${retryAttempt}/${maxRetries})`
+        return `Betley is still looking... (${retryAttempt}/${maxRetries})`
       default:
         return 'Betley is looking around for bets...'
     }

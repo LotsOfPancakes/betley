@@ -217,7 +217,7 @@ export default function BetsPage() {
                   {/* Loading overlay for background refetches */}
                   <LoadingOverlay 
                     isVisible={isFetching && hasExistingData}
-                    message={activeTab === 'my' ? 'Refreshing your bets...' : 'Refreshing public bets...'}
+                    message={activeTab === 'my' ? 'Betley is looking for your bets...' : 'Betley is looking for public bets...'}
                   />
                   
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
