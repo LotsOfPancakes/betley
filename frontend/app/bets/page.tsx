@@ -1,7 +1,7 @@
 // frontend/app/bets/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 // AppKit buttons are web components - no import needed
@@ -75,8 +75,17 @@ export default function BetsPage() {
     enabled: activeTab === 'public'
   })
 
-  // Filter public bets by status (simplified - they don't have contract data yet)
-  const filteredPublicBets = publicBetsData?.bets || []
+  // Filter public bets to show only active ones (bets that haven't ended yet)
+  const filteredPublicBets = useMemo(() => {
+    if (!publicBetsData?.bets) return []
+    
+    return publicBetsData.bets.filter(bet => {
+      const now = Date.now()
+      const endTime = new Date(bet.endTime).getTime()
+      // Show only bets that haven't ended yet (active bets)
+      return endTime > now
+    })
+  }, [publicBetsData?.bets])
 
   // Determine what to show based on active tab
   const isLoading = activeTab === 'my' ? myBetsLoading : publicBetsLoading
