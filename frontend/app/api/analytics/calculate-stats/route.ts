@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
     const userStats = new Map();
 
     for (const activity of activities) {
-      if (!userStats.has(activity.user_address)) {
-        userStats.set(activity.user_address, {
-          user_address: activity.user_address,
+      if (!userStats.has(activity.wallet_address)) {
+        userStats.set(activity.wallet_address, {
+          user_address: activity.wallet_address,
           bets_created: 0,
           total_amount_bet: 0,
           total_volume_generated: 0,
@@ -29,14 +29,14 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      const stats = userStats.get(activity.user_address);
+      const stats = userStats.get(activity.wallet_address);
 
       if (activity.activity_type === 'bet_created') {
         stats.bets_created += 1;
         stats.total_volume_generated += activity.amount || 0;
       } else if (activity.activity_type === 'bet_placed') {
         stats.total_amount_bet += activity.amount || 0;
-        stats.wallets_attracted.add(activity.user_address);
+        stats.wallets_attracted.add(activity.wallet_address);
       }
     }
 

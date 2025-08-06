@@ -15,8 +15,9 @@ export async function trackBetCreation(creatorAddress: string, betId: number): P
       .insert({
         wallet_address: creatorAddress.toLowerCase(),
         bet_id: betId,
-        activity_type: 'create',
+        activity_type: 'bet_created',
         amount: null,
+        block_number: null,
         transaction_hash: null,
         created_at: new Date().toISOString()
       })
@@ -43,8 +44,9 @@ export async function trackBetPlacement(
       .insert({
         wallet_address: userAddress.toLowerCase(),
         bet_id: betId,
-        activity_type: 'bet',
+        activity_type: 'bet_placed',
         amount: amount,
+        block_number: null,
         transaction_hash: txHash,
         created_at: new Date().toISOString()
       })
