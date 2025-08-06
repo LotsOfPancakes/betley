@@ -75,3 +75,60 @@ export async function trackBetPlacement(
     // Don't throw - analytics failure shouldn't break bet placement
   }
 }
+
+// Track bet resolution activity
+export async function trackBetResolution(
+  resolverAddress: string,
+  betId: number,
+  winningOption: number,
+  txHash: string
+): Promise<void> {
+  const supabase = createServerSupabaseClient()
+
+  try {
+    // Insert resolution activity
+    const activityData = {
+      wallet_address: resolverAddress.toLowerCase(),
+      bet_id: betId,
+      activity_type: 'resolve',
+      amount: winningOption.toString(), // Store winning option in amount field
+      block_number: 0, // Use 0 for real-time activities
+      transaction_hash: txHash,
+      created_at: new Date().toISOString()
+    }
+
+    console.log('Attempting to insert resolution activity:', activityData)
+
+    const { data: activityResult, error: activityError } = await supabase
+      .from('user_activities')
+      .insert(activityData)
+
+    if (activityError) {
+      console.error('Supabase activity insert error:', activityError)
+      throw activityError
+    }
+
+    // Update bet_mappings with resolution status
+    const { data: updateResult, error: updateError } = await supabase
+      .from('bet_mappings')
+      .update({
+        resolved: true,
+        winning_option: winningOption,
+        cached_at: new Date().toISOString()
+      })
+      .eq('numeric_id', betId)
+
+    if (updateError) {
+      console.error('Supabase bet update error:', updateError)
+      throw updateError
+    }
+
+    console.log(`Tracked bet resolution: ${resolverAddress} resolved bet ${betId} with winning option ${winningOption}`, {
+      activity: activityResult,
+      update: updateResult
+    })
+  } catch (error) {
+    console.error('Error tracking bet resolution:', error)
+    // Don't throw - analytics failure shouldn't break bet resolution
+  }
+}

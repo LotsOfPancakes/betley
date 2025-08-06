@@ -37,6 +37,9 @@ export async function POST(request: NextRequest) {
       } else if (activity.activity_type === 'bet') {
         stats.total_amount_bet += activity.amount || 0;
         stats.wallets_attracted.add(activity.wallet_address);
+      } else if (activity.activity_type === 'resolve') {
+        // Resolution activities don't affect user stats directly
+        // but could be used for other metrics in the future
       }
     }
 

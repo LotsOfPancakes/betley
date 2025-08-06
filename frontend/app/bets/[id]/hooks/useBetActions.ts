@@ -16,6 +16,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentTxType, setCurrentTxType] = useState<TransactionType | null>(null)
+  const [resolutionWinningOption, setResolutionWinningOption] = useState<number | null>(null)
   
   const numericBetId = parseInt(betId)
   const queryClient = useQueryClient()
@@ -182,6 +183,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
     try {
       setIsSubmitting(true)
       setCurrentTxType('resolveBet')
+      setResolutionWinningOption(winningOption) // Store winning option for tracking
       
       writeContract({
         address: BETLEY_ADDRESS,
@@ -264,12 +266,38 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
           break
         case 'resolveBet':
           showSuccess('Bet resolved successfully!')
+          
+          // ✅ REAL-TIME ANALYTICS: Track bet resolution
+          if (userAddress && receipt?.transactionHash && resolutionWinningOption !== null) {
+            // Use async IIFE to handle the API call
+            (async () => {
+              try {
+                await fetch('/api/bets/resolve', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    betId: numericBetId,
+                    resolverAddress: userAddress,
+                    winningOption: resolutionWinningOption,
+                    txHash: receipt.transactionHash
+                  })
+                })
+                console.log('Bet resolution analytics tracked successfully')
+              } catch (error) {
+                console.error('Failed to track bet resolution analytics:', error)
+                // Don't show error to user - analytics failure shouldn't affect UX
+              }
+            })()
+          }
+          
+          // Reset resolution state
+          setResolutionWinningOption(null)
           break
       }
       
       setCurrentTxType(null)
     }
-  }, [isConfirmed, receipt, currentTxType, queryClient, numericBetId, showSuccess, betAmount, userAddress])
+  }, [isConfirmed, receipt, currentTxType, queryClient, numericBetId, showSuccess, betAmount, userAddress, resolutionWinningOption])
 
   // Handle write errors
   useEffect(() => {
