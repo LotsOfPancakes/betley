@@ -9,11 +9,11 @@ interface BetFiltersProps {
 }
 
 const filterOptions: { value: FilterType; label: string }[] = [
-  { value: 'all', label: 'All' },
   { value: 'active', label: 'Active' },
   { value: 'pending', label: 'Pending' },
   { value: 'resolved', label: 'Resolved' },
-  { value: 'expired', label: 'Expired' }
+  { value: 'expired', label: 'Expired' },
+  { value: 'all', label: 'All' }
 ]
 
 export default function BetFilters({ currentFilter, onFilterChange }: BetFiltersProps) {

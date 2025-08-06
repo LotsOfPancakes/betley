@@ -4,7 +4,7 @@ import { BetDetails, FilterType } from '../types/bet.types'
 import { isBetEmpty } from '@/lib/utils/bettingUtils'
 
 export function useBetsFiltering(bets: BetDetails[]) {
-  const [filter, setFilter] = useState<FilterType>('all')
+  const [filter, setFilter] = useState<FilterType>('active')
 
   // Filter bets based on selected filter
   const filteredBets = useMemo(() => {
