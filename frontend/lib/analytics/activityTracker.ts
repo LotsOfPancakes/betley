@@ -10,19 +10,28 @@ export async function trackBetCreation(creatorAddress: string, betId: number): P
   const supabase = createServerSupabaseClient()
 
   try {
-    await supabase
-      .from('user_activities')
-      .insert({
-        wallet_address: creatorAddress.toLowerCase(),
-        bet_id: betId,
-        activity_type: 'bet_created',
-        amount: null,
-        block_number: null,
-        transaction_hash: null,
-        created_at: new Date().toISOString()
-      })
+    const insertData = {
+      wallet_address: creatorAddress.toLowerCase(),
+      bet_id: betId,
+      activity_type: 'bet_created',
+      amount: null,
+      block_number: null,
+      transaction_hash: null,
+      created_at: new Date().toISOString()
+    }
 
-    console.log(`Tracked bet creation: ${creatorAddress} created bet ${betId}`)
+    console.log('Attempting to insert bet creation activity:', insertData)
+
+    const { data, error } = await supabase
+      .from('user_activities')
+      .insert(insertData)
+
+    if (error) {
+      console.error('Supabase insert error:', error)
+      throw error
+    }
+
+    console.log(`Tracked bet creation: ${creatorAddress} created bet ${betId}`, data)
   } catch (error) {
     console.error('Error tracking bet creation:', error)
     // Don't throw - analytics failure shouldn't break bet creation
@@ -39,19 +48,28 @@ export async function trackBetPlacement(
   const supabase = createServerSupabaseClient()
 
   try {
-    await supabase
-      .from('user_activities')
-      .insert({
-        wallet_address: userAddress.toLowerCase(),
-        bet_id: betId,
-        activity_type: 'bet_placed',
-        amount: amount,
-        block_number: null,
-        transaction_hash: txHash,
-        created_at: new Date().toISOString()
-      })
+    const insertData = {
+      wallet_address: userAddress.toLowerCase(),
+      bet_id: betId,
+      activity_type: 'bet_placed',
+      amount: amount,
+      block_number: null,
+      transaction_hash: txHash,
+      created_at: new Date().toISOString()
+    }
 
-    console.log(`Tracked bet placement: ${userAddress} bet ${amount} on bet ${betId}`)
+    console.log('Attempting to insert activity:', insertData)
+
+    const { data, error } = await supabase
+      .from('user_activities')
+      .insert(insertData)
+
+    if (error) {
+      console.error('Supabase insert error:', error)
+      throw error
+    }
+
+    console.log(`Tracked bet placement: ${userAddress} bet ${amount} on bet ${betId}`, data)
   } catch (error) {
     console.error('Error tracking bet placement:', error)
     // Don't throw - analytics failure shouldn't break bet placement
