@@ -223,6 +223,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
     if (isConfirmed && receipt && currentTxType) {
       queryClient.invalidateQueries({ queryKey: ['bet', numericBetId] })
       queryClient.invalidateQueries({ queryKey: ['userBets', numericBetId] })
+      queryClient.invalidateQueries({ queryKey: ['user-bets-v2'] }) // ✅ Invalidate bet list cache
       queryClient.invalidateQueries({ queryKey: ['balance'] })
       queryClient.invalidateQueries({ queryKey: ['allowance'] })
       queryClient.invalidateQueries({ queryKey: ['userClaimed'] })
@@ -283,6 +284,12 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
                   })
                 })
                 console.log('Bet resolution analytics tracked successfully')
+                
+                // ✅ Force refresh bet list after database update
+                setTimeout(() => {
+                  queryClient.invalidateQueries({ queryKey: ['user-bets-v2'] })
+                }, 1000) // 1 second delay to ensure database update is complete
+                
               } catch (error) {
                 console.error('Failed to track bet resolution analytics:', error)
                 // Don't show error to user - analytics failure shouldn't affect UX
