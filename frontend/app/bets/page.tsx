@@ -4,9 +4,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-// AppKit buttons are web components - no import needed
-
-// Import our extracted components and hooks
+import BackgroundElements from '@/app/components/BackgroundElements'
 import BetCard from './components/BetCard'
 import BetFilters from './components/BetFilters'
 import EmptyState from './components/EmptyState'
@@ -16,6 +14,7 @@ import LoadingOverlay from './components/LoadingOverlay'
 import { useBetsListDatabase } from './hooks/useBetsListV2'
 import { useBetsFiltering } from './hooks/useBetsFiltering'
 import { usePublicBets } from '@/lib/hooks/usePublicBets'
+import { COLORS, DIMENSIONS, ANIMATIONS, SHADOWS } from '@/lib/constants/ui'
 
 type TabType = 'my' | 'public'
 
@@ -35,7 +34,7 @@ interface PublicBet {
 
 export default function BetsPage() {
   const router = useRouter()
-  const { address } = useAccount()  // REMOVE address since it's unused
+  const { address } = useAccount()
   
   // Tab state management
   const [activeTab, setActiveTab] = useState<TabType>('my')
@@ -83,40 +82,20 @@ export default function BetsPage() {
   const hasExistingData = activeTab === 'my' ? myBets.length > 0 : (publicBetsData?.bets?.length || 0) > 0
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
-      {/* Animated background grid */}
-      <div className="absolute inset-0 opacity-[0.2]">
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }}
-        />
-      </div>
-
-      {/* Floating gradient orbs */}
-      <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/15 to-lime-400/15 rounded-full blur-3xl animate-pulse delay-1000" />
+    <div className={`min-h-screen ${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-hidden`}>
+      <BackgroundElements />
+      
       <div className="relative z-10 py-12">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className={`${DIMENSIONS.maxWidth.content} mx-auto px-4`}>
           
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-white">
+            <h1 className={`text-3xl md:text-4xl font-bold ${COLORS.text.primary}`}>
               {activeTab === 'my' ? 'My Bets' : 'Public Bets'}
-              {activeTab === 'my' && process.env.NODE_ENV === 'development' && (
-                <span className="ml-2 text-xs bg-green-600 text-white px-2 py-1 rounded">
-                  DB-First v2
-                </span>
-              )}
             </h1>
             <button
               onClick={() => router.push('/setup')}
-              className="bg-gradient-to-r from-green-500/80 to-emerald-400/70 hover:from-green-400 hover:to-emerald-400 text-gray-100 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30"
+              className={`${COLORS.gradients.brandButton} ${COLORS.gradients.brandButtonHover} text-white px-6 py-3 ${DIMENSIONS.borderRadius.input} font-semibold ${ANIMATIONS.transition} hover:scale-105 ${SHADOWS.glow.button}`}
             >
               Create New Bet
             </button>
@@ -189,7 +168,7 @@ export default function BetsPage() {
                     </p>
                     <button
                       onClick={() => router.push('/setup')}
-                      className="bg-gradient-to-r from-green-500/80 to-emerald-400/70 hover:from-green-400 hover:to-emerald-400 text-gray-100 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl shadow-green-500/30"
+                      className={`${COLORS.gradients.brandButton} ${COLORS.gradients.brandButtonHover} text-white px-6 py-3 ${DIMENSIONS.borderRadius.input} font-semibold ${ANIMATIONS.transition} hover:scale-105 ${SHADOWS.glow.button}`}
                     >
                       Create Public Bet
                     </button>
@@ -222,14 +201,6 @@ export default function BetsPage() {
           )}
         </div>
       </div>
-
-      {/* Custom CSS for floating animation */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-10px) rotate(2deg); }
-        }
-      `}</style>
     </div>
   )
 }

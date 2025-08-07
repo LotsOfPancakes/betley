@@ -7,6 +7,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAccount } from 'wagmi'
 import { BetDetails } from '../types/bet.types'
+import { BET_CONSTANTS } from '@/lib/constants/bets'
 
 interface DatabaseBetsResponse {
   bets: BetDetails[]
@@ -67,10 +68,13 @@ export function useBetsListV2() {
       }
     },
     enabled: !!address,
-    staleTime: 30 * 1000, // 30 seconds (database is fast, can refresh more often)
-    refetchInterval: 60 * 1000, // 1 minute background refresh
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
+    staleTime: BET_CONSTANTS.timeouts.staleTime,
+    refetchInterval: BET_CONSTANTS.timeouts.refetchInterval,
+    retry: BET_CONSTANTS.retry.maxAttempts,
+    retryDelay: (attemptIndex) => Math.min(
+      BET_CONSTANTS.retry.baseDelay * 2 ** attemptIndex, 
+      BET_CONSTANTS.retry.maxDelay
+    )
   })
 }
 
@@ -83,8 +87,8 @@ export function useBetsListDatabase() {
     loading: isLoading,
     fetching: isFetching,
     error: error?.message || null,
-    decimals: 18, // Default decimals (can be fetched separately if needed)
-    retryAttempt: 0, // TODO: Track retry attempts if needed
+    decimals: BET_CONSTANTS.defaults.decimals,
+    retryAttempt: BET_CONSTANTS.defaults.retryAttempt,
     refreshBets: refetch,
     source: data?.source || 'unknown',
     count: data?.count || 0
