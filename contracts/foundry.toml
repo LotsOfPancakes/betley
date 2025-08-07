@@ -5,7 +5,7 @@ libs = ["lib"]
 solc = "0.8.20"
 
 [rpc_endpoints]
-hyperevm = "https://rpc.hyperliquid-testnet.xyz/evm"
+base_sepolia = "https://base-sepolia.api.onfinality.io/public"
 
 [etherscan]
-hyperevm = { key = "dummy", url = "https://explorer.hyperliquid-testnet.xyz/api" }
+base_sepolia = { key = "dummy", url = "https://api-sepolia.basescan.org/api" }

@@ -62,8 +62,8 @@ export const metadata: Metadata = {
     "betting",
     "decentralized",
     "blockchain", 
-    "HyperEVM",
-    "HYPE",
+    "Base",
+    "ETH",
     "pari-mutuel",
     "crypto betting",
     "web3"

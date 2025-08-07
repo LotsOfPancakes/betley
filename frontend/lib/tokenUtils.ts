@@ -7,11 +7,11 @@ import { config } from './config'
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const
 
 /**
- * Check if a token address represents native HYPE
+ * Check if a token address represents native ETH
  * @param tokenAddress The token contract address or zero address
- * @returns True if the address represents native HYPE tokens
+ * @returns True if the address represents native ETH tokens
  */
-export function isNativeHype(tokenAddress: string): boolean {
+export function isNativeETH(tokenAddress: string): boolean {
   return tokenAddress === ZERO_ADDRESS
 }
 
@@ -22,7 +22,7 @@ export function isNativeHype(tokenAddress: string): boolean {
  * @returns True if approval is needed (ERC20 tokens with amount > 0)
  */
 export function needsApproval(tokenAddress: string, amount: string): boolean {
-  return !isNativeHype(tokenAddress) && parseFloat(amount) > 0
+  return !isNativeETH(tokenAddress) && parseFloat(amount) > 0
 }
 
 /**
@@ -31,11 +31,11 @@ export function needsApproval(tokenAddress: string, amount: string): boolean {
  * @returns Token configuration object
  */
 export function getTokenConfig(tokenAddress: string) {
-  if (isNativeHype(tokenAddress)) {
+  if (isNativeETH(tokenAddress)) {
     return {
       address: ZERO_ADDRESS,
-      symbol: 'HYPE',
-      name: 'Native HYPE',
+      symbol: 'ETH',
+      name: 'Native ETH',
       decimals: 18,
       isNative: true
     }
@@ -57,7 +57,7 @@ export function getTokenConfig(tokenAddress: string) {
  */
 export function getAvailableTokens() {
   return [
-    getTokenConfig(ZERO_ADDRESS),           // Native HYPE
+    getTokenConfig(ZERO_ADDRESS),           // Native ETH
     getTokenConfig(config.contracts.mockERC20)  // Mock ERC20
   ]
 }

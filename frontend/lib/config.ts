@@ -30,29 +30,29 @@ function getBooleanEnv(key: string, fallback: boolean): boolean {
 // Centralized configuration object
 export const config = {
   network: {
-    chainId: getNumericEnv('NEXT_PUBLIC_CHAIN_ID', 998),
+    chainId: getNumericEnv('NEXT_PUBLIC_CHAIN_ID', 84532),
     rpcUrl: getRequiredEnv(
       'NEXT_PUBLIC_RPC_URL', 
-      'https://rpc.hyperliquid-testnet.xyz/evm'
+      'https://base-sepolia.api.onfinality.io/public'
     ),
     explorerUrl: getOptionalEnv(
       'NEXT_PUBLIC_EXPLORER_URL',
       getBooleanEnv('NEXT_PUBLIC_IS_TESTNET', true) 
-        ? 'https://explorer.hyperliquid-testnet.xyz'
-        : 'https://hyperevmscan.io/'
+        ? 'https://sepolia.basescan.org'
+        : 'https://basescan.org'
     ),
-    name: getOptionalEnv('NEXT_PUBLIC_NETWORK_NAME', 'HyperEVM Testnet'),
+    name: getOptionalEnv('NEXT_PUBLIC_NETWORK_NAME', 'Base Sepolia'),
     isTestnet: getBooleanEnv('NEXT_PUBLIC_IS_TESTNET', true),
   },
   
   contracts: {
     betley: getRequiredEnv(
       'NEXT_PUBLIC_BETLEY_ADDRESS',
-      '0x3eB11c552cc4259730f14b8b88dEEF06f78A7913'
+      '0xE49Fe9FD2D6E46c3A58cce393A6125bDE1BAb6Ec'
     ) as `0x${string}`,
-    mockERC20: getRequiredEnv(
-      'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // this is mock ERC20 token
-      '0xE9E98a2e2Bc480E2805Ebea6b6CDafAd41b7257C'
+    mockERC20: getOptionalEnv(
+      'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // Leave empty for native ETH betting
+      ''
     ) as `0x${string}`,
   },
   

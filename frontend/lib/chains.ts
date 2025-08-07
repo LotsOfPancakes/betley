@@ -2,13 +2,13 @@
 import { defineChain } from 'viem'
 import { networkConfig } from './config'
 
-export const hyperevm = defineChain({
+export const baseSepolia = defineChain({
   id: networkConfig.chainId,
   name: networkConfig.name,
   nativeCurrency: {
     decimals: 18,
-    name: 'Testnet HYPE',
-    symbol: 'HYPE',
+    name: 'Ether',
+    symbol: 'ETH',
   },
   rpcUrls: {
     default: {

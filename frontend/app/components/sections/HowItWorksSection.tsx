@@ -10,7 +10,7 @@ const steps = [
   {
     number: '2', 
     title: 'Place Bets',
-    description: 'Bet with HYPE on your preferred outcome.\n\nBetley\'s contracts ensure all funds are held securely until resolution.'
+    description: 'Bet with ETH on your preferred outcome.\n\nBetley\'s contracts ensure all funds are held securely until resolution.'
   },
   {
     number: '3',

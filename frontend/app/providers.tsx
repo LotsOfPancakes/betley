@@ -8,7 +8,7 @@ import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { hyperevm } from '@/lib/chains'
+import { baseSepolia } from '@/lib/chains'
 import { useState, useEffect } from 'react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
 import { 
@@ -20,7 +20,7 @@ import {
 
 // ✅ Create Wagmi Adapter for AppKit
 const wagmiAdapter = new WagmiAdapter({
-  networks: [hyperevm],
+  networks: [baseSepolia],
   projectId: walletConnectConfig.projectId,
   ssr: true
 })
@@ -28,7 +28,7 @@ const wagmiAdapter = new WagmiAdapter({
 // ✅ Create AppKit with email and social login support
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [hyperevm],
+  networks: [baseSepolia],
   projectId: walletConnectConfig.projectId,
   metadata: {
     name: appConfig.name,
