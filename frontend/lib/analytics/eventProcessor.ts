@@ -4,10 +4,10 @@
 
 import { createPublicClient, http, parseAbi } from 'viem'
 import { createServerSupabaseClient } from '@/lib/supabase'  
-import { hyperevm } from '@/lib/chains'
+import { baseSepolia } from '@/lib/chains'
 
 const publicClient = createPublicClient({
-  chain: hyperevm,
+  chain: baseSepolia,
   transport: http(process.env.NEXT_PUBLIC_RPC_URL)
 })
 
@@ -239,10 +239,10 @@ export async function getLastProcessedBlock(): Promise<bigint> {
       // Fallback: Calculate a reasonable recent block number based on time
       console.log('Using fallback block number due to RPC failure')
       
-      // HyperEVM has ~1 second block time, estimate current block
+      // Base has ~2 second block time, estimate current block
       // Assume chain started around block 9,000,000 at some point in the past
       // This is a rough estimation - in production you'd want more precise values
-      const ESTIMATED_BLOCKS_PER_DAY = 86400 // 1 second per block
+      const ESTIMATED_BLOCKS_PER_DAY = 43200 // 2 seconds per block
       const DAYS_AGO_FALLBACK = 1 // Start from 1 day ago to be safe
       const ROUGH_CURRENT_ESTIMATE = 9950000 // Update this periodically
       

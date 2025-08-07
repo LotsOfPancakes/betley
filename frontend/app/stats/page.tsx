@@ -22,14 +22,14 @@ function useUserStats(address: string | undefined) {
   })
 }
 
-// GET Symbol for Native HYPE
+// GET Symbol for Native ETH
 const nativeTokenSymbol = getTokenSymbol(true)
 // for ERC20 token (if we use it)
 // const erc20TokenSymbol = getTokenSymbol(false)
 
 
 // Utility functions
-function formatHype(weiAmount: string): string {
+function formatETH(weiAmount: string): string {
   if (weiAmount === '0') return '0'
   const formatted = formatEther(BigInt(weiAmount))
   return parseFloat(formatted).toLocaleString(undefined, { 
@@ -217,8 +217,8 @@ export default function UserStatsPage() {
                 
                 <StatCard
                   title="Volume Generated"
-                  value={`${formatHype(stats.total_volume_created)} ${nativeTokenSymbol}`}
-                  // value={`${formatHype(stats.total_volume_created)} ${tokenSymbol}`} for ERC20 token symbol
+                  value={`${formatETH(stats.total_volume_created)} ${nativeTokenSymbol}`}
+                  // value={`${formatETH(stats.total_volume_created)} ${tokenSymbol}`} for ERC20 token symbol
                   subtitle="Others bet on your bets"
                   icon="💰"
                   gradient="from-green-500 to-green-600"
@@ -226,7 +226,7 @@ export default function UserStatsPage() {
                 
                 <StatCard
                   title="Personal Betting"
-                  value={`${formatHype(stats.total_volume_bet)} ${nativeTokenSymbol}`}
+                  value={`${formatETH(stats.total_volume_bet)} ${nativeTokenSymbol}`}
                   subtitle="Your total wagered"
                   icon="🎲"
                   gradient="from-purple-500 to-purple-600"

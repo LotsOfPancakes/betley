@@ -104,7 +104,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
   const {
     betDetails,
     userBets,
-    hypeBalance,
+    ethBalance,
     allowance,
     decimals,
     hasClaimed,
@@ -244,7 +244,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   handlePlaceBet={handlePlaceBet}
                   totalAmounts={totalAmounts as readonly bigint[] || []}
                   decimals={Number(decimals) || 18}
-                  hypeBalance={hypeBalance as bigint || BigInt(0)}
+                  ethBalance={ethBalance as bigint || BigInt(0)}
                   justPlacedBet={justPlacedBet}
                   hasExistingBet={hasExistingBet}
                   isNativeBet={isNativeBet || false}

@@ -129,8 +129,8 @@ export default function RootLayout({
         <meta property="discord:color" content="#22c55e" />
         
         {/* ✅ ENHANCED: Preconnect for performance */}
-        <link rel="preconnect" href="https://rpc.hyperliquid-testnet.xyz" />
-        <link rel="dns-prefetch" href="https://rpc.hyperliquid-testnet.xyz" />
+        <link rel="preconnect" href="https://base-sepolia.api.onfinality.io" />
+        <link rel="dns-prefetch" href="https://base-sepolia.api.onfinality.io" />
         
         {/* ✅ ENHANCED: Structured data for search engines */}
         <script

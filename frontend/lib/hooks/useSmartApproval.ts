@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
-import { isNativeHype } from '@/lib/tokenUtils'
+import { isNativeETH } from '@/lib/tokenUtils'
 import { ERC20_ABI } from '@/lib/contractABI'
 
 interface UseSmartApprovalProps {
@@ -31,8 +31,8 @@ export function useSmartApproval({
   const { address: userAddress } = useAccount()
   const [error, setError] = useState<Error | null>(null)
   
-  // Skip approval entirely for native HYPE tokens
-  const skipApproval = isNativeHype(tokenAddress)
+  // Skip approval entirely for native ETH tokens
+  const skipApproval = isNativeETH(tokenAddress)
   
   // Check current allowance for ERC20 tokens only
   const { data: currentAllowance } = useReadContract({
@@ -48,7 +48,7 @@ export function useSmartApproval({
 
   // Determine if new approval is needed - FIXED typing
   const needsNewApproval = useMemo(() => {
-    if (skipApproval) return false // Native HYPE never needs approval
+    if (skipApproval) return false // Native ETH never needs approval
     if (!userAddress) return false
     
     // Type the currentAllowance properly

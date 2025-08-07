@@ -6,7 +6,7 @@ import { parseUnits } from 'viem'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useChainValidation } from '@/lib/hooks/useChainValidation' // ✅ ADD THIS
 import { BETLEY_ABI, BETLEY_ADDRESS, MOCKERC20_TOKEN_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
-import { isNativeHype } from '@/lib/tokenUtils'
+import { isNativeETH } from '@/lib/tokenUtils'
 
 type TransactionType = 'approve' | 'placeBet' | 'claimWinnings' | 'claimRefund' | 'resolveBet'
 
@@ -24,8 +24,8 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
   const { validateChain } = useChainValidation() // ✅ ADD THIS
   const { address: userAddress } = useAccount()
 
-  // Determine if this bet uses native HYPE
-  const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : true
+  // Determine if this bet uses native ETH
+  const isNativeBet = tokenAddress ? isNativeETH(tokenAddress) : true
 
   // Contract interactions
   const { 
@@ -122,7 +122,7 @@ export function useBetActions(betId: string, tokenAddress?: string, resolved?: b
       } else {
         showError(
           isNativeBet 
-            ? 'Failed to place bet. Please check your HYPE balance and try again.'
+            ? 'Failed to place bet. Please check your ETH balance and try again.'
             : 'Failed to place bet. Please make sure you have approved the token transfer.'
         )
       }

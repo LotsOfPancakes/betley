@@ -104,7 +104,7 @@ export function usePlaceBetMutation(betId: number) {
 
   return useMutation({
     mutationFn: async ({ option, amount }: { option: number; amount: string }) => {
-      const decimals = 18 // HYPE token decimals
+      const decimals = 18 // ETH token decimals
       const amountWei = parseUnits(amount, decimals)
       
       return writeContract({
@@ -136,7 +136,7 @@ export function useApproveMutation() {
 
   return useMutation({
     mutationFn: async ({ amount }: { amount: string }) => {
-      const decimals = 18 // HYPE token decimals
+      const decimals = 18 // ETH token decimals
       const amountWei = parseUnits(amount, decimals)
       
       return writeContract({

@@ -38,7 +38,7 @@ interface UnifiedBettingInterfaceProps {
   handlePlaceBet: () => void
   totalAmounts?: readonly bigint[]
   decimals?: number
-  hypeBalance?: bigint
+  ethBalance?: bigint
   justPlacedBet?: boolean
   hasExistingBet?: boolean
   isNativeBet?: boolean
@@ -70,7 +70,7 @@ export function UnifiedBettingInterface({
   handlePlaceBet,
   totalAmounts,
   decimals,
-  hypeBalance,
+  ethBalance,
   //justPlacedBet, // Currently unused
   hasExistingBet,
   isNativeBet = false,
@@ -86,7 +86,7 @@ export function UnifiedBettingInterface({
   const safeUserBets = userBets || []
   const safeTotalAmounts = totalAmounts || []
   const safeDecimals = decimals || 18
-  const safeBalance = hypeBalance || BigInt(0)
+  const safeBalance = ethBalance || BigInt(0)
 
   // Calculate totals and user state
   const totalPool = safeTotalAmounts.reduce((a, b) => a + b, BigInt(0))

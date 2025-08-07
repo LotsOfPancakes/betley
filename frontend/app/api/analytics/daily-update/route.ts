@@ -7,11 +7,10 @@ import { createServerSupabaseClient } from '@/lib/supabase'
 import { getBlockchainEvents, getLastProcessedBlock, updateLastProcessedBlock, ProcessedEvent } from '@/lib/analytics/eventProcessor'
 import { recalculateAllUserStats } from '@/lib/analytics/statsCalculator'
 import { createPublicClient, http } from 'viem'
-import { hyperevm } from '@/lib/chains'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { baseSepolia } from '@/lib/chains'
 
 const publicClient = createPublicClient({
-  chain: hyperevm,
+  chain: baseSepolia,
   transport: http(process.env.NEXT_PUBLIC_RPC_URL)
 })
 

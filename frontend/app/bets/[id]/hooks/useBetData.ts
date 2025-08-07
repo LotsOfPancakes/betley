@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useReadContract, useBalance } from 'wagmi'
 import { BETLEY_ABI, BETLEY_ADDRESS, ERC20_ABI } from '@/lib/contractABI'
-import { isNativeHype } from '@/lib/tokenUtils'
+import { isNativeETH } from '@/lib/tokenUtils'
 
 interface UseBetDataOptions {
   useReactQuery?: boolean
@@ -59,7 +59,7 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
 
   // Extract token address from bet details
   const tokenAddress = (betDetails as BetDetailsArray)?.[7] as string
-  const isNativeBet = tokenAddress ? isNativeHype(tokenAddress) : false
+  const isNativeBet = tokenAddress ? isNativeETH(tokenAddress) : false
 
   // Native balance query
   const { data: nativeBalance } = useBalance({
@@ -143,7 +143,7 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
   })
 
   // Choose correct balance based on token type
-  const hypeBalance = isNativeBet ? nativeBalance?.value : erc20Balance
+  const ethBalance = isNativeBet ? nativeBalance?.value : erc20Balance
 
   // Decimals
   const { data: decimals } = useReadContract({
@@ -196,8 +196,8 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
     // Data
     betDetails,
     userBets,
-    hypeBalance,
-    decimals: isNativeBet ? 18 : decimals, // Native HYPE has 18 decimals
+    ethBalance,
+    decimals: isNativeBet ? 18 : decimals, // Native ETH has 18 decimals
     hasClaimed,
     hasClaimedCreatorFees, // NEW: Add creator fee claim status
     resolutionDeadline: resolutionDeadline ? Number(resolutionDeadline) : undefined,

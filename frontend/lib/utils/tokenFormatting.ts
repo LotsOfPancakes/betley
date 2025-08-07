@@ -5,7 +5,7 @@ import { config } from '@/lib/config'
 
 /**
  * Get token symbol based on bet type
- * @param isNativeBet - Whether this is a native HYPE bet
+ * @param isNativeBet - Whether this is a native ETH bet
  * @returns Token symbol string
  */
 export const getTokenSymbol = (isNativeBet: boolean): string => {
@@ -16,7 +16,7 @@ export const getTokenSymbol = (isNativeBet: boolean): string => {
  * Format amount with token symbol consistently
  * @param amount - Amount in wei
  * @param decimals - Token decimals
- * @param isNativeBet - Whether this is native HYPE
+ * @param isNativeBet - Whether this is native ETH
  * @returns Formatted string with amount and symbol
  */
 export const formatTokenAmount = (amount: bigint, decimals: number, isNativeBet: boolean): string => {
@@ -25,7 +25,7 @@ export const formatTokenAmount = (amount: bigint, decimals: number, isNativeBet:
 
 /**
  * Hook-like utility for token formatting (can be used in components)
- * @param isNativeBet - Whether this is a native HYPE bet
+ * @param isNativeBet - Whether this is a native ETH bet
  * @returns Object with formatting functions
  */
 export const createTokenFormatter = (isNativeBet: boolean) => {

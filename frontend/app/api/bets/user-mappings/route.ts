@@ -5,11 +5,11 @@
 import { NextRequest } from 'next/server'
 import { supabase, checkRateLimit, createServerSupabaseClient } from '@/lib/supabase'
 import { createPublicClient, http, parseAbi } from 'viem'
-import { hyperevm } from '@/lib/chains'
+import { baseSepolia } from '@/lib/chains'
 
 // Create RPC client for contract calls
 const publicClient = createPublicClient({
-  chain: hyperevm,
+  chain: baseSepolia,
   transport: http(process.env.NEXT_PUBLIC_RPC_URL)
 })
 

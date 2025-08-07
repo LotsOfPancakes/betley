@@ -2,11 +2,11 @@
 
 **🎯 Live at: [https://www.betley.xyz](https://www.betley.xyz)**
 
-A production-ready pari-mutuel style betting platform built on HyperEVM testnet using HYPE tokens.
+A production-ready pari-mutuel style betting platform built on Base Sepolia testnet using native ETH.
 
 ## 🌟 Features
 - **Custom Bets**: Create bets with 2-4 custom options and flexible duration
-- **Dual Token Support**: Bet with native HYPE or other ERC20 tokens (later phases)
+- **Native ETH Betting**: Bet with native ETH on Base Sepolia
 - **Pari-Mutuel Payouts**: Automatic fair distribution based on betting pools
 - **Privacy-First**: Random bet IDs prevent enumeration and protect user privacy
 - **Auto-Resolution**:48-hour resolution deadline with automatic refund system
@@ -16,15 +16,15 @@ A production-ready pari-mutuel style betting platform built on HyperEVM testnet 
 ## 🚀 Live Platform
 - **Production**: [https://www.betley.xyz](https://www.betley.xyz)
 - **Staging**: [https://betley.vercel.app](https://betley.vercel.app)
-- **Blockchain**: HyperEVM Testnet
-- **Contract**: `0x3eB11c552cc4259730f14b8b88dEEF06f78A7913`
+- **Blockchain**: Base Sepolia Testnet
+- **Contract**: `0xE49Fe9FD2D6E46c3A58cce393A6125bDE1BAb6Ec`
 
 ## 🛠️ Tech Stack
 - **Smart Contracts**: Solidity + Foundry
 - **Frontend**: Next.js 15, TypeScript, Tailwind CSS
 - **Web3**: Wagmi v2, Viem, ConnectKit
 - **Database**: PostgreSQL (Supabase)
-- **Blockchain**: HyperEVM Testnet
+- **Blockchain**: Base Sepolia Testnet
 - **Deployment**: Vercel with custom domain
 
 ## ⚡ Quick Start
@@ -80,9 +80,9 @@ forge test -vvv
 
 ### Deployment
 ```bash
-# Deploy to HyperEVM testnet
-forge script script/DeployBetley.s.sol \
-  --rpc-url https://rpc.hyperliquid-testnet.xyz/evm \
+# Deploy to Base Sepolia testnet
+forge script script/DeployBetleyBaseSepolia.s.sol \
+  --rpc-url base_sepolia \
   --broadcast \
   --verify
 ```
@@ -91,11 +91,11 @@ forge script script/DeployBetley.s.sol \
 ```bash
 # View current fee status
 forge script script/ConfigureFees.s.sol:ViewFees \
-  --rpc-url https://rpc.hyperliquid-testnet.xyz/evm
+  --rpc-url base_sepolia
 
 # Enable fees (when ready); change RPC accordingly
 forge script script/ConfigureFees.s.sol:EnableFees \
-  --rpc-url https://rpc.hyperliquid-testnet.xyz/evm \
+  --rpc-url base_sepolia \
   --broadcast
 ```
 
@@ -104,9 +104,9 @@ forge script script/ConfigureFees.s.sol:EnableFees \
 ### Required Variables
 ```env
 # Core Configuration
-NEXT_PUBLIC_BETLEY_ADDRESS=0x88598D1EfC9032318FB7B39DCdD9E5c2a7a4F8b9
-NEXT_PUBLIC_CHAIN_ID=998
-NEXT_PUBLIC_RPC_URL=https://rpc.hyperliquid-testnet.xyz/evm
+NEXT_PUBLIC_BETLEY_ADDRESS=0xE49Fe9FD2D6E46c3A58cce393A6125bDE1BAb6Ec
+NEXT_PUBLIC_CHAIN_ID=84532
+NEXT_PUBLIC_RPC_URL=https://base-sepolia.api.onfinality.io/public
 
 # Database (Supabase)
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
@@ -133,7 +133,7 @@ PRIVATE_KEY=your-private-key-for-deployment
 - **Pari-Mutuel Logic**: Fair payout calculation based on pool sizes
 - **Fee System**: Optional creator (1%) and platform (0.5%) fees
 - **Security**: ReentrancyGuard, access controls, comprehensive validation
-- **Token Support**: Native HYPE for now
+- **Token Support**: Native ETH on Base Sepolia
 
 ### Database Schema
 - **Bet Mappings**: Random ID ↔ Numeric ID for privacy
@@ -225,7 +225,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **HyperLiquid**: For providing the testnet infrastructure
+- **Base**: For providing the testnet infrastructure and L2 scaling
 - **Foundry**: For the excellent smart contract development toolkit
 - **Vercel**: For seamless deployment and hosting
 - **Community**: For testing and feedback during development
