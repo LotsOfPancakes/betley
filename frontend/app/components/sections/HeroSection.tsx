@@ -1,5 +1,5 @@
 import BetTitleInput from '../BetTitleInput'
-import { COLORS, DIMENSIONS, ANIMATIONS } from '@/lib/constants/ui'
+import { COLORS, DIMENSIONS } from '@/lib/constants/ui'
 
 interface HeroSectionProps {
   betTitle: string
