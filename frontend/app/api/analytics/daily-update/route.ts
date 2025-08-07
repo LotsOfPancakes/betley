@@ -8,6 +8,7 @@ import { getBlockchainEvents, getLastProcessedBlock, updateLastProcessedBlock, P
 import { recalculateAllUserStats } from '@/lib/analytics/statsCalculator'
 import { createPublicClient, http } from 'viem'
 import { baseSepolia } from '@/lib/chains'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
