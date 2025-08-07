@@ -51,8 +51,8 @@ export const config = {
       '0xE49Fe9FD2D6E46c3A58cce393A6125bDE1BAb6Ec'
     ) as `0x${string}`,
     mockERC20: getOptionalEnv(
-      'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // Leave empty for native ETH betting
-      ''
+      'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // Placeholder for native ETH betting
+      '0x0000000000000000000000000000000000000000'
     ) as `0x${string}`,
   },
   
