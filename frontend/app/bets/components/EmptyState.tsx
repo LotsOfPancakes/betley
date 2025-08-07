@@ -35,7 +35,7 @@ export default function EmptyState({ filter }: EmptyStateProps) {
         }
       default:
         return {
-          title: "You haven't created or joined any bets yet",
+          title: "It's a little empty here",
           description: 'Create your first bet or ask a friend!'
         }
     }

@@ -5,7 +5,6 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 // AppKit buttons are web components - no import needed
-import Image from 'next/image'
 
 // Import our extracted components and hooks
 import BetCard from './components/BetCard'
@@ -154,28 +153,12 @@ export default function BetsPage() {
 
           {/* Connection check for My Bets */}
           {activeTab === 'my' && !address ? (
-          <div className="text-center relative z-10">
-            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
-              <div className="w-16 h-16 mx-auto mb-4 relative">
-                <Image
-              src="/images/betley-searching.png"
-              alt="Searching for bets"
-              width={64}
-              height={64}
-              className="object-contain animate-pulse"
-              style={{
-                animation: 'pulse 2s infinite, float 3s ease-in-out infinite'
-              }}
-              priority={false} // Not critical for initial page load
-              quality={90} // High quality for sharp rendering
+            <LoadingOverlay 
+              isVisible={true}
+              message="Looking for your Bets?"
+              showButton={true}
+              buttonComponent={<appkit-button />}
             />
-            </div>
-              <h1 className="text-2xl font-bold text-white mb-4">Looking for your Bets?</h1>
-              <div className="flex justify-center mb-4"> 
-                <appkit-button />
-              </div>
-            </div>
-          </div>
           ) : (
             <>
               {/* Error state */}
@@ -199,10 +182,10 @@ export default function BetsPage() {
                   // Custom empty state for public bets
                   <div className="text-center py-12">
                     <h3 className="text-xl font-semibold text-white mb-4">
-                      No public bets found
+                      No Public Bets found
                     </h3>
                     <p className="text-gray-300 mb-6">
-                      There are currently no public bets available. Check back later or create your own!
+                      Check back later or create your own!
                     </p>
                     <button
                       onClick={() => router.push('/setup')}

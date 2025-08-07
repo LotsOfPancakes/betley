@@ -1,6 +1,7 @@
 -- ============================================================================
 -- SQL Function: calculate_user_stats()
 -- Recalculates all user statistics from user_activities table
+-- Note: Only 'create' and 'bet' activity types are supported by database constraint
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION calculate_user_stats()

@@ -6,32 +6,43 @@ import Image from 'next/image'
 interface LoadingOverlayProps {
   isVisible: boolean
   message?: string
+  showButton?: boolean
+  buttonComponent?: React.ReactNode
 }
 
 export default function LoadingOverlay({ 
   isVisible, 
-  message = 'Betley is looking...' 
+  message = 'Betley is looking...', 
+  showButton = false,
+  buttonComponent 
 }: LoadingOverlayProps) {
   if (!isVisible) return null
 
   return (
-    <div className="absolute inset-0 bg-gray-950/50 backdrop-blur-sm z-40 flex items-start justify-center pt-4">
-      <div className="bg-gradient-to-r from-gray-800/90 to-gray-700/90 border border-green-500/30 rounded-xl px-4 py-2 flex items-center gap-3 shadow-lg">
-        <div className="w-6 h-6 relative">
-          <Image
-            src="/images/betley-searching.png"
-            alt="Loading"
-            width={24}
-            height={24}
-            className="object-contain animate-pulse"
-            style={{
-              animation: 'pulse 2s infinite, float 3s ease-in-out infinite'
-            }}
-            priority={false}
-            quality={90}
-          />
+    <div className="absolute inset-0 bg-gray-950/50 backdrop-blur-sm z-40 flex items-center justify-center">
+      <div className="text-center relative z-10">
+        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 hover:border-green-400/40 transition-all duration-500">
+          <div className="w-16 h-16 mx-auto mb-4 relative">
+            <Image
+              src="/images/betley-searching.png"
+              alt="Loading"
+              width={64}
+              height={64}
+              className="object-contain animate-pulse"
+              style={{
+                animation: 'pulse 2s infinite, float 3s ease-in-out infinite'
+              }}
+              priority={false}
+              quality={90}
+            />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-4">{message}</h1>
+          {showButton && buttonComponent && (
+            <div className="flex justify-center mb-4">
+              {buttonComponent}
+            </div>
+          )}
         </div>
-        <span className="text-green-300 text-sm font-medium">{message}</span>
       </div>
 
       {/* Custom CSS for floating animation */}
