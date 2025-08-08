@@ -6,7 +6,7 @@ import { useAccount } from 'wagmi'
 import BackgroundElements from './components/BackgroundElements'
 import HeroSection from './components/sections/HeroSection'
 import HowItWorksSection from './components/sections/HowItWorksSection'
-import KeyFeaturesSection from './components/sections/KeyFeaturesSection'
+// import KeyFeaturesSection from './components/sections/KeyFeaturesSection' //stop using keyFeatures section for now
 import CTASection from './components/sections/CTASection'
 import { COLORS } from '@/lib/constants/ui'
 
@@ -44,9 +44,7 @@ export default function HomePage() {
         />
         
         <HowItWorksSection />
-        
-        <KeyFeaturesSection />
-        
+                
         <CTASection
           betTitle={betTitle}
           setBetTitle={setBetTitle}

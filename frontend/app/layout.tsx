@@ -6,6 +6,7 @@ import { NotificationToast } from './components/ui/NotificationToast'
 import { Navigation } from '../components/Navigation'
 import { CriticalErrorBoundary } from '@/components/ErrorBoundary'
 import { Footer } from '../components/Footer'
+import { headers } from 'next/headers' // Import headers function
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -109,11 +110,15 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+// ATTENTION!!! RootLayout must be an async function to use headers() 
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Retrieve cookies from request headers on the server
+  const headersObj = await headers() // IMPORTANT: await the headers() call
+  const cookies = headersObj.get('cookie')
   return (
     <html lang="en">
       <head>
@@ -156,7 +161,8 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <CriticalErrorBoundary>
-          <Providers>
+          {/* Wrap children with Providers, passing cookies */}
+          <Providers cookies={cookies}>
             <Navigation />
             {children}
             <Footer />

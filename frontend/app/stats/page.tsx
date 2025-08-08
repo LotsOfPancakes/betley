@@ -40,7 +40,7 @@ function formatETH(weiAmount: string): string {
 
 function formatDate(dateString: string | null): string {
   if (!dateString) return 'Never'
-  return new Date(dateString).toLocaleDateString(undefined, {
+  return new Date(dateString).toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',

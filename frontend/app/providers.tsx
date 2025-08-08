@@ -1,62 +1,76 @@
-// Reown AppKit Configuration for Betley
+// Reown AppKit Configuration for Betley - Updated with Best Practices
 // File: frontend/app/providers.tsx
 
 'use client'
 
-import { createAppKit } from '@reown/appkit/react'
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
-import { WagmiProvider } from 'wagmi'
+import React, { ReactNode, useState, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { baseSepolia } from '@/lib/chains'
-import { useState, useEffect } from 'react'
+import { WagmiProvider, cookieToInitialState, type Config } from 'wagmi'
+import { createAppKit } from '@reown/appkit/react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
 import { 
   appConfig, 
-  walletConnectConfig, 
   timeoutsConfig, 
   devConfig 
 } from '@/lib/config'
+// Import config, networks, projectId, and wagmiAdapter from our config file
+import { config, networks, projectId, wagmiAdapter } from '@/config'
+// Import the default network separately if needed
+import { baseSepolia } from '@/lib/chains'
 
-// ✅ Create Wagmi Adapter for AppKit
-const wagmiAdapter = new WagmiAdapter({
-  networks: [baseSepolia],
-  projectId: walletConnectConfig.projectId,
-  ssr: true
-})
+const metadata = {
+  name: appConfig.name,
+  description: appConfig.description,
+  url: appConfig.url,
+  icons: ['https://www.betley.xyz/images/betley-logo-128.png']
+}
 
-// ✅ Create AppKit with email and social login support
-createAppKit({
-  adapters: [wagmiAdapter],
-  networks: [baseSepolia],
-  projectId: walletConnectConfig.projectId,
-  metadata: {
-    name: appConfig.name,
-    description: appConfig.description,
-    url: appConfig.url,
-    icons: ['https://betley.vercel.app/images/betley-logo-128.png']
-  },
-  features: {
-    email: true,                    // Enable email signup
-    socials: ['google', 'apple', 'x', 'discord'], // Enable social login
-    analytics: devConfig.enableDevtools, // Optional analytics
-    onramp: false, // disable buying crypto
-    swaps: false, // Disable swaps
-  },
-  themeMode: 'dark',               // Match your app's dark theme
-  themeVariables: {
-    '--w3m-accent': '#10b981',     // Green accent to match your brand
-    '--w3m-border-radius-master': '12px'
-  }
-})
+// Initialize AppKit *outside* the component render cycle
+// Add a check for projectId for type safety, although config throws error already.
+if (!projectId) {
+  console.error("AppKit Initialization Error: Project ID is missing.");
+  // Optionally throw an error or render fallback UI
+} else {
+  createAppKit({
+    adapters: [wagmiAdapter],
+    // Use non-null assertion `!` as projectId is checked runtime, needed for TypeScript
+    projectId: projectId!,
+    // Pass networks directly (type is now correctly inferred from config)
+    networks: networks,
+    defaultNetwork: baseSepolia, // Or your preferred default
+    metadata,
+    features: { 
+      analytics: devConfig.enableDevtools, // Optional analytics
+      email: true,                    // Enable email signup
+      socials: ['google', 'apple', 'x', 'discord'], // Enable social login
+      onramp: false, // disable buying crypto
+      swaps: false, // Disable swaps
+    },
+    themeMode: 'dark',               // Match your app's dark theme
+    themeVariables: {
+      '--w3m-accent': '#10b981',     // Green accent to match your brand
+      '--w3m-border-radius-master': '12px'
+    }
+  })
+}
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  cookies,
+}: {
+  children: ReactNode
+  cookies: string | null // Cookies from server for hydration
+}) {
   const [mounted, setMounted] = useState(false)
 
   // ✅ Handle client-side hydration
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Calculate initial state for Wagmi SSR hydration
+  const initialState = cookieToInitialState(config as Config, cookies)
 
   // Create optimized QueryClient with configurable timeouts
   const [queryClient] = useState(() => new QueryClient({
@@ -81,7 +95,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
+    // Cast config as Config for WagmiProvider
+    <WagmiProvider config={config as Config} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
         <NotificationProvider>
           {children}
