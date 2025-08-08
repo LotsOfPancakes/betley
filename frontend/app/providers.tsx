@@ -1,4 +1,4 @@
-// Reown AppKit Configuration for Betley - Fixed SSR Hydration
+// Reown AppKit Configuration for Betley - Following Official Pattern
 // File: frontend/app/providers.tsx
 
 'use client'
@@ -6,7 +6,7 @@
 import React, { ReactNode, useState, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { WagmiProvider, cookieToInitialState } from 'wagmi'
+import { WagmiProvider, cookieToInitialState, type Config } from 'wagmi'
 import { createAppKit } from '@reown/appkit/react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
 import { 
@@ -14,17 +14,47 @@ import {
   timeoutsConfig, 
   devConfig 
 } from '@/lib/config'
-// Import factory function and constants from our config file
+// Import wagmiAdapter and constants from our config file
 import { getConfig, networks, projectId } from '@/config'
 // Import the default network separately if needed
 import { baseSepolia } from '@/lib/chains'
 
+// Get fresh config instance at module level
+const { wagmiAdapter } = getConfig()
+
+// Set up metadata
 const metadata = {
   name: appConfig.name,
   description: appConfig.description,
   url: appConfig.url,
   icons: ['https://www.betley.xyz/images/betley-logo-128.png']
 }
+
+// Validate project ID
+if (!projectId) {
+  throw new Error('Project ID is not defined')
+}
+
+// ✅ Create AppKit at module level (following official pattern)
+createAppKit({
+  adapters: [wagmiAdapter],
+  projectId,
+  networks: networks,
+  defaultNetwork: baseSepolia,
+  metadata: metadata,
+  features: { 
+    analytics: devConfig.enableDevtools,
+    email: true,
+    socials: ['google', 'apple', 'x', 'discord'],
+    onramp: false,
+    swaps: false,
+  },
+  themeMode: 'dark',
+  themeVariables: {
+    '--w3m-accent': '#10b981',
+    '--w3m-border-radius-master': '12px'
+  }
+})
 
 export function Providers({
   children,
@@ -34,45 +64,14 @@ export function Providers({
   cookies: string | null // Cookies from server for hydration
 }) {
   const [mounted, setMounted] = useState(false)
-  
-  // ✅ Create fresh config instance following official best practices
-  const [{ wagmiAdapter, config }] = useState(() => getConfig())
-  
-  // ✅ Initialize AppKit with fresh wagmiAdapter instance
-  useState(() => {
-    if (!projectId) {
-      console.error("AppKit Initialization Error: Project ID is missing.");
-      return null
-    }
-    
-    return createAppKit({
-      adapters: [wagmiAdapter],
-      projectId: projectId!,
-      networks: networks,
-      defaultNetwork: baseSepolia,
-      metadata,
-      features: { 
-        analytics: devConfig.enableDevtools,
-        email: true,
-        socials: ['google', 'apple', 'x', 'discord'],
-        onramp: false,
-        swaps: false,
-      },
-      themeMode: 'dark',
-      themeVariables: {
-        '--w3m-accent': '#10b981',
-        '--w3m-border-radius-master': '12px'
-      }
-    })
-  })
 
   // ✅ Handle client-side hydration
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // ✅ Calculate initial state for Wagmi SSR hydration with fresh config
-  const initialState = cookieToInitialState(config, cookies)
+  // ✅ Calculate initial state for Wagmi SSR hydration
+  const initialState = cookieToInitialState(wagmiAdapter.wagmiConfig as Config, cookies)
 
   // Create optimized QueryClient with configurable timeouts
   const [queryClient] = useState(() => new QueryClient({
@@ -97,8 +96,8 @@ export function Providers({
   }
 
   return (
-    // ✅ No type casting needed - fresh config has correct types
-    <WagmiProvider config={config} initialState={initialState}>
+    // ✅ Use wagmiAdapter.wagmiConfig following official pattern
+    <WagmiProvider config={wagmiAdapter.wagmiConfig as Config} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
         <NotificationProvider>
           {children}

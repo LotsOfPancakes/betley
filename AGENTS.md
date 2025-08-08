@@ -29,4 +29,4 @@
 - No comments unless explicitly requested
 - Follow existing patterns and conventions in the codebase
 - Use existing libraries (wagmi, viem, @tanstack/react-query, supabase)
-- Avoid over-engineering. Question the need to have certain features/functionalities if there may can be more direct ways to achieve a goal
+- Avoid over-engineering. Question the need to have certain features/functionalities if there may be more direct ways to achieve a goal
