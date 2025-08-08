@@ -57,9 +57,9 @@ export function useBetFeeData(
     address: BETLEY_ADDRESS,
     abi: BETLEY_ABI,
     functionName: 'calculatePotentialWinnings',
-    args: betId && address ? [BigInt(betId), address as `0x${string}`] : undefined,
+    args: betId != null && betId !== '' && address ? [BigInt(betId), address as `0x${string}`] : undefined,
     query: {
-      enabled: !!address && !!betId && !!resolved,
+      enabled: !!address && betId != null && betId !== '' && !!resolved,
       refetchInterval: 5000,
       staleTime: 30000,
     }

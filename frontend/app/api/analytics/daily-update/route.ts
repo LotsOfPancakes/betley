@@ -7,7 +7,7 @@ import { createServerSupabaseClient } from '@/lib/supabase'
 import { getBlockchainEvents, getLastProcessedBlock, updateLastProcessedBlock, ProcessedEvent } from '@/lib/analytics/eventProcessor'
 import { recalculateAllUserStats } from '@/lib/analytics/statsCalculator'
 import { createPublicClient, http } from 'viem'
-import { baseSepolia } from '@/lib/chains'
+import { baseSepolia } from '@reown/appkit/networks'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const publicClient = createPublicClient({

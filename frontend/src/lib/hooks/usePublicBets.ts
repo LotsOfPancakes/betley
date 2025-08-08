@@ -45,7 +45,7 @@ export function usePublicBets(options: UsePublicBetsOptions = {}) {
     },
     enabled,
     staleTime: 30 * 1000, // 30 seconds (reduced due to time-sensitive active bets)
-    refetchInterval: 60 * 1000, // 1 minute (more frequent updates for active bets)
+    refetchInterval: 300 * 1000, // 5 minutes
     retry: 2
   })
 }

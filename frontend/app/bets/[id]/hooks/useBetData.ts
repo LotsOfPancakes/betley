@@ -30,8 +30,8 @@ export function useBetData(betId: string, options: UseBetDataOptions = {}) {
 
 
   
-  // Validate bet ID
-  const isValidBetId = betId && !isNaN(parseInt(betId)) && parseInt(betId) >= 0
+  // Validate bet ID - Fixed to handle betId = "0" correctly
+  const isValidBetId = betId != null && betId !== '' && !isNaN(parseInt(betId)) && parseInt(betId) >= 0
   const numericBetId = isValidBetId ? parseInt(betId) : null
 
   // Manual refresh function

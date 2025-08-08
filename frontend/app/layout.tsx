@@ -1,11 +1,12 @@
 // frontend/app/layout.tsx
 import type { Metadata, Viewport } from "next";
+import { headers } from 'next/headers'
 import "./globals.css";
-import { Providers } from './providers'
+import ContextProvider from '@/context'
 import { NotificationToast } from './components/ui/NotificationToast'
-import { Navigation } from '../components/Navigation'
+import { Navigation } from '@/components/Navigation'
 import { CriticalErrorBoundary } from '@/components/ErrorBoundary'
-import { Footer } from '../components/Footer'
+import { Footer } from '@/components/Footer'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -109,11 +110,14 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersData = await headers()
+  const cookies = headersData.get('cookie')
+
   return (
     <html lang="en">
       <head>
@@ -156,12 +160,12 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <CriticalErrorBoundary>
-          <Providers>
+          <ContextProvider cookies={cookies}>
             <Navigation />
             {children}
             <Footer />
             <NotificationToast />
-          </Providers>
+          </ContextProvider>
         </CriticalErrorBoundary>
       </body>
     </html>

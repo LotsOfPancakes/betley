@@ -1,7 +1,7 @@
 export const BET_CONSTANTS = {
   timeouts: {
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // 1 minute
+    refetchInterval: 300 * 1000, // 5 minute
     resolutionDeadline: 48 * 60 * 60 * 1000, // 48 hours in milliseconds
   },
   retry: {

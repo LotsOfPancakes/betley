@@ -513,7 +513,7 @@ export function UserActions({
   // ============================================================================
   
   const handleClaimCreatorFees = useCallback(async () => {
-    if (!betId || isCreatorClaimPending) return
+    if (betId == null || betId === '' || isCreatorClaimPending) return
     
     try {
       writeCreatorClaim({

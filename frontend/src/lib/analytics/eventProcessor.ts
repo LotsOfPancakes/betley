@@ -4,7 +4,7 @@
 
 import { createPublicClient, http, parseAbi } from 'viem'
 import { createServerSupabaseClient } from '@/lib/supabase'  
-import { baseSepolia } from '@/lib/chains'
+import { baseSepolia } from '@reown/appkit/networks'
 
 const publicClient = createPublicClient({
   chain: baseSepolia,

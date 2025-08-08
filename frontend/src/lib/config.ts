@@ -66,7 +66,7 @@ export const config = {
   
   walletConnect: {
     projectId: getOptionalEnv(
-      'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID', 
+      'NEXT_PUBLIC_PROJECT_ID', 
       '3631ce78fe91dacd79be36cf1db10400'
     ),
   },

@@ -7,7 +7,7 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
 import { createPublicClient, http, parseAbi } from 'viem'
-import { baseSepolia } from '@/lib/chains'
+import { baseSepolia } from '@reown/appkit/networks'
 
 // Create RPC client for contract calls
 const publicClient = createPublicClient({

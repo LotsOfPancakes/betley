@@ -112,7 +112,7 @@ export function useBetCreation() {
     // ✅ VALIDATE CHAIN FIRST
     if (!validateChain()) return
 
-    if (!address || !betCounter) {
+    if (!address || !betCounter == null) {
       showError('Please connect your wallet first')
       return
     }
