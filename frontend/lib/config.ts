@@ -1,4 +1,3 @@
-// frontend/lib/config.ts - CLEANED VERSION: Debug statements removed
 'use client'
 
 // Environment variable helpers
@@ -62,7 +61,7 @@ export const config = {
       'NEXT_PUBLIC_APP_DESCRIPTION', 
       'Decentralized betting platform'
     ),
-    url: getOptionalEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
+    url: getOptionalEnv('NEXT_PUBLIC_APP_URL', 'https://www.betley.xyz'),
   },
   
   walletConnect: {

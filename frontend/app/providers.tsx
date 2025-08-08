@@ -14,13 +14,10 @@ import {
   timeoutsConfig, 
   devConfig 
 } from '@/lib/config'
-// Import wagmiAdapter and constants from our config file
-import { getConfig, networks, projectId } from '@/config'
-// Import the default network separately if needed
-import { baseSepolia } from '@/lib/chains'
-
-// Get fresh config instance at module level
-const { wagmiAdapter } = getConfig()
+// Import static wagmiAdapter and constants from our config file
+import { wagmiAdapter, projectId } from '@/config'
+// Import the default network from AppKit networks
+import { baseSepolia } from '@reown/appkit/networks'
 
 // Set up metadata
 const metadata = {
@@ -39,7 +36,7 @@ if (!projectId) {
 createAppKit({
   adapters: [wagmiAdapter],
   projectId,
-  networks: networks,
+  networks: [baseSepolia],
   defaultNetwork: baseSepolia,
   metadata: metadata,
   features: { 
