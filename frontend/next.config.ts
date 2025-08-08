@@ -8,10 +8,7 @@ const nextConfig: NextConfig = {
     // Number of pages that should be kept simultaneously without being disposed
     pagesBufferLength: 2,
   },
-  // Optimize CSS loading
-  experimental: {
-    optimizeCss: true,
-  },
+
 };
 
 export default nextConfig;
