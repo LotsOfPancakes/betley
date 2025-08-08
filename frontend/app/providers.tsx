@@ -1,4 +1,4 @@
-// Reown AppKit Configuration for Betley - Updated with Best Practices
+// Reown AppKit Configuration for Betley - Fixed SSR Hydration
 // File: frontend/app/providers.tsx
 
 'use client'
@@ -6,7 +6,7 @@
 import React, { ReactNode, useState, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { WagmiProvider, cookieToInitialState, type Config } from 'wagmi'
+import { WagmiProvider, cookieToInitialState } from 'wagmi'
 import { createAppKit } from '@reown/appkit/react'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
 import { 
@@ -14,8 +14,8 @@ import {
   timeoutsConfig, 
   devConfig 
 } from '@/lib/config'
-// Import config, networks, projectId, and wagmiAdapter from our config file
-import { config, networks, projectId, wagmiAdapter } from '@/config'
+// Import factory function and constants from our config file
+import { getConfig, networks, projectId } from '@/config'
 // Import the default network separately if needed
 import { baseSepolia } from '@/lib/chains'
 
@@ -26,35 +26,6 @@ const metadata = {
   icons: ['https://www.betley.xyz/images/betley-logo-128.png']
 }
 
-// Initialize AppKit *outside* the component render cycle
-// Add a check for projectId for type safety, although config throws error already.
-if (!projectId) {
-  console.error("AppKit Initialization Error: Project ID is missing.");
-  // Optionally throw an error or render fallback UI
-} else {
-  createAppKit({
-    adapters: [wagmiAdapter],
-    // Use non-null assertion `!` as projectId is checked runtime, needed for TypeScript
-    projectId: projectId!,
-    // Pass networks directly (type is now correctly inferred from config)
-    networks: networks,
-    defaultNetwork: baseSepolia, // Or your preferred default
-    metadata,
-    features: { 
-      analytics: devConfig.enableDevtools, // Optional analytics
-      email: true,                    // Enable email signup
-      socials: ['google', 'apple', 'x', 'discord'], // Enable social login
-      onramp: false, // disable buying crypto
-      swaps: false, // Disable swaps
-    },
-    themeMode: 'dark',               // Match your app's dark theme
-    themeVariables: {
-      '--w3m-accent': '#10b981',     // Green accent to match your brand
-      '--w3m-border-radius-master': '12px'
-    }
-  })
-}
-
 export function Providers({
   children,
   cookies,
@@ -63,14 +34,45 @@ export function Providers({
   cookies: string | null // Cookies from server for hydration
 }) {
   const [mounted, setMounted] = useState(false)
+  
+  // ✅ Create fresh config instance following official best practices
+  const [{ wagmiAdapter, config }] = useState(() => getConfig())
+  
+  // ✅ Initialize AppKit with fresh wagmiAdapter instance
+  useState(() => {
+    if (!projectId) {
+      console.error("AppKit Initialization Error: Project ID is missing.");
+      return null
+    }
+    
+    return createAppKit({
+      adapters: [wagmiAdapter],
+      projectId: projectId!,
+      networks: networks,
+      defaultNetwork: baseSepolia,
+      metadata,
+      features: { 
+        analytics: devConfig.enableDevtools,
+        email: true,
+        socials: ['google', 'apple', 'x', 'discord'],
+        onramp: false,
+        swaps: false,
+      },
+      themeMode: 'dark',
+      themeVariables: {
+        '--w3m-accent': '#10b981',
+        '--w3m-border-radius-master': '12px'
+      }
+    })
+  })
 
   // ✅ Handle client-side hydration
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Calculate initial state for Wagmi SSR hydration
-  const initialState = cookieToInitialState(config as Config, cookies)
+  // ✅ Calculate initial state for Wagmi SSR hydration with fresh config
+  const initialState = cookieToInitialState(config, cookies)
 
   // Create optimized QueryClient with configurable timeouts
   const [queryClient] = useState(() => new QueryClient({
@@ -95,8 +97,8 @@ export function Providers({
   }
 
   return (
-    // Cast config as Config for WagmiProvider
-    <WagmiProvider config={config as Config} initialState={initialState}>
+    // ✅ No type casting needed - fresh config has correct types
+    <WagmiProvider config={config} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
         <NotificationProvider>
           {children}
