@@ -10,7 +10,6 @@ import BetFilters from './components/BetFilters'
 import EmptyState from './components/EmptyState'
 import PublicBetCard from './components/PublicBetCard' 
 import BetsSearchLoading from './components/BetsSearchLoading'
-import LoadingOverlay from './components/LoadingOverlay'
 import { useBetsListDatabase } from './hooks/useBetsListV2'
 import { useBetsFiltering } from './hooks/useBetsFiltering'
 import { usePublicBets } from '@/lib/hooks/usePublicBets'
@@ -132,12 +131,15 @@ export default function BetsPage() {
 
           {/* Connection check for My Bets */}
           {activeTab === 'my' && !address ? (
-            <LoadingOverlay 
-              isVisible={true}
-              message="Looking for your Bets?"
-              showButton={true}
-              buttonComponent={<appkit-button />}
-            />
+            <div className="text-center py-12">
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 max-w-md mx-auto">
+                <h3 className="text-xl font-semibold text-white mb-4">Looking for your Bets?</h3>
+                <p className="text-gray-300 mb-6">Connect your wallet to see your betting history</p>
+                <div className="flex justify-center">
+                  <appkit-button />
+                </div>
+              </div>
+            </div>
           ) : (
             <>
               {/* Error state */}
@@ -176,11 +178,12 @@ export default function BetsPage() {
                 )
               ) : (
                 <div className="relative">
-                  {/* Loading overlay for background refetches */}
-                  <LoadingOverlay 
-                    isVisible={isFetching && hasExistingData}
-                    message={activeTab === 'my' ? 'Betley is looking for your bets...' : 'Betley is looking for public bets...'}
-                  />
+                  {/* Background refresh loading - consistent with initial load */}
+                  {isFetching && hasExistingData && (
+                    <div className="absolute inset-0 bg-gray-950/50 backdrop-blur-sm z-40 flex items-center justify-center">
+                      <BetsSearchLoading variant="refetch" />
+                    </div>
+                  )}
                   
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {activeTab === 'my' ? (
