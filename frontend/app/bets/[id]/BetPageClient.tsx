@@ -4,7 +4,6 @@
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { useState } from 'react'
-import { useBetIdMapping } from '@/lib/hooks/useBetIdMapping'
 
 // Import only the components we actually use
 import { CreatorActions } from './components/CreatorActions'
@@ -15,8 +14,8 @@ import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBou
 
 
 // Import hooks
-import { useBetData } from './hooks/useBetData'
-import { useBetActions } from './hooks/useBetActions'
+import { useBetDataNew } from './hooks/useBetDataNew'
+import { useBetActionsNew } from './hooks/useBetActionsNew'
 
 // Type definition for bet details array 
 type BetDetailsArray = readonly [
@@ -92,15 +91,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
   const randomBetId = id
   const [showResolveModal, setShowResolveModal] = useState(false)
 
-
-  // Get numeric bet ID from random ID
-  const { 
-    numericBetId, 
-    isValidId: isValidBetId, 
-    isLoading: isLoadingMappings 
-  } = useBetIdMapping(randomBetId as string)
-
-  // Get bet data using the numeric ID
+  // Get bet data using the new privacy-focused approach
   const {
     betDetails,
     userBets,
@@ -108,13 +99,15 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     allowance,
     decimals,
     hasClaimed,
-    hasClaimedCreatorFees,
+
     isBetLoading,
     isNativeBet,
     timeLeft,
     resolutionTimeLeft,
-    resolutionDeadlinePassed
-  } = useBetData(isValidBetId && numericBetId !== null ? numericBetId.toString() : '999999', { useReactQuery: true })
+    resolutionDeadlinePassed,
+    isValidBetId,
+    numericBetId
+  } = useBetDataNew(randomBetId as string, { useReactQuery: true })
 
   // Extract bet data with proper typing - FIXED TypeScript issues
   const typedBetDetails = betDetails as BetDetailsArray | undefined
@@ -140,15 +133,13 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     handleResolveBet,
     isPending,
     isApproving,
-  } = useBetActions(
+  } = useBetActionsNew(
     numericBetId ? numericBetId.toString() : '0',
-    tokenAddress || '',
-    resolved,
-    resolutionDeadlinePassed
+    tokenAddress || ''
   )
   
   // Loading states with bento styling
-  if (isLoadingMappings || isBetLoading) {
+  if (isBetLoading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
         {/* Animated background grid */}
@@ -178,6 +169,8 @@ export default function BetPageClient({ id }: BetPageClientProps) {
   }
 
   // Invalid bet ID
+
+  
   if (!isValidBetId || !typedBetDetails) {
     return <InvalidBetError randomId={randomBetId as string} />
   }
@@ -283,7 +276,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   totalAmounts={totalAmounts as readonly bigint[] || []}
                   resolutionDeadlinePassed={resolutionDeadlinePassed}
                   hasClaimed={Boolean(hasClaimed)}
-                  hasClaimedCreatorFees={Boolean(hasClaimedCreatorFees)} // NEW: Pass creator fee claim status
+
                   decimals={Number(decimals) || 18}
                   isPending={isPending}
                   handleClaimWinnings={handleClaimWinnings}

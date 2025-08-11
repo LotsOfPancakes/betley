@@ -1,318 +1,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-// lib/openzeppelin-contracts/contracts/utils/Context.sol
-
-// OpenZeppelin Contracts (last updated v5.0.1) (utils/Context.sol)
-
-/**
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes calldata) {
-        return msg.data;
-    }
-
-    function _contextSuffixLength() internal view virtual returns (uint256) {
-        return 0;
-    }
-}
-
-// lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol
-
-// OpenZeppelin Contracts (last updated v5.1.0) (token/ERC20/IERC20.sol)
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @dev Interface of the ERC-20 standard as defined in the ERC.
- */
-interface IERC20 {
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-
-    /**
-     * @dev Returns the value of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the value of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves a `value` amount of tokens from the caller's account to `to`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address to, uint256 value) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets a `value` amount of tokens as the allowance of `spender` over the
-     * caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 value) external returns (bool);
-
-    /**
-     * @dev Moves a `value` amount of tokens from `from` to `to` using the
-     * allowance mechanism. `value` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address from, address to, uint256 value) external returns (bool);
-}
-
-// lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol
-
-// OpenZeppelin Contracts (last updated v5.1.0) (utils/ReentrancyGuard.sol)
-
-/**
- * @dev Contract module that helps prevent reentrant calls to a function.
- *
- * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier
- * available, which can be applied to functions to make sure there are no nested
- * (reentrant) calls to them.
- *
- * Note that because there is a single `nonReentrant` guard, functions marked as
- * `nonReentrant` may not call one another. This can be worked around by making
- * those functions `private`, and then adding `external` `nonReentrant` entry
- * points to them.
- *
- * TIP: If EIP-1153 (transient storage) is available on the chain you're deploying at,
- * consider using {ReentrancyGuardTransient} instead.
- *
- * TIP: If you would like to learn more about reentrancy and alternative ways
- * to protect against it, check out our blog post
- * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
- */
-abstract contract ReentrancyGuard {
-    // Booleans are more expensive than uint256 or any type that takes up a full
-    // word because each write operation emits an extra SLOAD to first read the
-    // slot's contents, replace the bits taken up by the boolean, and then write
-    // back. This is the compiler's defense against contract upgrades and
-    // pointer aliasing, and it cannot be disabled.
-
-    // The values being non-zero value makes deployment a bit more expensive,
-    // but in exchange the refund on every call to nonReentrant will be lower in
-    // amount. Since refunds are capped to a percentage of the total
-    // transaction's gas, it is best to keep them low in cases like this one, to
-    // increase the likelihood of the full refund coming into effect.
-    uint256 private constant NOT_ENTERED = 1;
-    uint256 private constant ENTERED = 2;
-
-    uint256 private _status;
-
-    /**
-     * @dev Unauthorized reentrant call.
-     */
-    error ReentrancyGuardReentrantCall();
-
-    constructor() {
-        _status = NOT_ENTERED;
-    }
-
-    /**
-     * @dev Prevents a contract from calling itself, directly or indirectly.
-     * Calling a `nonReentrant` function from another `nonReentrant`
-     * function is not supported. It is possible to prevent this from happening
-     * by making the `nonReentrant` function external, and making it call a
-     * `private` function that does the actual work.
-     */
-    modifier nonReentrant() {
-        _nonReentrantBefore();
-        _;
-        _nonReentrantAfter();
-    }
-
-    function _nonReentrantBefore() private {
-        // On the first call to nonReentrant, _status will be NOT_ENTERED
-        if (_status == ENTERED) {
-            revert ReentrancyGuardReentrantCall();
-        }
-
-        // Any calls to nonReentrant after this point will fail
-        _status = ENTERED;
-    }
-
-    function _nonReentrantAfter() private {
-        // By storing the original value once again, a refund is triggered (see
-        // https://eips.ethereum.org/EIPS/eip-2200)
-        _status = NOT_ENTERED;
-    }
-
-    /**
-     * @dev Returns true if the reentrancy guard is currently set to "entered", which indicates there is a
-     * `nonReentrant` function in the call stack.
-     */
-    function _reentrancyGuardEntered() internal view returns (bool) {
-        return _status == ENTERED;
-    }
-}
-
-// lib/openzeppelin-contracts/contracts/access/Ownable.sol
-
-// OpenZeppelin Contracts (last updated v5.0.0) (access/Ownable.sol)
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * The initial owner is set to the address provided by the deployer. This can
- * later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-abstract contract Ownable is Context {
-    address private _owner;
-
-    /**
-     * @dev The caller account is not authorized to perform an operation.
-     */
-    error OwnableUnauthorizedAccount(address account);
-
-    /**
-     * @dev The owner is not a valid owner account. (eg. `address(0)`)
-     */
-    error OwnableInvalidOwner(address owner);
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the address provided by the deployer as the initial owner.
-     */
-    constructor(address initialOwner) {
-        if (initialOwner == address(0)) {
-            revert OwnableInvalidOwner(address(0));
-        }
-        _transferOwnership(initialOwner);
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        _checkOwner();
-        _;
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view virtual returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if the sender is not the owner.
-     */
-    function _checkOwner() internal view virtual {
-        if (owner() != _msgSender()) {
-            revert OwnableUnauthorizedAccount(_msgSender());
-        }
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby disabling any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        _transferOwnership(address(0));
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        if (newOwner == address(0)) {
-            revert OwnableInvalidOwner(address(0));
-        }
-        _transferOwnership(newOwner);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Internal function without access restriction.
-     */
-    function _transferOwnership(address newOwner) internal virtual {
-        address oldOwner = _owner;
-        _owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
-    }
-}
-
-// src/Betley.sol
-
-/**
- * @title Betley - Production Pari-Mutuel Betting Platform
- * @dev Secure, fee-enabled betting contract with comprehensive safety measures
+ * @title Betley - Privacy-Focused Pari-Mutuel Betting Platform
+ * @dev Secure betting contract with minimal on-chain data for enhanced privacy
  * @author Betley Team
- * @notice V2 with advanced fee system and enhanced security
+ * @notice New architecture: sensitive data stored off-chain, only operational data on-chain
  */
 contract Betley is Ownable, ReentrancyGuard {
     
     // ========== STRUCTS ==========
     
     struct Bet {
-        string name;
-        string[] options;
+        // ❌ REMOVED: name, options[] - stored in database for privacy
         address creator;
         uint256 endTime;
         uint256 resolutionDeadline;
         bool resolved;
         uint8 winningOption;
+        uint8 optionCount;  // Just the number of options (2-4), not the actual option text
         mapping(uint8 => uint256) totalAmountPerOption;
         mapping(address => mapping(uint8 => uint256)) userBets;
         mapping(address => bool) hasClaimed;
@@ -327,7 +37,8 @@ contract Betley is Ownable, ReentrancyGuard {
     
     // ========== STATE VARIABLES ==========
     
-    mapping(uint256 => Bet) public bets;
+    // ❌ CHANGED: Make bets mapping private to prevent enumeration
+    mapping(uint256 => Bet) private bets;
     uint256 public betCounter;
     
     // Fee configuration
@@ -347,7 +58,8 @@ contract Betley is Ownable, ReentrancyGuard {
     
     // ========== EVENTS ==========
     
-    event BetCreated(uint256 indexed betId, address indexed creator, string name, address token);
+    // ❌ CHANGED: Remove sensitive data from events
+    event BetCreated(uint256 indexed betId, address indexed creator, uint8 optionCount, address token);
     event BetPlaced(uint256 indexed betId, address indexed user, uint8 option, uint256 amount);
     event BetResolved(uint256 indexed betId, uint8 winningOption);
     event WinningsClaimed(uint256 indexed betId, address indexed user, uint256 amount);
@@ -363,35 +75,32 @@ contract Betley is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Create a new bet
-     * @param _name Name of the bet
-     * @param _options Array of betting options (2-4 options)
+     * @dev Create a new bet with minimal on-chain data
+     * @param _optionCount Number of betting options (2-4)
      * @param _duration Duration in seconds for betting period
      * @param _token Token address (address(0) for native, contract address for ERC20)
+     * @notice Bet name and options are stored off-chain for privacy
      */
     function createBet(
-        string memory _name,
-        string[] memory _options,
+        uint8 _optionCount,
         uint256 _duration,
         address _token
     ) external returns (uint256) {
-        require(_options.length >= 2 && _options.length <= 4, "Must have 2-4 options");
+        require(_optionCount >= 2 && _optionCount <= 4, "Must have 2-4 options");
         require(_duration > 0, "Duration must be positive");
-        require(bytes(_name).length > 0, "Name cannot be empty");
         
         uint256 betId = betCounter++;
         Bet storage bet = bets[betId];
         
-        bet.name = _name;
-        bet.options = _options;
+        // ✅ ONLY store operational data, no sensitive information
         bet.creator = msg.sender;
+        bet.optionCount = _optionCount;
         bet.endTime = block.timestamp + _duration;
         bet.resolutionDeadline = bet.endTime + 48 hours; // 48 hour resolution window
         bet.token = _token;
-        // Fees start unlocked (will be locked during resolution)
         bet.feesLocked = false;
         
-        emit BetCreated(betId, msg.sender, _name, _token);
+        emit BetCreated(betId, msg.sender, _optionCount, _token);
         return betId;
     }
     
@@ -406,7 +115,7 @@ contract Betley is Ownable, ReentrancyGuard {
         Bet storage bet = bets[_betId];
         require(block.timestamp < bet.endTime, "Betting period ended");
         require(!bet.resolved, "Bet already resolved");
-        require(_option < bet.options.length, "Invalid option");
+        require(_option < bet.optionCount, "Invalid option");
         require(_amount > 0, "Amount must be positive");
         
         // Handle payment based on token type
@@ -422,7 +131,7 @@ contract Betley is Ownable, ReentrancyGuard {
         bet.userBets[msg.sender][_option] += _amount;
         bet.totalAmountPerOption[_option] += _amount;
     
-    emit BetPlaced(_betId, msg.sender, _option, _amount);
+        emit BetPlaced(_betId, msg.sender, _option, _amount);
     }
     
     /**
@@ -436,7 +145,7 @@ contract Betley is Ownable, ReentrancyGuard {
         require(msg.sender == bet.creator, "Only creator can resolve");
         require(block.timestamp >= bet.endTime, "Betting period not ended");
         require(!bet.resolved, "Already resolved");
-        require(_winningOption < bet.options.length, "Invalid winning option");
+        require(_winningOption < bet.optionCount, "Invalid winning option");
         
         bet.resolved = true;
         bet.winningOption = _winningOption;
@@ -528,7 +237,7 @@ contract Betley is Ownable, ReentrancyGuard {
         
         // Calculate total user bet across all options
         uint256 totalUserBet = 0;
-        for (uint8 i = 0; i < bet.options.length; i++) {
+        for (uint8 i = 0; i < bet.optionCount; i++) {
             totalUserBet += bet.userBets[msg.sender][i];
         }
         require(totalUserBet > 0, "No bet to refund");
@@ -644,7 +353,7 @@ contract Betley is Ownable, ReentrancyGuard {
         Bet storage bet = bets[_betId];
         uint256 losingPool = 0;
         
-        for (uint8 i = 0; i < bet.options.length; i++) {
+        for (uint8 i = 0; i < bet.optionCount; i++) {
             if (i != bet.winningOption) {
                 losingPool += bet.totalAmountPerOption[i];
             }
@@ -653,49 +362,66 @@ contract Betley is Ownable, ReentrancyGuard {
         return losingPool;
     }
     
-    // ========== VIEW FUNCTIONS ==========
+    // ========== NEW MINIMAL VIEW FUNCTIONS ==========
     
     /**
-     * @dev Get comprehensive bet details INCLUDING TOKEN ADDRESS (FIXED FOR V2)
+     * @dev Get basic bet information (no sensitive data)
      * @param _betId ID of the bet
-     * @return name The name of the bet
-     * @return options Array of betting options
      * @return creator Address of the bet creator
      * @return endTime When betting period ends
      * @return resolved Whether the bet is resolved
      * @return winningOption Index of winning option (if resolved)
-     * @return totalAmounts Total amounts bet on each option
-     * @return token Token address used for this bet (ADDED - INDEX 7)
+     * @return optionCount Number of betting options
+     * @return token Token address used for this bet
      */
-    function getBetDetails(uint256 _betId) external view returns (
-        string memory name,
-        string[] memory options,
+    function getBetBasics(uint256 _betId) external view returns (
         address creator,
         uint256 endTime,
         bool resolved,
         uint8 winningOption,
-        uint256[] memory totalAmounts,
-        address token  // ← FIXED: Added token address as 8th return value
+        uint8 optionCount,
+        address token
     ) {
         require(_betId < betCounter, "Bet does not exist");
         Bet storage bet = bets[_betId];
         
-        // Build total amounts array
-        totalAmounts = new uint256[](bet.options.length);
-        for (uint8 i = 0; i < bet.options.length; i++) {
-            totalAmounts[i] = bet.totalAmountPerOption[i];
-        }
-        
         return (
-            bet.name,
-            bet.options,
             bet.creator,
             bet.endTime,
             bet.resolved,
             bet.winningOption,
-            totalAmounts,
-            bet.token  // ← FIXED: Now returning token address
+            bet.optionCount,
+            bet.token
         );
+    }
+    
+    /**
+     * @dev Get betting amounts for all options
+     * @param _betId ID of the bet
+     * @return totalAmounts Array of total amounts bet on each option
+     */
+    function getBetAmounts(uint256 _betId) external view returns (uint256[] memory) {
+        require(_betId < betCounter, "Bet does not exist");
+        Bet storage bet = bets[_betId];
+        
+        uint256[] memory totalAmounts = new uint256[](bet.optionCount);
+        for (uint8 i = 0; i < bet.optionCount; i++) {
+            totalAmounts[i] = bet.totalAmountPerOption[i];
+        }
+        
+        return totalAmounts;
+    }
+    
+    /**
+     * @dev Check if betting is still active for a bet
+     * @param _betId ID of the bet
+     * @return canBet Whether betting is still active
+     */
+    function canPlaceBet(uint256 _betId) external view returns (bool) {
+        require(_betId < betCounter, "Bet does not exist");
+        Bet storage bet = bets[_betId];
+        
+        return block.timestamp < bet.endTime && !bet.resolved;
     }
     
     /**
@@ -708,8 +434,8 @@ contract Betley is Ownable, ReentrancyGuard {
         require(_betId < betCounter, "Bet does not exist");
         Bet storage bet = bets[_betId];
         
-        uint256[] memory userBets = new uint256[](bet.options.length);
-        for (uint8 i = 0; i < bet.options.length; i++) {
+        uint256[] memory userBets = new uint256[](bet.optionCount);
+        for (uint8 i = 0; i < bet.optionCount; i++) {
             userBets[i] = bet.userBets[_user][i];
         }
         
@@ -816,4 +542,3 @@ contract Betley is Ownable, ReentrancyGuard {
         revert("Function not found");
     }
 }
-

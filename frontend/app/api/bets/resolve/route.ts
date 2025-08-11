@@ -6,21 +6,11 @@
 import { NextRequest } from 'next/server'
 import { trackBetResolution } from '@/lib/analytics/activityTracker'
 
-// Helper function to get client IP
-function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const vercelIP = request.headers.get('x-vercel-forwarded-for')
-  
-  if (forwarded) return forwarded.split(',')[0].trim()
-  if (vercelIP) return vercelIP.split(',')[0].trim()
-  
-  return '127.0.0.1'
-}
+
 
 export async function POST(request: NextRequest) {
   try {
-    // Get client IP for logging
-    const clientIp = getClientIP(request)
+
 
     // Validate content type
     const contentType = request.headers.get('content-type')
@@ -44,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     const { betId, resolverAddress, winningOption, txHash } = body
 
-    console.log('Bet resolution tracking request:', { betId, resolverAddress, winningOption, txHash, clientIp })
+
 
     // Basic validation
     if (typeof betId !== 'number' || betId < 0) {

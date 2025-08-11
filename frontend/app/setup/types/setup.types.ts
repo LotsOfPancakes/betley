@@ -10,7 +10,6 @@ export interface BetFormData {
   options: string[]
   duration: Duration
   isPublic: boolean
-
 }
 
 export interface ValidationError {

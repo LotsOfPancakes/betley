@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react'
 import { useReadContract } from 'wagmi'
-import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
+import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
 import { 
   calculateLosingPool, 
   calculateAllFees 
@@ -54,8 +54,8 @@ export function useBetFeeData(
     isLoading: isLoadingWinnings,
     error: winningsError
   } = useReadContract({
-    address: BETLEY_ADDRESS,
-    abi: BETLEY_ABI,
+    address: BETLEY_NEW_ADDRESS,
+    abi: BETLEY_NEW_ABI,
     functionName: 'calculatePotentialWinnings',
     args: betId != null && betId !== '' && address ? [BigInt(betId), address as `0x${string}`] : undefined,
     query: {
@@ -71,8 +71,8 @@ export function useBetFeeData(
     isLoading: isLoadingFeeParams,
     error: feeParamsError
   } = useReadContract({
-    address: BETLEY_ADDRESS,
-    abi: BETLEY_ABI,
+    address: BETLEY_NEW_ADDRESS,
+    abi: BETLEY_NEW_ABI,
     functionName: 'getFeeParameters',
     query: {
       staleTime: 30000,

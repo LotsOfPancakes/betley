@@ -108,16 +108,21 @@ export async function POST(request: NextRequest) {
         total_amounts,
         resolved,
         winning_option,
-        is_public,
-        created_at,
-        cached_at
+        created_at
       `)
       .in('numeric_id', Array.from(userBetIds))
       .order('created_at', { ascending: false })
 
     if (detailsError) {
       console.error('Bet details query error:', detailsError)
-      return Response.json({ error: 'Failed to fetch bet details' }, { status: 500 })
+      console.error('Query details:', {
+        userBetIds: Array.from(userBetIds),
+        address: address.toLowerCase()
+      })
+      return Response.json({ 
+        error: 'Failed to fetch bet details',
+        details: detailsError.message 
+      }, { status: 500 })
     }
 
     // ✅ STEP 5: Transform data for frontend consumption
@@ -145,8 +150,8 @@ export async function POST(request: NextRequest) {
         totalAmounts: bet.total_amounts || [], // Keep as number array
         userRole,
         userTotalBet: 0, // TODO: Calculate from user_activities
-        isPublic: bet.is_public || false,
-        cachedAt: bet.cached_at
+        isPublic: false, // Default to false since column might not exist
+        cachedAt: bet.created_at // Use created_at as fallback
       }
     })
 

@@ -84,52 +84,62 @@ export async function checkRateLimit(
   const serverSupabase = createServerSupabaseClient()
   
   try {
-    // Try to use the RPC function if it exists
-    const { data, error } = await serverSupabase.rpc('check_rate_limit', {
-      p_client_ip: clientIp,
-      p_endpoint: endpoint,
-      p_max_requests: maxRequests,
-      p_window_minutes: windowMinutes
-    })
+    // Create a hash of the client IP for privacy
+    const keyHash = Buffer.from(`${clientIp}-${endpoint}`).toString('base64').substring(0, 32)
+    const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000)
+    
+    // Check current rate limit status
+    const { data: record, error: selectError } = await serverSupabase
+      .from('rate_limits')
+      .select('request_count, window_start')
+      .eq('key_hash', keyHash)
+      .eq('action_type', endpoint)
+      .single()
 
-    if (error) {
-      console.error('Rate limit RPC failed, falling back to manual check:', error)
-      
-      // Fallback to manual rate limiting
-      const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000)
-      const key = `${clientIp}-${endpoint}`
-      
-      const { data: records, error: selectError } = await serverSupabase
-        .from('rate_limits')
-        .select('count')
-        .eq('key', key)
-        .gte('created_at', windowStart.toISOString())
-        .single()
-
-      if (selectError && selectError.code !== 'PGRST116') {
-        console.error('Rate limit fallback check error:', selectError)
-        return true // Allow on error
-      }
-
-      const currentCount = records?.count || 0
-      
-      if (currentCount >= maxRequests) {
-        return false
-      }
-
-      // Update rate limit record
-      await serverSupabase
-        .from('rate_limits')
-        .upsert({
-          key,
-          count: currentCount + 1,
-          created_at: new Date().toISOString()
-        })
-
-      return true
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.error('Rate limit check error:', selectError)
+      return true // Allow on error
     }
 
-    return data === true
+    let currentCount = 0
+
+    if (record) {
+      const recordWindowStart = new Date(record.window_start)
+      
+      // If the record is within the current window, use its count
+      if (recordWindowStart >= windowStart) {
+        currentCount = record.request_count
+        
+        // Check if we've exceeded the limit
+        if (currentCount >= maxRequests) {
+          return false
+        }
+        
+        // Increment the count
+        currentCount += 1
+      } else {
+        // Window has expired, reset count
+        currentCount = 1
+      }
+    } else {
+      // No existing record, start with 1
+      currentCount = 1
+    }
+
+    // Update or insert the rate limit record
+    await serverSupabase
+      .from('rate_limits')
+      .upsert({
+        key_hash: keyHash,
+        action_type: endpoint,
+        request_count: currentCount,
+        window_start: record && new Date(record.window_start) >= windowStart 
+          ? record.window_start 
+          : new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+    return true
   } catch (error) {
     console.error('Rate limiting error:', error)
     return true // Allow on error to prevent service disruption

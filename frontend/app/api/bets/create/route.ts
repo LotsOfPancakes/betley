@@ -1,5 +1,7 @@
 // ============================================================================
 // File: frontend/app/api/bets/create/route.ts
+// New Privacy-Focused Bet Creation API
+// Purpose: Store sensitive bet data in database after contract creation
 // ============================================================================
 
 import { NextRequest } from 'next/server'
@@ -55,12 +57,12 @@ export async function POST(request: NextRequest) {
       numericId, 
       creatorAddress, 
       betName, 
-      isPublic = false,
       betOptions = [],
+      tokenAddress,
       durationInSeconds = 0
     } = body
 
-    console.log('Create bet request:', { numericId, creatorAddress, betName, isPublic, betOptions, durationInSeconds })
+
 
     // ✅ VALIDATION: Check all inputs
     if (typeof numericId !== 'number' || numericId < 0) {
@@ -79,25 +81,35 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Bet name too long' }, { status: 400 })
     }
 
-    // ✅ VALIDATION: Validate isPublic parameter
-    if (typeof isPublic !== 'boolean') {
-      return Response.json({ error: 'Invalid public flag' }, { status: 400 })
+    // ✅ VALIDATION: Validate bet options (required for new architecture)
+    if (!Array.isArray(betOptions) || betOptions.length < 2 || betOptions.length > 4) {
+      return Response.json({ error: 'Invalid bet options - need 2-4 options' }, { status: 400 })
     }
 
-    // ✅ VALIDATION: Validate bet options (Phase 2)
-    if (betOptions && (!Array.isArray(betOptions) || betOptions.length < 2)) {
-      return Response.json({ error: 'Invalid bet options - need at least 2 options' }, { status: 400 })
+    // ✅ VALIDATION: Validate each option
+    for (const option of betOptions) {
+      if (!option || typeof option !== 'string' || option.trim().length === 0) {
+        return Response.json({ error: 'All bet options must be non-empty strings' }, { status: 400 })
+      }
+      if (option.length > 100) {
+        return Response.json({ error: 'Bet options too long (max 100 characters)' }, { status: 400 })
+      }
     }
 
-    // ✅ VALIDATION: Validate duration (Phase 2)
-    if (durationInSeconds && (typeof durationInSeconds !== 'number' || durationInSeconds <= 0)) {
+    // ✅ VALIDATION: Validate token address
+    if (!tokenAddress || !tokenAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
+      return Response.json({ error: 'Invalid token address' }, { status: 400 })
+    }
+
+    // ✅ VALIDATION: Validate duration (required)
+    if (typeof durationInSeconds !== 'number' || durationInSeconds <= 0) {
       return Response.json({ error: 'Invalid duration' }, { status: 400 })
     }
 
     // ✅ RLS FIX: Use server Supabase client with full permissions
     const supabase = createServerSupabaseClient()
 
-    console.log('Using server Supabase client')
+
 
     // Check if mapping already exists for this numeric ID
     const { data: existing, error: lookupError } = await supabase
@@ -112,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (existing) {
-      console.log('Existing mapping found:', existing.random_id)
+
       return Response.json({ randomId: existing.random_id })
     }
 
@@ -144,26 +156,36 @@ export async function POST(request: NextRequest) {
       if (!duplicate) break
     } while (attempts < maxAttempts)
 
-    console.log('Generated random ID:', randomId, 'after', attempts, 'attempts')
 
-    // ✅ COMPLETE: Insert new mapping with complete bet details (Phase 2)
+
+    // ✅ NEW ARCHITECTURE: Store ALL sensitive bet details in database
+    const endTime = Math.floor(Date.now() / 1000) + durationInSeconds
     const insertData = {
       random_id: randomId,
       numeric_id: numericId,
-      creator_address: creatorAddress.toLowerCase(), // Normalize case
+      
+      // Sensitive data (stored here, NOT on blockchain)
       bet_name: betName.trim(),
-      is_public: isPublic,  // ✅ PRESERVED: isPublic field support
-      bet_options: betOptions.length > 0 ? betOptions : null, // ✅ NEW: Store bet options
-      end_time: durationInSeconds > 0 ? Math.floor(Date.now() / 1000) + durationInSeconds : null, // ✅ NEW: Calculate end time
-      total_amounts: betOptions.length > 0 ? new Array(betOptions.length).fill(0) : null, // ✅ NEW: Initialize amounts
-      resolved: false, // ✅ NEW: Default to unresolved
-      winning_option: null, // ✅ NEW: No winner yet
-      cached_at: new Date().toISOString() // ✅ NEW: Cache timestamp
+      bet_options: betOptions, // Full option text stored here
+      
+      // Creator and configuration
+      creator_address: creatorAddress.toLowerCase(),
+      option_count: betOptions.length,
+      token_address: tokenAddress.toLowerCase(),
+      
+      // Timing
+      end_time: endTime,
+      
+      // Initial state (will be updated by sync process)
+      resolved: false,
+      winning_option: null,
+      total_amounts: new Array(betOptions.length).fill(0), // Initialize with zeros
+      resolution_deadline: endTime + (48 * 60 * 60), // 48 hours after end time
     }
 
-    console.log('Inserting data:', insertData)
 
-    const { data: insertResult, error: insertError } = await supabase
+
+    const { error: insertError } = await supabase
       .from('bet_mappings')
       .insert(insertData)
       .select() // Return the inserted data
@@ -179,7 +201,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Failed to create mapping' }, { status: 500 })
     }
 
-    console.log('Successfully inserted:', insertResult)
+
 
     // ✅ REAL-TIME ANALYTICS: Track bet creation activity
     await trackBetCreation(creatorAddress, numericId)

@@ -9,6 +9,7 @@ import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBou
 
 // Import our extracted components and hooks
 import BetNameInput from './components/BetNameInput'
+
 import OptionsManager from './components/OptionsManager'
 import DurationSelector from './components/DurationSelector'
 import BetVisibilitySelector from './components/BetVisibilitySelector'  // ✅ NEW IMPORT
@@ -16,7 +17,7 @@ import SubmitSection from './components/SubmitSection'
 
 import { useBetForm } from './hooks/useBetForm'
 import { useBetValidation } from './hooks/useBetValidation'
-import { useBetCreation } from './hooks/useBetCreation'
+import { useBetCreationNew } from './hooks/useBetCreationNew'
 
 function SetupPageContent() {
   const { address } = useAccount()
@@ -46,7 +47,7 @@ function SetupPageContent() {
     error,
     createBet,
     clearError,
-  } = useBetCreation()
+  } = useBetCreationNew()
 
   // Pre-fill bet name if coming from landing page
   useEffect(() => {
@@ -64,8 +65,13 @@ function SetupPageContent() {
     const filledOptions = getFilledOptions()
     const durationInSeconds = getDurationInSeconds()
     
-    // ✅ UPDATED: Pass isPublic to createBet
-    createBet(formData.name, filledOptions, durationInSeconds, undefined, formData.isPublic)
+    // ✅ NEW ARCHITECTURE: Pass all details for database storage
+    createBet(
+      formData.name,           // betName
+      filledOptions,           // options array
+      durationInSeconds,       // duration
+      '0x0000000000000000000000000000000000000000' // native ETH
+    )
   }
 
   const creationState = {
@@ -114,6 +120,8 @@ function SetupPageContent() {
                 />
               </div>
             </ComponentErrorBoundary>
+
+
 
             {/* Options Manager */}
             <ComponentErrorBoundary>

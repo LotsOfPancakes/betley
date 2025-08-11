@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import { isNativeETH } from '@/lib/tokenUtils'
-import { ERC20_ABI } from '@/lib/contractABI'
+import { ERC20_ABI } from '@/lib/erc20ABI'
 
 interface UseSmartApprovalProps {
   tokenAddress: string

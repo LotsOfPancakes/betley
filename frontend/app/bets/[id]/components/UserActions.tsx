@@ -1,10 +1,8 @@
 // frontend/app/bets/[id]/components/UserActions.tsx
 'use client'
 
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
-import { useNotification } from '@/lib/hooks/useNotification'
+import { useState, useEffect, useMemo } from 'react'
+
 import { useBetFeeData, type FeeBreakdown } from '../hooks/useBetFeeData'
 import { 
   calculateWinningsBreakdown, 
@@ -28,7 +26,7 @@ interface UserActionsProps {
   totalAmounts?: readonly bigint[]
   resolutionDeadlinePassed: boolean
   hasClaimed?: boolean
-  hasClaimedCreatorFees?: boolean // NEW: Add creator fee claim status
+
   decimals?: number
   isPending: boolean
   handleClaimWinnings: () => void
@@ -418,7 +416,7 @@ export function UserActions({
   totalAmounts,
   resolutionDeadlinePassed,
   hasClaimed,
-  hasClaimedCreatorFees, // NEW: Accept creator fee claim status
+
   decimals = 18,
   isPending,
   handleClaimWinnings,
@@ -433,25 +431,16 @@ export function UserActions({
   
   const {
     contractWinnings,
-    creatorFeeAmount,
+
     feeParams,
     error: feeDataError
   } = useBetFeeData(betId, address, totalAmounts, winningOption, resolved)
 
-  const { showError, showSuccess } = useNotification()
+
   
-  const { 
-    writeContract: writeCreatorClaim, 
-    isPending: isCreatorClaimPending,
-    data: creatorClaimTxHash
-  } = useWriteContract()
 
-  const { isSuccess: isCreatorClaimSuccess } = useWaitForTransactionReceipt({ 
-    hash: creatorClaimTxHash 
-  })
 
-  // State for creator fee breakdown
-  const [isCreatorFeeExpanded, setIsCreatorFeeExpanded] = useState(false)
+
 
   // ============================================================================
   // COMPUTED VALUES - Derived state, well-named
@@ -489,18 +478,14 @@ export function UserActions({
   )
 
   // Use the fee data from winnings breakdown if available, fallback to calculated
-  const actualCreatorFeeAmount = winningsBreakdown?.creatorFee ?? creatorFeeAmount
-  const hasCreatorFees = isCreator && actualCreatorFeeAmount && actualCreatorFeeAmount > BigInt(0)
+
+
 
   // ============================================================================
   // EFFECTS - Properly isolated side effects
   // ============================================================================
   
-  useEffect(() => {
-    if (isCreatorClaimSuccess) {
-      showSuccess('Creator fees claimed successfully!')
-    }
-  }, [isCreatorClaimSuccess, showSuccess])
+
 
   useEffect(() => {
     if (feeDataError) {
@@ -512,21 +497,7 @@ export function UserActions({
   // EVENT HANDLERS - Clear, single responsibility
   // ============================================================================
   
-  const handleClaimCreatorFees = useCallback(async () => {
-    if (betId == null || betId === '' || isCreatorClaimPending) return
-    
-    try {
-      writeCreatorClaim({
-        address: BETLEY_ADDRESS,
-        abi: BETLEY_ABI,
-        functionName: 'claimCreatorFees',
-        args: [BigInt(betId)],
-      })
-    } catch (error) {
-      console.error('Error claiming creator fees:', error)
-      showError('Failed to claim creator fees. Please try again.')
-    }
-  }, [betId, isCreatorClaimPending, writeCreatorClaim, showError])
+
 
   // ============================================================================
   // RENDER - Clean JSX with clear structure
@@ -595,56 +566,7 @@ export function UserActions({
         }
       })()}
 
-      {/* Creator Fee Section - only show if not empty expired bet */}
-      {!isEmptyExpiredBet && hasCreatorFees && !hasClaimedCreatorFees ? (
-        <div className="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm rounded-3xl p-6">
-          <p className="text-yellow-300 mb-4">
-            Creator Fees available: {formatTokenAmount(actualCreatorFeeAmount, decimals, isNativeBet)}
-          </p>
-          
-          <ClaimButton
-            onClick={handleClaimCreatorFees}
-            disabled={isCreatorClaimPending}
-            variant="warning"
-          >
-            {isCreatorClaimPending ? 'Claiming...' : `Claim ${formatTokenAmount(actualCreatorFeeAmount, decimals, isNativeBet)} Creator Fees`}
-          </ClaimButton>
 
-          {/* Clean Creator Fee Breakdown */}
-          <div className="bg-gradient-to-br from-yellow-800/30 to-orange-800/30 rounded-2xl p-4 mt-4">
-            <button
-              onClick={() => setIsCreatorFeeExpanded(!isCreatorFeeExpanded)}
-              className="w-full flex items-center justify-between text-yellow-200 hover:text-yellow-400 transition-colors"
-              aria-expanded={isCreatorFeeExpanded}
-              aria-controls="creator-fee-details"
-            >
-              <span className="font-semibold">Fee Breakdown</span>
-              <span className={`transform transition-transform ${isCreatorFeeExpanded ? 'rotate-180' : ''}`}>
-                ▼
-              </span>
-            </button>
-            
-            {isCreatorFeeExpanded && (
-              <div id="creator-fee-details" className="mt-3 space-y-2 text-yellow-200 text-sm">
-                <div className="flex justify-between">
-                  <span>Losing Pool Total:</span>
-                  <span>{formatTokenAmount(
-                    winningsBreakdown ? 
-                      winningsBreakdown.rawWinningsFromLosers + winningsBreakdown.creatorFee + winningsBreakdown.platformFee :
-                      BigInt(0), 
-                    decimals, 
-                    isNativeBet
-                  )}</span>
-                </div>
-                <div className="flex justify-between font-semibold border-t border-gray-600 pt-2">
-                  <span>Creator Fee (1%):</span>
-                  <span className="text-yellow-400">{formatTokenAmount(actualCreatorFeeAmount, decimals, isNativeBet)}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }

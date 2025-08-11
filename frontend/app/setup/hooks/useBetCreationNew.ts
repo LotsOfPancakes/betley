@@ -1,4 +1,5 @@
-// frontend/app/setup/hooks/useBetCreation.ts - Updated with chain validation and isPublic support
+// frontend/app/setup/hooks/useBetCreationNew.ts
+// New Privacy-Focused Bet Creation Hook
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -7,23 +8,28 @@ import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadCont
 import { useQueryClient } from '@tanstack/react-query'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useChainValidation } from '@/lib/hooks/useChainValidation'
-import { BETLEY_ABI, BETLEY_ADDRESS } from '@/lib/contractABI'
-import { UnifiedBetMapper } from '@/lib/betIdMapping'
+import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
 
 interface BetCreationState {
   isLoading: boolean
   error: string | null
 }
 
-export function useBetCreation() {
+export function useBetCreationNew() {
   const [state, setState] = useState<BetCreationState>({
     isLoading: false,
     error: null
   })
-  const [lastBetName, setLastBetName] = useState<string>('')
-  const [lastIsPublic, setLastIsPublic] = useState<boolean>(false)  // ✅ NEW STATE
-  const [lastBetOptions, setLastBetOptions] = useState<string[]>([]) // ✅ NEW STATE
-  const [lastDurationInSeconds, setLastDurationInSeconds] = useState<number>(0) // ✅ NEW STATE
+  
+  // Store bet details for database storage after contract creation
+  const [pendingBetDetails, setPendingBetDetails] = useState<{
+    name: string
+    options: string[]
+    duration: number
+    tokenAddress: string
+    creatorAddress: string
+  } | null>(null)
+  
   const [betCounterWhenStarted, setBetCounterWhenStarted] = useState<number | null>(null)
   
   const router = useRouter()
@@ -34,8 +40,8 @@ export function useBetCreation() {
   
   // Get current bet counter for ID prediction
   const { data: betCounter } = useReadContract({
-    address: BETLEY_ADDRESS,
-    abi: BETLEY_ABI,
+    address: BETLEY_NEW_ADDRESS,
+    abi: BETLEY_NEW_ABI,
     functionName: 'betCounter',
     query: {
       staleTime: 5000,
@@ -55,39 +61,55 @@ export function useBetCreation() {
     data: receipt 
   } = useWaitForTransactionReceipt({ hash: txHash })
 
-  // ✅ CRITICAL: Handle successful transaction with async mapping creation
+  // Handle successful transaction - create database mapping
   useEffect(() => {
-    if (isSuccess && receipt && betCounterWhenStarted !== null && address && lastBetName) {
-      const createMappingAndRedirect = async () => {
+    if (isSuccess && receipt && betCounterWhenStarted !== null && pendingBetDetails) {
+      const createDatabaseMapping = async () => {
         try {
           setState(prev => ({ ...prev, isLoading: true }))
           
           // The bet ID is the counter value when we started
           const newBetId = betCounterWhenStarted
           
-          // ✅ UPDATED: Pass complete bet details for Phase 2
-          const randomId = await UnifiedBetMapper.createMapping(
-            newBetId,
-            lastBetName,
-            address,
-            lastIsPublic,
-            lastBetOptions, // ✅ NEW: Pass bet options
-            lastDurationInSeconds // ✅ NEW: Pass duration
-          )
+          // Call our new API to store sensitive data in database
+          const response = await fetch('/api/bets/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              numericId: newBetId,
+              creatorAddress: pendingBetDetails.creatorAddress,
+              betName: pendingBetDetails.name,
+              betOptions: pendingBetDetails.options,
+              tokenAddress: pendingBetDetails.tokenAddress,
+              durationInSeconds: pendingBetDetails.duration,
+            }),
+          })
+          
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Failed to create bet mapping')
+          }
+          
+          const { randomId } = await response.json()
           
           // Invalidate React Query cache
           queryClient.invalidateQueries({ queryKey: ['betCounter'] })
           queryClient.invalidateQueries({ queryKey: ['bet'] })
-          queryClient.invalidateQueries({ queryKey: ['bet-mapping'] })
           
           setState(prev => ({ ...prev, isLoading: false }))
           showSuccess('Bet created successfully!')
 
-          // Now safe to redirect
+          // Clear pending details
+          setPendingBetDetails(null)
+          setBetCounterWhenStarted(null)
+
+          // Redirect to the new bet page
           router.push(`/bets/${randomId}`)
           
         } catch (error) {
-          console.error('Error creating mapping:', error)
+          console.error('Error creating database mapping:', error)
           setState(prev => ({ 
             ...prev, 
             isLoading: false, 
@@ -97,50 +119,60 @@ export function useBetCreation() {
         }
       }
       
-      createMappingAndRedirect()
+      createDatabaseMapping()
     }
-  }, [isSuccess, receipt, betCounterWhenStarted, address, lastBetName, lastIsPublic, lastBetOptions, lastDurationInSeconds, queryClient, showSuccess, showError, router])
+  }, [isSuccess, receipt, betCounterWhenStarted, pendingBetDetails, queryClient, showSuccess, showError, router])
 
-  // ✅ UPDATED: Main create bet function with isPublic parameter
+  // Main create bet function - NEW ARCHITECTURE
   const createBet = async (
     betName: string,
     options: string[],
     durationInSeconds: number,
-    tokenAddress?: string,
-    isPublic: boolean = false  // ✅ NEW PARAMETER
+    tokenAddress: string = '0x0000000000000000000000000000000000000000'
   ) => {
-    // ✅ VALIDATE CHAIN FIRST
+    // Validate chain first
     if (!validateChain()) return
 
-    if (!address || !betCounter == null) {
+    if (!address || betCounter == null) {
       showError('Please connect your wallet first')
       return
     }
 
-    if (!betName.trim() || options.length < 2) {
-      showError('Please provide a bet name and at least 2 options')
+    if (!betName.trim() || options.length < 2 || options.length > 4) {
+      showError('Please provide a bet name and 2-4 options')
+      return
+    }
+
+    // Validate all options are non-empty
+    const validOptions = options.filter(opt => opt.trim())
+    if (validOptions.length !== options.length) {
+      showError('All bet options must be non-empty')
       return
     }
 
     try {
       setState({ isLoading: true, error: null })
-      setLastBetName(betName.trim())
-      setLastIsPublic(isPublic)  // ✅ NEW: Store isPublic state
-      setLastBetOptions(options.filter(opt => opt.trim())) // ✅ NEW: Store bet options
-      setLastDurationInSeconds(durationInSeconds) // ✅ NEW: Store duration
+      
+      // Store bet details for database creation after contract success
+      setPendingBetDetails({
+        name: betName.trim(),
+        options: validOptions,
+        duration: durationInSeconds,
+        tokenAddress: tokenAddress,
+        creatorAddress: address
+      })
+      
       setBetCounterWhenStarted(Number(betCounter))
       
-      // ✅ NOTE: Smart contract function signature remains unchanged
-      // isPublic is only stored in database, not on-chain
+      // ✅ NEW CONTRACT CALL: Only operational data, no sensitive info
       writeContract({
-        address: BETLEY_ADDRESS,
-        abi: BETLEY_ABI,
+        address: BETLEY_NEW_ADDRESS,
+        abi: BETLEY_NEW_ABI,
         functionName: 'createBet',
         args: [
-          betName.trim(),
-          options.filter(opt => opt.trim()),
-          BigInt(durationInSeconds),
-          tokenAddress || '0x0000000000000000000000000000000000000000'
+          validOptions.length,  // optionCount (uint8)
+          BigInt(durationInSeconds),  // duration (uint256)
+          tokenAddress as `0x${string}`  // token (address)
         ],
       })
       
@@ -149,11 +181,13 @@ export function useBetCreation() {
       
       const errorMessage = error instanceof Error ? error.message : String(error)
       
+      // Handle user rejection gracefully
       if (errorMessage.toLowerCase().includes('user rejected') || 
           errorMessage.toLowerCase().includes('cancelled') ||
           errorMessage.toLowerCase().includes('denied') ||
           errorMessage.includes('4001')) {
         setState({ isLoading: false, error: null })
+        setPendingBetDetails(null)
         return
       }
       
@@ -162,6 +196,7 @@ export function useBetCreation() {
         error: 'Failed to create bet. Please try again.'
       })
       showError('Failed to create bet. Please try again.')
+      setPendingBetDetails(null)
     }
   }
 

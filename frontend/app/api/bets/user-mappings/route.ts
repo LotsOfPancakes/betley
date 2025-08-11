@@ -4,20 +4,15 @@
 
 import { NextRequest } from 'next/server'
 import { supabase, checkRateLimit, createServerSupabaseClient } from '@/lib/supabase'
-import { createPublicClient, http, parseAbi } from 'viem'
+import { createPublicClient, http } from 'viem'
 import { baseSepolia } from '@reown/appkit/networks'
+import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
 
 // Create RPC client for contract calls
 const publicClient = createPublicClient({
   chain: baseSepolia,
   transport: http(process.env.NEXT_PUBLIC_RPC_URL)
 })
-
-const BETLEY_ADDRESS = process.env.NEXT_PUBLIC_BETLEY_ADDRESS as `0x${string}`
-const BETLEY_ABI = parseAbi([
-  'function getUserBets(uint256 betId, address user) external view returns (uint256[] memory)',
-  'function getBetDetails(uint256 betId) external view returns (string memory, string[] memory, address, uint256, bool, uint8, uint256[], address)'
-])
 
 // Get IP helper function
 function getClientIP(request: NextRequest): string {
@@ -123,8 +118,8 @@ export async function POST(request: NextRequest) {
         // This handles the timing gap between bet placement and cron job
         try {
           const userBets = await publicClient.readContract({
-            address: BETLEY_ADDRESS,
-            abi: BETLEY_ABI,
+            address: BETLEY_NEW_ADDRESS,
+            abi: BETLEY_NEW_ABI,
             functionName: 'getUserBets',
             args: [BigInt(numericId), address as `0x${string}`]
           })

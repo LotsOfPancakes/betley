@@ -1,6 +1,9 @@
 // frontend/app/api/bets/public/route.ts
 import { NextRequest } from 'next/server'
 import { supabase, checkRateLimit } from '@/lib/supabase'
+import { createPublicClient, http } from 'viem'
+import { baseSepolia } from 'viem/chains'
+import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -33,7 +36,8 @@ export async function GET(request: NextRequest) {
     const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0)
 
     // ✅ SECURITY: Query only public bets with essential info
-    const { data, error } = await supabase
+    // First try with is_public column, fallback if column doesn't exist
+    let { data, error } = await supabase
       .from('bet_mappings')
       .select(`
         random_id,
@@ -47,6 +51,13 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
+    // If query failed due to missing is_public column, return empty results
+    if (error && error.message?.includes('is_public')) {
+      console.log('is_public column not found, returning empty results until migration is run')
+      data = []
+      error = null
+    }
+
     if (error) {
       console.error('Database error:', error)
       return Response.json(
@@ -55,16 +66,52 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ✅ Transform data for frontend consumption
-    const publicBets = (data || []).map(bet => ({
-      randomId: bet.random_id,
-      numericId: bet.numeric_id,
-      name: bet.bet_name,
-      creator: bet.creator_address,
-      createdAt: bet.created_at,
-      isPublic: bet.is_public,
-      endTime: '0', // Placeholder - no active filtering for now
-      timeRemaining: 'Public Bet' // Simple indicator
+    // ✅ Transform data and fetch real end times from blockchain
+    const publicClient = createPublicClient({
+      chain: baseSepolia,
+      transport: http()
+    })
+    
+    const publicBets = await Promise.all((data || []).map(async (bet) => {
+      let endTime = '0'
+      let timeRemaining = 'Public Bet'
+      
+      try {
+        // Fetch real end time from blockchain
+        const betBasics = await publicClient.readContract({
+          address: BETLEY_NEW_ADDRESS,
+          abi: BETLEY_NEW_ABI,
+          functionName: 'getBetBasics',
+          args: [BigInt(bet.numeric_id)],
+        }) as readonly [string, bigint, boolean, number, number, string]
+        
+        const blockchainEndTime = betBasics[1] // endTime is second element
+        endTime = (Number(blockchainEndTime) * 1000).toString() // Convert to milliseconds
+        
+        // Calculate time remaining
+        const now = Date.now()
+        const endTimeMs = Number(blockchainEndTime) * 1000
+        if (endTimeMs > now) {
+          const hoursLeft = Math.ceil((endTimeMs - now) / (1000 * 60 * 60))
+          timeRemaining = `${hoursLeft}h left`
+        } else {
+          timeRemaining = 'Ended'
+        }
+      } catch (error) {
+        console.log(`Failed to fetch end time for bet ${bet.numeric_id}:`, error)
+        // Keep placeholder values
+      }
+      
+      return {
+        randomId: bet.random_id,
+        numericId: bet.numeric_id,
+        name: bet.bet_name,
+        creator: bet.creator_address,
+        createdAt: bet.created_at,
+        isPublic: bet.is_public,
+        endTime,
+        timeRemaining
+      }
     }))
 
     // ✅ Return clean response with caching

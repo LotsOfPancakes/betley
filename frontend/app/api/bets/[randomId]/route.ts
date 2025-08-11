@@ -1,9 +1,11 @@
 // ============================================================================
-// frontend/app/api/bets/[randomId]/route.ts - Fixed bet lookup
+// File: frontend/app/api/bets/[randomId]/route.ts
+// New Privacy-Focused Bet Details API
+// Purpose: Provide bet details to anyone with the random URL (link-based access)
 // ============================================================================
 
 import { NextRequest } from 'next/server'
-import { supabase, checkRateLimit, validateRandomId } from '@/lib/supabase'
+import { createServerSupabaseClient, checkRateLimit, validateRandomId } from '@/lib/supabase'
 
 // Get IP Helper function
 function getClientIP(request: NextRequest): string {
@@ -28,11 +30,11 @@ export async function GET(
     // ✅ SECURITY: Get client IP with proper fallbacks
     const clientIp = getClientIP(request)
 
-    // ✅ SECURITY: Rate limit (100 lookups per hour)
-    const rateLimitOk = await checkRateLimit(clientIp, 'lookup-bet', 100, 60)
+    // ✅ SECURITY: Rate limit (200 lookups per hour - generous for legitimate use)
+    const rateLimitOk = await checkRateLimit(clientIp, 'bet-details', 200, 60)
     if (!rateLimitOk) {
       return Response.json(
-        { error: 'Rate limit exceeded' }, 
+        { error: 'Rate limit exceeded. Please try again later.' }, 
         { status: 429 }
       )
     }
@@ -43,15 +45,30 @@ export async function GET(
     // ✅ SECURITY: Validate input format
     if (!validateRandomId(randomId)) {
       return Response.json(
-        { error: 'Invalid random ID format' }, 
+        { error: 'Invalid bet URL format' }, 
         { status: 400 }
       )
     }
 
-    // ✅ SECURITY: Use read-only client for lookup
-    const { data, error } = await supabase
+    // ✅ DATABASE: Get bet details from database (this is the new approach)
+    const supabase = createServerSupabaseClient()
+    const { data: bet, error } = await supabase
       .from('bet_mappings')
-      .select('numeric_id')
+      .select(`
+        numeric_id,
+        bet_name,
+        bet_options,
+        creator_address,
+        option_count,
+        token_address,
+        end_time,
+        resolved,
+        winning_option,
+        total_amounts,
+        resolution_deadline,
+        created_at,
+        updated_at
+      `)
       .eq('random_id', randomId)
       .single()
 
@@ -63,22 +80,78 @@ export async function GET(
       )
     }
 
-    // ✅ SECURITY: Return null for not found (don't reveal existence)
+    // ✅ NOT FOUND: Return 404 for invalid random IDs
+    if (!bet) {
+      return Response.json(
+        { error: 'Bet not found. Please check the URL and try again.' }, 
+        { status: 404 }
+      )
+    }
+
+    // ✅ SUCCESS: Return ALL bet details to anyone with the link
+    // This is the core of our privacy model: the random URL IS the access control
     return Response.json(
-      { numericId: data?.numeric_id || null },
+      {
+        // Core bet information
+        numericId: bet.numeric_id,
+        name: bet.bet_name,
+        options: bet.bet_options,
+        
+        // Creator and configuration
+        creator: bet.creator_address,
+        optionCount: bet.option_count,
+        tokenAddress: bet.token_address,
+        
+        // Timing
+        endTime: bet.end_time,
+        createdAt: bet.created_at,
+        
+        // Resolution status (cached from blockchain)
+        resolved: bet.resolved,
+        winningOption: bet.winning_option,
+        resolutionDeadline: bet.resolution_deadline,
+        
+        // Betting amounts (cached from blockchain, may be slightly stale)
+        totalAmounts: bet.total_amounts,
+        
+        // Metadata
+        lastUpdated: bet.updated_at,
+        
+        // Status flags for frontend
+        canAccess: true, // Anyone with the link can access
+        isActive: bet.end_time > Math.floor(Date.now() / 1000) && !bet.resolved,
+        hasEnded: bet.end_time <= Math.floor(Date.now() / 1000),
+      },
       {
         headers: {
-          'Cache-Control': 'public, max-age=300', // 5 min cache
-          'X-Content-Type-Options': 'nosniff'
+          // Cache for 30 seconds to reduce database load
+          'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
+          'X-Content-Type-Options': 'nosniff',
+          // Add CORS headers if needed
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
         }
       }
     )
 
   } catch (error) {
-    console.error('API lookup error:', error)
+    console.error('API bet details error:', error)
     return Response.json(
       { error: 'Internal server error' }, 
       { status: 500 }
     )
   }
+}
+
+// ============================================================================
+// Optional: Handle OPTIONS for CORS preflight
+// ============================================================================
+export async function OPTIONS() {
+  return Response.json({}, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    }
+  })
 }

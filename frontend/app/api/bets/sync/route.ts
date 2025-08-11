@@ -6,19 +6,15 @@
 
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
-import { createPublicClient, http, parseAbi } from 'viem'
+import { createPublicClient, http } from 'viem'
 import { baseSepolia } from '@reown/appkit/networks'
+import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
 
 // Create RPC client for contract calls
 const publicClient = createPublicClient({
   chain: baseSepolia,
   transport: http(process.env.NEXT_PUBLIC_RPC_URL)
 })
-
-const BETLEY_ADDRESS = process.env.NEXT_PUBLIC_BETLEY_ADDRESS as `0x${string}`
-const BETLEY_ABI = parseAbi([
-  'function getBetDetails(uint256 betId) external view returns (string memory, string[] memory, address, uint256, bool, uint8, uint256[])'
-])
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,23 +62,31 @@ export async function POST(request: NextRequest) {
 
         console.log(`Syncing bet ${bet.numeric_id}...`)
 
-        // Get fresh data from blockchain
-        const betData = await publicClient.readContract({
-          address: BETLEY_ADDRESS,
-          abi: BETLEY_ABI,
-          functionName: 'getBetDetails',
-          args: [BigInt(bet.numeric_id)]
-        }) as readonly [string, readonly string[], `0x${string}`, bigint, boolean, number, readonly bigint[]]
+        // Get fresh data from blockchain using new contract functions
+        const [betBasics, betAmounts] = await Promise.all([
+          publicClient.readContract({
+            address: BETLEY_NEW_ADDRESS,
+            abi: BETLEY_NEW_ABI,
+            functionName: 'getBetBasics',
+            args: [BigInt(bet.numeric_id)]
+          }) as Promise<readonly [`0x${string}`, bigint, boolean, number, number, `0x${string}`]>,
+          
+          publicClient.readContract({
+            address: BETLEY_NEW_ADDRESS,
+            abi: BETLEY_NEW_ABI,
+            functionName: 'getBetAmounts',
+            args: [BigInt(bet.numeric_id)]
+          }) as Promise<readonly bigint[]>
+        ])
 
         // Update database with fresh data
         const { error: updateError } = await supabase
           .from('bet_mappings')
           .update({
-            bet_options: betData[1] as string[],
-            end_time: Number(betData[3]),
-            total_amounts: betData[6].map(amount => Number(amount)),
-            resolved: betData[4],
-            winning_option: betData[4] ? betData[5] : null,
+            end_time: Number(betBasics[1]),
+            total_amounts: betAmounts.map(amount => Number(amount)),
+            resolved: betBasics[2],
+            winning_option: betBasics[2] ? betBasics[3] : null,
             cached_at: new Date().toISOString()
           })
           .eq('numeric_id', bet.numeric_id)

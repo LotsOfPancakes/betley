@@ -47,7 +47,7 @@ export const config = {
   contracts: {
     betley: getRequiredEnv(
       'NEXT_PUBLIC_BETLEY_ADDRESS',
-      '0xE49Fe9FD2D6E46c3A58cce393A6125bDE1BAb6Ec'
+      '0xF19644783E32fB9BDF6B09B37BE009C6FaEf67D0'
     ) as `0x${string}`,
     mockERC20: getOptionalEnv(
       'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // Placeholder for native ETH betting

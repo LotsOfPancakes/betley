@@ -19,6 +19,8 @@ export function useBetForm(initialTitle?: string) {
     setFormData(prev => ({ ...prev, name }))
   }
 
+
+
   const updateOptions = (options: string[]) => {
     setFormData(prev => ({ ...prev, options }))
   }

@@ -20,7 +20,7 @@ export async function trackBetCreation(creatorAddress: string, betId: number): P
       created_at: new Date().toISOString()
     }
 
-    console.log('Attempting to insert bet creation activity:', insertData)
+
 
     const { data, error } = await supabase
       .from('user_activities')
@@ -58,7 +58,7 @@ export async function trackBetPlacement(
       created_at: new Date().toISOString()
     }
 
-    console.log('Attempting to insert activity:', insertData)
+
 
     const { data, error } = await supabase
       .from('user_activities')
@@ -97,7 +97,7 @@ export async function trackBetResolution(
       created_at: new Date().toISOString()
     }
 
-    console.log('Attempting to insert resolution activity:', activityData)
+
 
     const { data: activityResult, error: activityError } = await supabase
       .from('user_activities')
