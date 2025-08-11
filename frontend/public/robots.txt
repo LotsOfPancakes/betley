@@ -11,7 +11,7 @@ Disallow: /api/
 Disallow: /_next/
 
 # Allow sitemap
-Sitemap: https://betley.xyz/sitemap.xml
+Sitemap: https://www.betley.xyz/sitemap.xml
 
 # Crawl delay (optional - helps with server load)
 Crawl-delay: 1

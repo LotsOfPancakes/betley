@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Homepage -->
   <url>
-    <loc>https://betley.xyz</loc>
+    <loc>https://www.betley.xyz</loc>
     <lastmod>2025-07-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -10,7 +10,7 @@
   
   <!-- Create Bet Page -->
   <url>
-    <loc>https://betley.xyz/create</loc>
+    <loc>https://www.betley.xyz/create</loc>
     <lastmod>2025-07-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -18,7 +18,7 @@
   
   <!-- Public Bets Browse Page -->
   <url>
-    <loc>https://betley.xyz/bets</loc>
+    <loc>https://www.betley.xyz/bets</loc>
     <lastmod>2025-07-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>

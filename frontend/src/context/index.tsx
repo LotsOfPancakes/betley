@@ -29,8 +29,8 @@ const queryClient = new QueryClient({
 const metadata = {
   name: 'Betley',
   description: 'Easiest way to set up an on-chain bet on anything',
-  url: 'https://betley.xyz',
-  icons: ['https://betley.xyz/images/betley-logo-128.png']
+  url: 'https://www.betley.xyz',
+  icons: ['https://www.betley.xyz/images/betley-logo-128.png']
 }
 
 // Create the modal - this is where createAppKit should be called
