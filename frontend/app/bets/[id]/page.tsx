@@ -1,7 +1,7 @@
 // frontend/app/bets/[id]/page.tsx - SERVER COMPONENT (remove 'use client')
 
 import type { Metadata } from 'next'
-import { supabase } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase'
 import BetPageClient from './BetPageClient'
   
 // ADD THIS: Generate dynamic metadata function
@@ -14,7 +14,8 @@ export async function generateMetadata({
     // Await the params in Next.js 15
     const { id: randomId } = await params
     
-    // Look up bet details from database
+    // Look up bet details from database using server client
+    const supabase = createServerSupabaseClient()
     const { data: mapping } = await supabase
       .from('bet_mappings')
       .select('bet_name, numeric_id')

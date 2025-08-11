@@ -72,19 +72,20 @@ export async function GET(
       .eq('random_id', randomId)
       .single()
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+    // ✅ NOT FOUND: Return 404 for both "not found" errors and missing data
+    if (error?.code === 'PGRST116' || !bet) {
+      return Response.json(
+        { error: 'Bet not found' }, 
+        { status: 404 }
+      )
+    }
+
+    // ✅ DATABASE ERROR: Return 500 for actual database errors
+    if (error) {
       console.error('Database error:', error)
       return Response.json(
         { error: 'Database query failed' }, 
         { status: 500 }
-      )
-    }
-
-    // ✅ NOT FOUND: Return 404 for invalid random IDs
-    if (!bet) {
-      return Response.json(
-        { error: 'Bet not found. Please check the URL and try again.' }, 
-        { status: 404 }
       )
     }
 
@@ -135,7 +136,9 @@ export async function GET(
     )
 
   } catch (error) {
-    console.error('API bet details error:', error)
+    console.error('API error:', error)
+    
+    // ✅ SECURITY: Don't leak internal error details
     return Response.json(
       { error: 'Internal server error' }, 
       { status: 500 }

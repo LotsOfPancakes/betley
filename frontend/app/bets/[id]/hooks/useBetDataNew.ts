@@ -66,7 +66,10 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
       const response = await fetch(`/api/bets/${randomId}`)
       
       if (!response.ok) {
-        throw new Error('Bet not found')
+        if (response.status === 404) {
+          throw new Error('Bet not found')
+        }
+        throw new Error(`API error: ${response.status}`)
       }
       
       const data = await response.json()
