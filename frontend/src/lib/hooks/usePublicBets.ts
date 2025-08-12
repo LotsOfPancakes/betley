@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 
 interface PublicBet {
   randomId: string
-  numericId: number
+  // ✅ SECURITY: numericId removed to prevent contract enumeration
   name: string
   creator: string
   createdAt: string

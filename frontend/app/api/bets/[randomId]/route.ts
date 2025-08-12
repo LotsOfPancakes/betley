@@ -94,7 +94,7 @@ export async function GET(
     return Response.json(
       {
         // Core bet information
-        numericId: bet.numeric_id,
+        numericId: bet.numeric_id, // ✅ KEEP: Needed for blockchain operations on individual bet page
         name: bet.bet_name,
         options: bet.bet_options,
         

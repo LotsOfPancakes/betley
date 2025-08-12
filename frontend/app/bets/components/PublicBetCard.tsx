@@ -6,7 +6,7 @@ import Link from 'next/link'
 // ✅ UPDATED: Match the interface used in the main page
 interface PublicBet {
   randomId: string
-  numericId: number
+  // ✅ SECURITY: numericId removed to prevent contract enumeration
   name: string
   creator: string
   createdAt: string

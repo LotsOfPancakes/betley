@@ -22,7 +22,7 @@ type TabType = 'my' | 'public'
 // ✅ NEW: Public bet interface (different from BetDetails)
 interface PublicBet {
   randomId: string
-  numericId: number
+  // ✅ SECURITY: numericId removed to prevent contract enumeration
   name: string
   creator: string
   createdAt: string

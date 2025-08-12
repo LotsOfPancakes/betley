@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { NextRequest } from 'next/server'
-import { supabase, checkRateLimit } from '@/lib/supabase'  // ✅ KEEP: Use regular client for public leaderboard
+import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'  // ✅ UPDATED: Use server client for secure leaderboard access
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -40,9 +40,9 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: 'Invalid metric' }, { status: 400 })
     }
     
-    // ✅ NOTE: This will work with RLS if we create a public read policy for leaderboards
-    // OR we'll need to switch to admin client if leaderboard should be restricted
-    const { data: leaders, error } = await supabase
+    // ✅ SECURITY: Use server client to access user_stats (respects new RLS policy)
+    const supabaseAdmin = createServerSupabaseClient()
+    const { data: leaders, error } = await supabaseAdmin
       .from('user_stats')
       .select('wallet_address, bets_created, total_volume_created, total_volume_bet, unique_wallets_attracted')
       .order(metric, { ascending: false })
