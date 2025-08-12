@@ -99,6 +99,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     allowance,
     decimals,
     hasClaimed,
+    hasClaimedCreatorFees,
 
     isBetLoading,
     isNativeBet,
@@ -130,6 +131,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
+    handleClaimCreatorFees,
     handleResolveBet,
     isPending,
     isApproving,
@@ -276,10 +278,12 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   totalAmounts={totalAmounts as readonly bigint[] || []}
                   resolutionDeadlinePassed={resolutionDeadlinePassed}
                   hasClaimed={Boolean(hasClaimed)}
+                  hasClaimedCreatorFees={Boolean(hasClaimedCreatorFees)}
 
                   decimals={Number(decimals) || 18}
                   isPending={isPending}
                   handleClaimWinnings={handleClaimWinnings}
+                  handleClaimCreatorFees={handleClaimCreatorFees}
                   betId={numericBetId?.toString() || '0'}
                   isNativeBet={isNativeBet || false}
                     tokenAddress={tokenAddress}  // ADD THIS LINE

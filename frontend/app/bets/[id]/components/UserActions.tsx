@@ -26,10 +26,12 @@ interface UserActionsProps {
   totalAmounts?: readonly bigint[]
   resolutionDeadlinePassed: boolean
   hasClaimed?: boolean
+  hasClaimedCreatorFees?: boolean
 
   decimals?: number
   isPending: boolean
   handleClaimWinnings: () => void
+  handleClaimCreatorFees: () => void
   betId: string
   isNativeBet?: boolean
   tokenAddress?: string  // ADD THIS LINE
@@ -48,13 +50,30 @@ type ClaimStatus =
   | { type: 'already-claimed'; claimType: string; amount?: bigint }
   | { type: 'can-claim-winnings'; breakdown: WinningsBreakdown }
   | { type: 'can-claim-refund'; amount: bigint }
+  | { type: 'can-claim-creator-fees'; amount?: bigint }
   | { type: 'user-lost'; amount: bigint }
 
 // ============================================================================
 // UTILITY FUNCTIONS - Pure functions, easily testable
 // ============================================================================
 
-
+/**
+ * Check if creator can claim fees
+ */
+const canClaimCreatorFees = (
+  resolved: boolean,
+  winningOption: number | undefined,
+  isCreator: boolean,
+  hasClaimedCreatorFees: boolean,
+  breakdown: WinningsBreakdown | null
+): boolean => {
+  return Boolean(resolved && 
+         winningOption !== undefined && 
+         isCreator && 
+         !hasClaimedCreatorFees && 
+         breakdown && 
+         breakdown.creatorFee > BigInt(0))
+}
 
 /**
  * Determine user's claim status based on bet state
@@ -74,6 +93,7 @@ const determineClaimStatus = (
   winningOption: number | undefined,
   resolutionDeadlinePassed: boolean,
   hasClaimed: boolean,
+  hasClaimedCreatorFees: boolean,
   isCreator: boolean,
   breakdown: WinningsBreakdown | null,
   totalAmounts?: readonly bigint[]
@@ -292,7 +312,7 @@ function AlreadyClaimedStatus({
   return (
     <StatusCard variant="neutral">
       <p className="text-blue-300">
-        You have already claimed {claimStatus.claimType}
+        You have claimed {claimStatus.claimType}
         {claimStatus.amount && (
           <span>
             {' '}of {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
@@ -380,6 +400,60 @@ function RefundClaimable({
 }
 
 /**
+ * Component for claiming creator fees
+ */
+function CreatorFeesClaimable({ 
+  claimStatus, 
+  handleClaimCreatorFees, 
+  isPending, 
+  decimals, 
+  isNativeBet 
+}: {
+  claimStatus: Extract<ClaimStatus, { type: 'can-claim-creator-fees' }>
+  handleClaimCreatorFees: () => void
+  isPending: boolean
+  decimals: number
+  isNativeBet: boolean
+}) {
+  return (
+    <StatusCard variant="warning">
+      <p className="text-orange-300 mb-4">
+        🎉 Creator fees available! You earned {claimStatus.amount ? formatTokenAmount(claimStatus.amount, decimals, isNativeBet) : '...'} from this bet.
+      </p>
+      
+      <ClaimButton
+        onClick={handleClaimCreatorFees}
+        disabled={isPending}
+        variant="warning"
+      >
+        {isPending ? 'Claiming...' : `Claim ${claimStatus.amount ? formatTokenAmount(claimStatus.amount, decimals, isNativeBet) : '...'} Creator Fees`}
+      </ClaimButton>
+    </StatusCard>
+  )
+}
+
+/**
+ * Component for showing already claimed creator fees
+ */
+function CreatorFeesClaimedStatus({ 
+  amount, 
+  decimals, 
+  isNativeBet 
+}: {
+  amount: bigint
+  decimals: number
+  isNativeBet: boolean
+}) {
+  return (
+    <StatusCard variant="neutral">
+      <p className="text-blue-300">
+        You have claimed creator fees of {formatTokenAmount(amount, decimals, isNativeBet)}
+      </p>
+    </StatusCard>
+  )
+}
+
+/**
  * Component for displaying user lost status
  */
 function UserLostStatus({ 
@@ -416,10 +490,12 @@ export function UserActions({
   totalAmounts,
   resolutionDeadlinePassed,
   hasClaimed,
+  hasClaimedCreatorFees,
 
   decimals = 18,
   isPending,
   handleClaimWinnings,
+  handleClaimCreatorFees,
   betId,
   isNativeBet = false,
   creator
@@ -470,11 +546,12 @@ export function UserActions({
       winningOption,
       resolutionDeadlinePassed,
       hasClaimed || false,
+      hasClaimedCreatorFees || false,
       isCreator,
       winningsBreakdown,
       totalAmounts
     ),
-    [userBets, resolved, winningOption, resolutionDeadlinePassed, hasClaimed, isCreator, winningsBreakdown, totalAmounts]
+    [userBets, resolved, winningOption, resolutionDeadlinePassed, hasClaimed, hasClaimedCreatorFees, isCreator, winningsBreakdown, totalAmounts]
   )
 
   // Use the fee data from winnings breakdown if available, fallback to calculated
@@ -506,6 +583,12 @@ export function UserActions({
   // Check if this is an empty expired bet
   const isEmptyExpiredBet = resolutionDeadlinePassed && !resolved && totalAmounts && isBetEmpty(totalAmounts)
   
+  // Check if creator can claim fees (independent of regular winnings)
+  const showCreatorFees = canClaimCreatorFees(resolved, winningOption, isCreator, hasClaimedCreatorFees || false, winningsBreakdown)
+  
+  // Check if creator has already claimed fees
+  const showCreatorFeesClaimed = resolved && winningOption !== undefined && isCreator && (hasClaimedCreatorFees || false) && winningsBreakdown && winningsBreakdown.creatorFee > BigInt(0)
+  
   return (
     <div className="space-y-4">
       {/* Special case: Empty expired bet */}
@@ -515,6 +598,26 @@ export function UserActions({
             This bet expired without any participants. No action needed.
           </p>
         </div>
+      )}
+      
+      {/* Creator Fees Section - Independent of main claim status */}
+      {showCreatorFees && winningsBreakdown && (
+        <CreatorFeesClaimable
+          claimStatus={{ type: 'can-claim-creator-fees', amount: winningsBreakdown.creatorFee }}
+          handleClaimCreatorFees={handleClaimCreatorFees}
+          isPending={isPending}
+          decimals={decimals}
+          isNativeBet={isNativeBet}
+        />
+      )}
+      
+      {/* Creator Fees Already Claimed Section */}
+      {showCreatorFeesClaimed && winningsBreakdown && (
+        <CreatorFeesClaimedStatus
+          amount={winningsBreakdown.creatorFee}
+          decimals={decimals}
+          isNativeBet={isNativeBet}
+        />
       )}
       
       {/* Main Claim Status Section */}

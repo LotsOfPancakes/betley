@@ -26,9 +26,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerSupabaseClient()
 
-    // ✅ STEP 1: Get bets that need syncing (older than 5 minutes)
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
-    
+    // ✅ STEP 1: Get bets that need syncing
     const { data: staleBets, error: staleError } = await supabase
       .from('bet_mappings')
       .select('numeric_id, random_id, bet_name')

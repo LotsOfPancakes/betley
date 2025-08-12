@@ -171,6 +171,18 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
     }
   })
 
+  // Has creator claimed creator fees
+  const { data: hasClaimedCreatorFees } = useReadContract({
+    address: BETLEY_NEW_ADDRESS,
+    abi: BETLEY_NEW_ABI,
+    functionName: 'hasClaimedCreatorFees',
+    args: address && numericBetId !== undefined ? [BigInt(numericBetId), address] : undefined,
+    query: {
+      enabled: numericBetId !== undefined && !!address,
+      refetchInterval: 10000,
+    }
+  })
+
 
 
   // Resolution deadline
@@ -259,6 +271,7 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
     ethBalance,
     decimals: isNativeBet ? 18 : decimals,
     hasClaimed,
+    hasClaimedCreatorFees,
 
     resolutionDeadline: resolutionDeadline ? Number(resolutionDeadline) : undefined,
     allowance,

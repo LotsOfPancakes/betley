@@ -9,7 +9,7 @@ import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
 import { ERC20_ABI } from '@/lib/erc20ABI'
 import { isNativeETH } from '@/lib/tokenUtils'
 
-type TransactionType = 'approve' | 'placeBet' | 'claimWinnings' | 'claimRefund' | 'resolveBet'
+type TransactionType = 'approve' | 'placeBet' | 'claimWinnings' | 'claimRefund' | 'claimCreatorFees' | 'resolveBet'
 
 export function useBetActionsNew(betId: string, tokenAddress?: string) {
   const [justPlacedBet, setJustPlacedBet] = useState(false)
@@ -122,6 +122,30 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     }
   }
 
+  const handleClaimCreatorFees = async () => {
+    if (isWritePending) return
+    
+    // ✅ VALIDATE CHAIN FIRST
+    if (!validateChain()) return
+    
+    try {
+      setCurrentTxType('claimCreatorFees')
+      setIsSubmitting(true)
+      
+      writeContract({
+        address: BETLEY_NEW_ADDRESS,
+        abi: BETLEY_NEW_ABI,
+        functionName: 'claimCreatorFees',
+        args: [BigInt(numericBetId)],
+      })
+    } catch (error) {
+      console.error('Claim creator fees error:', error)
+      showError('Failed to claim creator fees')
+      setIsSubmitting(false)
+      setCurrentTxType(null)
+    }
+  }
+
   const handleResolveBet = async (winningOption: number) => {
     if (isWritePending) return
     
@@ -208,6 +232,13 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
           showSuccess('Winnings claimed successfully!')
           // Invalidate claim status and balance queries
           queryClient.invalidateQueries({ queryKey: ['hasClaimed'] })
+          queryClient.invalidateQueries({ queryKey: ['balance'] })
+          break
+          
+        case 'claimCreatorFees':
+          showSuccess('Creator fees claimed successfully!')
+          // Invalidate creator fee claim status and balance queries
+          queryClient.invalidateQueries({ queryKey: ['hasClaimedCreatorFees'] })
           queryClient.invalidateQueries({ queryKey: ['balance'] })
           break
           
@@ -311,6 +342,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
+    handleClaimCreatorFees,
     handleResolveBet,
     
     // Debug info

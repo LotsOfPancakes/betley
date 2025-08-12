@@ -115,6 +115,21 @@ export const BETLEY_NEW_ABI = [
     "type": "function"
   },
   
+  // Claim Creator Fees
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claimCreatorFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  
   // ========== NEW MINIMAL VIEW FUNCTIONS ==========
   
   // Get Basic Bet Info (no sensitive data)
@@ -246,6 +261,32 @@ export const BETLEY_NEW_ABI = [
       }
     ],
     "name": "hasUserClaimed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "claimed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  
+  // Check if creator has claimed fees
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "hasClaimedCreatorFees",
     "outputs": [
       {
         "internalType": "bool",
