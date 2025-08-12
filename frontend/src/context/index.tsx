@@ -7,6 +7,7 @@ import { createAppKit } from '@reown/appkit/react'
 import React, { type ReactNode } from 'react'
 import { cookieToInitialState, WagmiProvider, type Config } from 'wagmi'
 import { NotificationProvider } from '@/lib/contexts/NotificationContext'
+import { WalletAuthProvider } from '@/lib/auth/WalletAuthContext'
 
 // Set up queryClient with optimized settings
 const queryClient = new QueryClient({
@@ -59,9 +60,11 @@ function ContextProvider({ children, cookies }: { children: ReactNode; cookies: 
   return (
     <WagmiProvider config={wagmiAdapter.wagmiConfig as Config} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
-        <NotificationProvider>
-          {children}
-        </NotificationProvider>
+        <WalletAuthProvider>
+          <NotificationProvider>
+            {children}
+          </NotificationProvider>
+        </WalletAuthProvider>
         {process.env.NODE_ENV === 'development' && (
           <ReactQueryDevtools initialIsOpen={false} />
         )}

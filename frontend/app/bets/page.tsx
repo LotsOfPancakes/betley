@@ -1,7 +1,7 @@
 // frontend/app/bets/page.tsx
 'use client'
 
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import BackgroundElements from '@/app/components/BackgroundElements'
@@ -14,6 +14,8 @@ import { useBetsListDatabase } from './hooks/useBetsListV2'
 import { useBetsFiltering } from './hooks/useBetsFiltering'
 import { usePublicBets } from '@/lib/hooks/usePublicBets'
 import { COLORS, DIMENSIONS, ANIMATIONS, SHADOWS } from '@/lib/constants/ui'
+import { useWalletAuth } from '@/lib/auth/WalletAuthContext'
+import { AuthModal } from '@/components/auth/AuthModal'
 
 type TabType = 'my' | 'public'
 
@@ -34,9 +36,28 @@ interface PublicBet {
 export default function BetsPage() {
   const router = useRouter()
   const { address } = useAccount()
+  const { isAuthenticated, authenticate } = useWalletAuth()
   
   // Tab state management
   const [activeTab, setActiveTab] = useState<TabType>('my')
+  const [showAuthModal, setShowAuthModal] = useState(false)
+
+  // Handle authentication requirement for My Bets tab
+  React.useEffect(() => {
+    if (activeTab === 'my' && address && !isAuthenticated) {
+      // Try silent authentication first
+      authenticate().then(success => {
+        if (!success) {
+          // If silent auth fails, show modal
+          setShowAuthModal(true)
+        }
+      })
+    }
+  }, [activeTab, address, isAuthenticated, authenticate])
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false)
+  }
 
   // My Bets (database-first approach - Phase 2)
   const { 
@@ -129,7 +150,7 @@ export default function BetsPage() {
             <BetFilters currentFilter={filter} onFilterChange={setFilter} />
           )}
 
-          {/* Connection check for My Bets */}
+          {/* Connection and Authentication check for My Bets */}
           {activeTab === 'my' && !address ? (
             <div className="text-center py-12">
               <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 max-w-md mx-auto">
@@ -140,12 +161,28 @@ export default function BetsPage() {
                 </div>
               </div>
             </div>
+          ) : activeTab === 'my' && address && !isAuthenticated && showAuthModal ? (
+            <div className="text-center py-12">
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-yellow-500/30 rounded-3xl p-8 max-w-md mx-auto">
+                <div className="text-yellow-400 text-4xl mb-4">🔐</div>
+                <h3 className="text-xl font-semibold text-white mb-4">Authentication Required</h3>
+                <p className="text-gray-300 mb-6">Please sign the message to access your betting history.</p>
+              </div>
+            </div>
           ) : (
             <>
               {/* Error state */}
               {error && (
                 <div className="mb-6 p-4 bg-gradient-to-r from-red-900/20 to-red-800/20 border border-red-500/30 rounded-2xl backdrop-blur-sm">
                   <p className="text-red-300">{error}</p>
+                  {error.includes('Authentication') && (
+                    <button
+                      onClick={() => setShowAuthModal(true)}
+                      className="mt-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl font-medium hover:from-green-400 hover:to-emerald-500 transition-all duration-300"
+                    >
+                      Try Authentication Again
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -204,6 +241,15 @@ export default function BetsPage() {
           )}
         </div>
       </div>
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+        title="Access Your Bets"
+        description="To view your personal betting history, please sign a message to verify wallet ownership."
+      />
     </div>
   )
 }

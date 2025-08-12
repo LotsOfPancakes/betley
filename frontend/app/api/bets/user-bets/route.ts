@@ -6,6 +6,7 @@
 
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'
+import { parseAuthHeader, verifyWalletSignature } from '@/lib/auth/verifySignature'
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -44,6 +45,46 @@ export async function POST(request: NextRequest) {
 
     if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
       return Response.json({ error: 'Invalid address format' }, { status: 400 })
+    }
+
+    // ✅ SECURITY: Verify wallet signature authentication
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return Response.json({ 
+        error: 'Authentication required',
+        code: 'AUTH_REQUIRED'
+      }, { status: 401 })
+    }
+
+    const authData = parseAuthHeader(authHeader)
+    if (!authData) {
+      return Response.json({ 
+        error: 'Invalid authentication format',
+        code: 'AUTH_INVALID_FORMAT'
+      }, { status: 401 })
+    }
+
+    // Verify the signature matches the requested address
+    if (authData.address.toLowerCase() !== address.toLowerCase()) {
+      return Response.json({ 
+        error: 'Authentication address mismatch',
+        code: 'AUTH_ADDRESS_MISMATCH'
+      }, { status: 403 })
+    }
+
+    // Verify the signature is valid
+    const isValidSignature = await verifyWalletSignature(
+      authData.address,
+      authData.signature,
+      authData.timestamp,
+      authData.nonce
+    )
+
+    if (!isValidSignature) {
+      return Response.json({ 
+        error: 'Invalid or expired signature',
+        code: 'AUTH_SIGNATURE_INVALID'
+      }, { status: 401 })
     }
 
     const supabase = createServerSupabaseClient()

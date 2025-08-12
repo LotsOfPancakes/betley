@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAccount } from 'wagmi'
 import { BetDetails } from '../types/bet.types'
 import { BET_CONSTANTS } from '@/lib/constants/bets'
+import { useWalletAuth } from '@/lib/auth/WalletAuthContext'
 
 interface DatabaseBetsResponse {
   bets: BetDetails[]
@@ -34,22 +35,35 @@ interface ApiBetResponse {
 
 export function useBetsListV2() {
   const { address } = useAccount()
+  const { getAuthHeader, isAuthenticated } = useWalletAuth()
 
   return useQuery({
-    queryKey: ['user-bets-v2', address],
+    queryKey: ['user-bets-v2', address, isAuthenticated],
     queryFn: async (): Promise<DatabaseBetsResponse> => {
       if (!address) {
         return { bets: [], count: 0, source: 'none' }
       }
 
+      const authHeader = getAuthHeader()
+      if (!authHeader) {
+        throw new Error('Authentication required')
+      }
+
       const response = await fetch('/api/bets/user-bets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
+        },
         body: JSON.stringify({ address })
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch user bets: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication failed')
+        }
+        throw new Error(errorData.error || `Failed to fetch user bets: ${response.status}`)
       }
 
       const data = await response.json()
@@ -67,10 +81,14 @@ export function useBetsListV2() {
         bets: transformedBets
       }
     },
-    enabled: !!address,
+    enabled: !!address && isAuthenticated,
     staleTime: BET_CONSTANTS.timeouts.staleTime,
     refetchInterval: BET_CONSTANTS.timeouts.refetchInterval,
-    retry: BET_CONSTANTS.retry.maxAttempts,
+    retry: (failureCount, error) => {
+      // Don't retry auth errors
+      if (error.message.includes('Authentication')) return false
+      return failureCount < BET_CONSTANTS.retry.maxAttempts
+    },
     retryDelay: (attemptIndex) => Math.min(
       BET_CONSTANTS.retry.baseDelay * 2 ** attemptIndex, 
       BET_CONSTANTS.retry.maxDelay
