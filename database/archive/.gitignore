@@ -1,0 +1,4 @@
+# Ignore all archived migration files
+*
+# But keep this .gitignore file
+!.gitignore
