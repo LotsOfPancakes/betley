@@ -31,8 +31,7 @@ export async function POST(request: NextRequest) {
     
     const { data: staleBets, error: staleError } = await supabase
       .from('bet_mappings')
-      .select('numeric_id, random_id, bet_name, cached_at')
-      .or(`cached_at.is.null,cached_at.lt.${fiveMinutesAgo}`)
+      .select('numeric_id, random_id, bet_name')
       .limit(10) // Process max 10 bets per sync to avoid rate limits
 
     if (staleError) {
@@ -86,8 +85,7 @@ export async function POST(request: NextRequest) {
             end_time: Number(betBasics[1]),
             total_amounts: betAmounts.map(amount => Number(amount)),
             resolved: betBasics[2],
-            winning_option: betBasics[2] ? betBasics[3] : null,
-            cached_at: new Date().toISOString()
+            winning_option: betBasics[2] ? betBasics[3] : null
           })
           .eq('numeric_id', bet.numeric_id)
 

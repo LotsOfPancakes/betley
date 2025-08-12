@@ -30,3 +30,4 @@
 - Follow existing patterns and conventions in the codebase
 - Use existing libraries (wagmi, viem, @tanstack/react-query, supabase)
 - Avoid over-engineering. Question the need to have certain features/functionalities if there may be more direct ways to achieve a goal
+- No adding of new functionality or UI elements unless requested for, or is necessary as part of the plan to achieve goals

@@ -113,8 +113,7 @@ export async function trackBetResolution(
       .from('bet_mappings')
       .update({
         resolved: true,
-        winning_option: winningOption,
-        cached_at: new Date().toISOString()
+        winning_option: winningOption
       })
       .eq('numeric_id', betId)
 
