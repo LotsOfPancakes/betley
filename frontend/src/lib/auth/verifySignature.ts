@@ -35,20 +35,35 @@ export async function verifyWalletSignature(
     const now = Date.now()
     const maxAge = 24 * 60 * 60 * 1000 // 24 hours
     
+    console.debug('[verifyWalletSignature] Starting verification:', { 
+      address: address.slice(0, 8), 
+      timestamp, 
+      now, 
+      age: now - timestamp,
+      nonce: nonce.slice(0, 8)
+    })
+    
     // Check if signature is expired
     if (now - timestamp > maxAge) {
-      console.warn('Signature expired:', { timestamp, now, age: now - timestamp })
+      console.warn('[verifyWalletSignature] Signature expired:', { timestamp, now, age: now - timestamp })
       return false
     }
     
     // Check if signature is too far in future (clock skew protection)
     if (timestamp > now + 5 * 60 * 1000) {
-      console.warn('Signature timestamp too far in future:', { timestamp, now })
+      console.warn('[verifyWalletSignature] Signature timestamp too far in future:', { timestamp, now })
       return false
     }
     
     // Recreate the message that was signed
     const message = createAuthMessage(address, timestamp, nonce)
+    console.debug('[verifyWalletSignature] Message recreated:', {
+      length: message.length,
+      preview: message.substring(0, 100) + '...',
+      address,
+      timestamp,
+      nonce
+    })
     
     // Verify the signature
     const isValid = await verifyMessage({
@@ -57,9 +72,19 @@ export async function verifyWalletSignature(
       signature: signature as `0x${string}`
     })
     
+    console.debug('[verifyWalletSignature] Verification result:', isValid)
+    
+    if (!isValid) {
+      console.debug('[verifyWalletSignature] Verification failed - debugging info:', {
+        addressFormat: typeof address,
+        signatureFormat: typeof signature,
+        signatureLength: signature.length,
+        messageHash: message.split('\n').map((line, i) => `${i}: ${line}`)
+      })
+    }
     return isValid
   } catch (error) {
-    console.error('Signature verification error:', error)
+    console.error('[verifyWalletSignature] Signature verification error:', error)
     return false
   }
 }

@@ -5,14 +5,34 @@
 
 import { NextRequest } from 'next/server'
 import { trackBetPlacement } from '@/lib/analytics/activityTracker'
+import { checkRateLimit } from '@/lib/supabase'
 
-
+// Helper function to get client IP
+function getClientIP(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const vercelIP = request.headers.get('x-vercel-forwarded-for')
+  
+  if (forwarded) return forwarded.split(',')[0].trim()
+  if (vercelIP) return vercelIP.split(',')[0].trim()
+  
+  return '127.0.0.1'
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ SECURITY: Get client IP for rate limiting
+    const clientIp = getClientIP(request)
 
+    // ✅ SECURITY: Rate limit bet placement tracking (50 requests per hour)
+    const rateLimitOk = await checkRateLimit(clientIp, 'place-bet', 50, 60)
+    if (!rateLimitOk) {
+      return Response.json(
+        { error: 'Rate limit exceeded. Please try again later.' }, 
+        { status: 429 }
+      )
+    }
 
-    // Validate content type
+    // ✅ SECURITY: Validate content type
     const contentType = request.headers.get('content-type')
     if (!contentType?.includes('application/json')) {
       return Response.json(

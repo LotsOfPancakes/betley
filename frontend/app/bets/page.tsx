@@ -36,7 +36,7 @@ interface PublicBet {
 export default function BetsPage() {
   const router = useRouter()
   const { address } = useAccount()
-  const { isAuthenticated, authenticate } = useWalletAuth()
+  const { isAuthenticated, authenticate, isInitialized, isAuthenticating } = useWalletAuth()
   
   // Tab state management
   const [activeTab, setActiveTab] = useState<TabType>('my')
@@ -44,16 +44,24 @@ export default function BetsPage() {
 
   // Handle authentication requirement for My Bets tab
   React.useEffect(() => {
-    if (activeTab === 'my' && address && !isAuthenticated) {
-      // Try silent authentication first
+    console.debug('[BetsPage] Auth state changed:', { activeTab, address: address?.slice(0, 8), isAuthenticated, isInitialized, isAuthenticating })
+    
+    // Only proceed if context is initialized and we're on My Bets tab
+    if (activeTab !== 'my' || !isInitialized || !address || isAuthenticating) {
+      return
+    }
+
+    if (!isAuthenticated) {
+      // Try silent authentication first (will succeed if there's a valid session)
       authenticate().then(success => {
+        console.debug('[BetsPage] Silent auth result:', success)
         if (!success) {
           // If silent auth fails, show modal
           setShowAuthModal(true)
         }
       })
     }
-  }, [activeTab, address, isAuthenticated, authenticate])
+  }, [activeTab, address, isAuthenticated, isInitialized, isAuthenticating, authenticate])
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false)
@@ -94,7 +102,9 @@ export default function BetsPage() {
   }, [publicBetsData?.bets])
 
   // Determine what to show based on active tab
-  const isInitialLoading = activeTab === 'my' ? myBetsLoading : publicBetsLoading
+  const isInitialLoading = activeTab === 'my' 
+    ? (myBetsLoading || !isInitialized || (address && !isAuthenticated && !showAuthModal))
+    : publicBetsLoading
   const isFetching = activeTab === 'my' ? myBetsFetching : publicBetsFetching
   const error = activeTab === 'my' ? myBetsError : publicBetsError?.message
   const retryAttempt = activeTab === 'my' ? myBetsRetryAttempt : publicBetsRetryAttempt
@@ -155,7 +165,6 @@ export default function BetsPage() {
             <div className="text-center py-12">
               <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 max-w-md mx-auto">
                 <h3 className="text-xl font-semibold text-white mb-4">Looking for your Bets?</h3>
-                <p className="text-gray-300 mb-6">Connect your wallet to see your betting history</p>
                 <div className="flex justify-center">
                   <appkit-button />
                 </div>

@@ -11,17 +11,22 @@ import { AuthModal } from '@/components/auth/AuthModal'
 
 // Custom hook for fetching user stats with authentication
 function useUserStats(address: string | undefined) {
-  const { getAuthHeader, isAuthenticated } = useWalletAuth()
+  const { getAuthHeader, isAuthenticated, isInitialized } = useWalletAuth()
   
   return useQuery({
     queryKey: ['userStats', address, isAuthenticated],
     queryFn: async () => {
+      console.debug('[useUserStats] Query function called:', { address: address?.slice(0, 8), isAuthenticated, isInitialized })
+      
       if (!address) throw new Error('No address')
       
       const authHeader = getAuthHeader()
       if (!authHeader) {
+        console.debug('[useUserStats] No auth header available')
         throw new Error('Authentication required')
       }
+
+      console.debug('[useUserStats] Making API request with auth header')
       
       const response = await fetch(`/api/users/${address}/stats`, {
         headers: {
@@ -39,7 +44,7 @@ function useUserStats(address: string | undefined) {
       
       return response.json()
     },
-    enabled: !!address && isAuthenticated,
+    enabled: !!address && isInitialized && isAuthenticated,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error) => {
       // Don't retry auth errors
@@ -131,22 +136,30 @@ function LoadingStats() {
 // Main Page Component
 export default function UserStatsPage() {
   const { address } = useAccount()
-  const { isAuthenticated, authenticate } = useWalletAuth()
+  const { isAuthenticated, authenticate, isInitialized, isAuthenticating } = useWalletAuth()
   const { data: stats, isLoading, error } = useUserStats(address)
   const [showAuthModal, setShowAuthModal] = React.useState(false)
 
   // Handle authentication requirement
   React.useEffect(() => {
-    if (address && !isAuthenticated) {
-      // Try silent authentication first
+    console.debug('[StatsPage] Auth state changed:', { address: address?.slice(0, 8), isAuthenticated, isInitialized, isAuthenticating })
+    
+    // Only proceed if context is initialized and we have an address
+    if (!isInitialized || !address || isAuthenticating) {
+      return
+    }
+
+    if (!isAuthenticated) {
+      // Try silent authentication first (will succeed if there's a valid session)
       authenticate().then(success => {
+        console.debug('[StatsPage] Silent auth result:', success)
         if (!success) {
           // If silent auth fails, show modal
           setShowAuthModal(true)
         }
       })
     }
-  }, [address, isAuthenticated, authenticate])
+  }, [address, isAuthenticated, isInitialized, isAuthenticating, authenticate])
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false)
@@ -240,8 +253,8 @@ export default function UserStatsPage() {
 
         {/* Stats Grid */}
         <div className="max-w-6xl mx-auto px-4 py-8">
-          {/* Show loading when authenticating or fetching data */}
-          {(isLoading || (address && !isAuthenticated && !showAuthModal)) && <LoadingStats />}
+          {/* Show loading when context initializing, authenticating, or fetching data */}
+          {(isLoading || !isInitialized || (address && !isAuthenticated && !showAuthModal && isAuthenticating)) && <LoadingStats />}
           
           {/* Show authentication required message */}
           {address && !isAuthenticated && showAuthModal && (

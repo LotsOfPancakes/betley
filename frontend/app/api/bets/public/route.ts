@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
         randomId: bet.random_id,
         numericId: bet.numeric_id,
         name: bet.bet_name,
-        creator: bet.creator_address,
+        creator: bet.creator_address.slice(0, 6) + '...' + bet.creator_address.slice(-4), // ✅ PRIVACY: Anonymize creator address
         createdAt: bet.created_at,
         isPublic: bet.is_public,
         endTime,

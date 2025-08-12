@@ -13,8 +13,6 @@ import { useWalletAuth } from '@/lib/auth/WalletAuthContext'
 interface DatabaseBetsResponse {
   bets: BetDetails[]
   count: number
-  source: string
-  message?: string
 }
 
 interface ApiBetResponse {
@@ -30,24 +28,28 @@ interface ApiBetResponse {
   userRole: 'creator' | 'bettor' | 'both'
   userTotalBet: number
   isPublic: boolean
-  cachedAt: string
 }
 
 export function useBetsListV2() {
   const { address } = useAccount()
-  const { getAuthHeader, isAuthenticated } = useWalletAuth()
+  const { getAuthHeader, isAuthenticated, isInitialized } = useWalletAuth()
 
   return useQuery({
     queryKey: ['user-bets-v2', address, isAuthenticated],
     queryFn: async (): Promise<DatabaseBetsResponse> => {
+      console.debug('[useBetsListV2] Query function called:', { address: address?.slice(0, 8), isAuthenticated, isInitialized })
+      
       if (!address) {
-        return { bets: [], count: 0, source: 'none' }
+        return { bets: [], count: 0 }
       }
 
       const authHeader = getAuthHeader()
       if (!authHeader) {
+        console.debug('[useBetsListV2] No auth header available')
         throw new Error('Authentication required')
       }
+
+      console.debug('[useBetsListV2] Making API request with auth header')
 
       const response = await fetch('/api/bets/user-bets', {
         method: 'POST',
@@ -81,7 +83,7 @@ export function useBetsListV2() {
         bets: transformedBets
       }
     },
-    enabled: !!address && isAuthenticated,
+    enabled: !!address && isInitialized && isAuthenticated,
     staleTime: BET_CONSTANTS.timeouts.staleTime,
     refetchInterval: BET_CONSTANTS.timeouts.refetchInterval,
     retry: (failureCount, error) => {
@@ -108,7 +110,6 @@ export function useBetsListDatabase() {
     decimals: BET_CONSTANTS.defaults.decimals,
     retryAttempt: BET_CONSTANTS.defaults.retryAttempt,
     refreshBets: refetch,
-    source: data?.source || 'unknown',
     count: data?.count || 0
   }
 }

@@ -49,7 +49,10 @@ export async function POST(request: NextRequest) {
 
     // ✅ SECURITY: Verify wallet signature authentication
     const authHeader = request.headers.get('authorization')
+    console.debug('[UserBets API] Auth header present:', !!authHeader)
+    
     if (!authHeader) {
+      console.debug('[UserBets API] No auth header provided')
       return Response.json({ 
         error: 'Authentication required',
         code: 'AUTH_REQUIRED'
@@ -57,7 +60,10 @@ export async function POST(request: NextRequest) {
     }
 
     const authData = parseAuthHeader(authHeader)
+    console.debug('[UserBets API] Auth data parsed:', !!authData, authData ? { address: authData.address.slice(0, 8), timestamp: authData.timestamp } : null)
+    
     if (!authData) {
+      console.debug('[UserBets API] Failed to parse auth header')
       return Response.json({ 
         error: 'Invalid authentication format',
         code: 'AUTH_INVALID_FORMAT'
@@ -66,6 +72,7 @@ export async function POST(request: NextRequest) {
 
     // Verify the signature matches the requested address
     if (authData.address.toLowerCase() !== address.toLowerCase()) {
+      console.debug('[UserBets API] Address mismatch:', { authAddress: authData.address.slice(0, 8), requestedAddress: address.slice(0, 8) })
       return Response.json({ 
         error: 'Authentication address mismatch',
         code: 'AUTH_ADDRESS_MISMATCH'
@@ -73,6 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the signature is valid
+    console.debug('[UserBets API] Verifying signature for:', authData.address.slice(0, 8))
     const isValidSignature = await verifyWalletSignature(
       authData.address,
       authData.signature,
@@ -80,6 +88,7 @@ export async function POST(request: NextRequest) {
       authData.nonce
     )
 
+    console.debug('[UserBets API] Signature verification result:', isValidSignature)
     if (!isValidSignature) {
       return Response.json({ 
         error: 'Invalid or expired signature',
@@ -191,16 +200,13 @@ export async function POST(request: NextRequest) {
         totalAmounts: bet.total_amounts || [], // Keep as number array
         userRole,
         userTotalBet: 0, // TODO: Calculate from user_activities
-        isPublic: false, // Default to false since column might not exist
-        cachedAt: bet.created_at // Use created_at as fallback
+        isPublic: false // Default to false since column might not exist
       }
     })
 
     return Response.json({
       bets: transformedBets,
-      count: transformedBets.length,
-      source: 'database',
-      message: `Found ${transformedBets.length} bets from database cache`
+      count: transformedBets.length
     }, {
       headers: {
         'Cache-Control': 'private, max-age=30', // Short cache for user-specific data

@@ -23,6 +23,7 @@ interface WalletAuthContextType {
   session: AuthSession | null
   isAuthenticated: boolean
   isAuthenticating: boolean
+  isInitialized: boolean
   authError: string | null
   
   // Actions
@@ -54,6 +55,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
   // Authentication state
   const [session, setSession] = useState<AuthSession | null>(null)
   const [isAuthenticating, setIsAuthenticating] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   
   // Check if current session is valid
@@ -83,6 +85,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
   const clearAuth = useCallback(() => {
     setSession(null)
     setAuthError(null)
+    console.debug('[WalletAuth] Session cleared')
   }, [])
   
   // Get authorization header for API requests
@@ -116,26 +119,51 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       // Generate authentication data
       const timestamp = Date.now()
       const nonce = generateNonce()
-      const message = createAuthMessage(address, timestamp, nonce)
+      // Use lowercase address for consistency with session storage
+      const normalizedAddress = address.toLowerCase()
+      const message = createAuthMessage(normalizedAddress, timestamp, nonce)
+      
+      console.debug('[WalletAuth] Signing message:', {
+        originalAddress: address,
+        normalizedAddress,
+        timestamp,
+        nonce,
+        messageLength: message.length,
+        messagePreview: message.substring(0, 100) + '...',
+        fullMessage: message
+      })
       
       // Request signature from user
       const signature = await signMessageAsync({ message })
       
+      console.debug('[WalletAuth] Signature received:', {
+        signatureLength: signature.length,
+        signaturePreview: signature.substring(0, 20) + '...'
+      })
+      
       // Create session
       const newSession: AuthSession = {
-        address: address.toLowerCase(),
+        address: normalizedAddress,
         signature,
         timestamp,
         nonce,
         expiresAt: timestamp + (24 * 60 * 60 * 1000) // 24 hours
       }
       
+      console.debug('[WalletAuth] Session created:', {
+        address: newSession.address,
+        timestamp: newSession.timestamp,
+        nonce: newSession.nonce,
+        expiresAt: newSession.expiresAt
+      })
+      
       setSession(newSession)
       setIsAuthenticating(false)
+      console.debug('[WalletAuth] Authentication successful for:', address.slice(0, 8))
       return true
       
     } catch (error) {
-      console.error('Authentication failed:', error)
+      console.error('[WalletAuth] Authentication failed:', error)
       
       // Handle user rejection gracefully
       if (error instanceof Error) {
@@ -153,13 +181,21 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
     }
   }, [address, isConnected, signMessageAsync, isSessionValid])
   
-  // Clear auth when wallet disconnects or address changes
+  // Initialize context and handle wallet changes
   useEffect(() => {
+    console.debug('[WalletAuth] Wallet state changed:', { isConnected, address: address?.slice(0, 8) })
+    
     if (!isConnected || !address) {
       clearAuth()
+      setIsInitialized(true)
     } else if (session && session.address.toLowerCase() !== address.toLowerCase()) {
       // Address changed, clear old session
+      console.debug('[WalletAuth] Address changed, clearing session')
       clearAuth()
+      setIsInitialized(true)
+    } else {
+      // Wallet connected and address matches (or no session yet)
+      setIsInitialized(true)
     }
   }, [isConnected, address, session, clearAuth])
   
@@ -186,6 +222,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
     session,
     isAuthenticated,
     isAuthenticating,
+    isInitialized,
     authError,
     
     // Actions
