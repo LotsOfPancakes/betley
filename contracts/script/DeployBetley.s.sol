@@ -11,22 +11,17 @@ contract DeployBetleyScript is Script {
 
         // Deploy Betley (clean, production-ready contract)
         Betley betley = new Betley();
-        
+
         console.log("=== Betley Deployment Complete ===");
         console.log("Contract address:", address(betley));
         console.log("Owner:", betley.owner());
         console.log("Platform fee recipient:", betley.platformFeeRecipient());
         console.log("");
-        
+
         // Display initial fee status (should be disabled)
-        (
-            bool creatorEnabled,
-            uint256 creatorAmount,
-            bool platformEnabled,
-            uint256 platformAmount,
-            address recipient
-        ) = betley.getFeeParameters();
-        
+        (bool creatorEnabled, uint256 creatorAmount, bool platformEnabled, uint256 platformAmount, address recipient) =
+            betley.getFeeParameters();
+
         console.log("=== Initial Fee Configuration ===");
         console.log("Creator fees:", creatorEnabled ? "ENABLED" : "DISABLED");
         console.log("Creator amount:", creatorAmount, "basis points");

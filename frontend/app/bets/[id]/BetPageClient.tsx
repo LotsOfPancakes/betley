@@ -303,6 +303,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
             betName={name || ''}
             options={options as readonly string[] || []}
             onResolve={handleResolveBet}
+            totalAmounts={totalAmounts}
           />
         </ComponentErrorBoundary>
       </div>

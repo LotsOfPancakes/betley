@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       resolved: false,
       winning_option: null,
       total_amounts: new Array(betOptions.length).fill(0), // Initialize with zeros
-      resolution_deadline: endTime + (48 * 60 * 60), // 48 hours after end time
+      resolution_deadline: endTime + (24 * 60 * 60), // 24 hours after end time
     }
 
 

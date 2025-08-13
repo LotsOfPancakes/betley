@@ -9,6 +9,7 @@ interface ResolveModalProps {
   onResolve: (winningOptionIndex: number) => Promise<void>
   options: readonly string[]
   betName: string
+  totalAmounts?: readonly bigint[]
 }
 
 export function ResolveModal({
@@ -16,10 +17,18 @@ export function ResolveModal({
   onClose,
   onResolve,
   options,
-  betName
+  betName,
+  totalAmounts
 }: ResolveModalProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [isResolving, setIsResolving] = useState(false)
+
+  // Check if an option can be selected (has bets)
+  const canSelectOption = (optionIndex: number) => {
+    if (!totalAmounts) return true // If no amount data, allow selection (fallback)
+    const optionAmount = totalAmounts[optionIndex] || BigInt(0)
+    return optionAmount > BigInt(0)
+  }
 
   if (!isOpen) return null
 
@@ -74,31 +83,54 @@ export function ResolveModal({
 
           {/* Options */}
           <div className="space-y-3 mb-6">
-            {options.map((option, index) => (
+            {options.map((option, index) => {
+              const canSelect = canSelectOption(index)
+              const isDisabled = isResolving || !canSelect
+              
+              return (
               <button
                 key={index}
-                onClick={() => setSelectedOption(index)}
-                disabled={isResolving}
+                onClick={() => canSelect && setSelectedOption(index)}
+                disabled={isDisabled}
                 className={`w-full p-4 rounded-2xl border transition-all duration-300 text-left group ${
-                  selectedOption === index
+                  selectedOption === index && canSelect
                     ? 'border-green-500/60 bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-white shadow-xl shadow-green-500/20 scale-105'
+                    : !canSelect
+                    ? 'border-red-500/40 bg-red-900/20 text-red-300 opacity-60 cursor-not-allowed'
                     : 'border-gray-600/50 bg-gray-800/40 text-gray-300 hover:border-green-500/30 hover:bg-gray-700/50 hover:scale-105'
-                } ${isResolving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                } ${isResolving ? 'opacity-50 cursor-not-allowed' : canSelect ? 'cursor-pointer' : 'cursor-not-allowed'}`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-lg group-hover:text-white transition-colors">
-                    {option}
-                  </span>
-                  {selectedOption === index && (
+                  <div className="flex flex-col">
+                    <span className={`font-medium text-lg transition-colors ${
+                      canSelect ? 'group-hover:text-white' : 'text-red-300'
+                    }`}>
+                      {option}
+                    </span>
+                    {!canSelect && (
+                      <span className="text-red-400 text-sm mt-1">
+                        No bets on this option - cannot select
+                      </span>
+                    )}
+                  </div>
+                  {selectedOption === index && canSelect && (
                     <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
                       <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
                   )}
+                  {!canSelect && (
+                    <div className="w-6 h-6 bg-red-500/50 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-red-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 008.367 8.367zM4 10a6 6 0 1112 0 6 6 0 01-12 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
               </button>
-            ))}
+              )
+            })}
           </div>
 
           {/* Warning */}

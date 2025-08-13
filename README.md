@@ -5,11 +5,12 @@
 A production-ready pari-mutuel style betting platform built on Base Sepolia testnet using native ETH.
 
 ## 🌟 Features
-- **Custom Bets**: Create bets with 2-4 custom options and flexible duration
+- **Custom Bets**: Create bets with 2 custom options and flexible duration
 - **Native ETH Betting**: Bet with native ETH on Base Sepolia
 - **Pari-Mutuel Payouts**: Automatic fair distribution based on betting pools
 - **Privacy-First**: Random bet IDs prevent enumeration and protect user privacy
-- **Auto-Resolution**:48-hour resolution deadline with automatic refund system
+- **Auto-Resolution**: 24-hour resolution deadline with automatic refund system
+- **Stranded Fund Protection**: Frontend and contract validation prevents fund locks
 - **Mobile Optimized**: Responsive design with PWA capabilities
 - **Fee System**: 1% creator and 0.5% platform fees
 
@@ -17,7 +18,7 @@ A production-ready pari-mutuel style betting platform built on Base Sepolia test
 - **Production**: [https://www.betley.xyz](https://www.betley.xyz)
 - **Staging**: [https://betley.vercel.app](https://betley.vercel.app)
 - **Blockchain**: Base Sepolia Testnet
-- **Contract**: `0xE49Fe9FD2D6E46c3A58cce393A6125bDE1BAb6Ec`
+- **Contract**: `0xE4cBF75D535F62B84B6D6680dd25AE5A18a903F9`
 
 ## 🛠️ Tech Stack
 - **Smart Contracts**: Solidity + Foundry
@@ -104,7 +105,7 @@ forge script script/ConfigureFees.s.sol:EnableFees \
 ### Required Variables
 ```env
 # Core Configuration
-NEXT_PUBLIC_BETLEY_ADDRESS=0xE49Fe9FD2D6E46c3A58cce393A6125bDE1BAb6Ec
+NEXT_PUBLIC_BETLEY_ADDRESS=0xE4cBF75D535F62B84B6D6680dd25AE5A18a903F9
 NEXT_PUBLIC_CHAIN_ID=84532
 NEXT_PUBLIC_RPC_URL=https://base-sepolia.api.onfinality.io/public
 
@@ -178,6 +179,7 @@ forge coverage                     # Coverage report
 - **ReentrancyGuard**: Protection against reentrancy attacks
 - **Access Controls**: Owner-only functions for fee management
 - **Input Validation**: Comprehensive parameter checking
+- **Stranded Fund Protection**: Prevents resolution to options with no bets
 - **Audit Status**: Internal review completed, external audit pending
 
 ### Frontend Security
@@ -192,6 +194,13 @@ forge coverage                     # Coverage report
 - **Creator Fee**: 1% of losing pool
 - **Platform Fee**: 0.5% of losing pool
 - **User Experience**: Fees only charged to losing side
+
+### Recent Improvements (Latest Update)
+- **Frontend Lock**: Resolution UI prevents selecting options with 0 bets
+- **Contract Validation**: Smart contract rejects invalid resolutions
+- **24-Hour Resolution**: Reduced from 48 hours for faster bet lifecycle
+- **Enhanced Error Handling**: Clear feedback for invalid resolution attempts
+- **Defense in Depth**: Multiple layers of protection prevent fund locks
 
 ## 🛣️ Roadmap
 

@@ -293,6 +293,8 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
           errorMessage.includes('cancelled') ||
           errorMessage.includes('denied')) {
         // Don't show error for user cancellation
+      } else if (errorMessage.includes('cannot resolve to option with no bets')) {
+        showError('Cannot resolve to an option with no bets. Please select an option that has received bets.')
       } else {
         showError(`Transaction failed: ${writeError.message}`)
       }

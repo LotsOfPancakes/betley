@@ -2,7 +2,7 @@
 // New Privacy-Focused Betley Contract ABI and Configuration
 
 // Contract addresses - UPDATE THESE TO NEW DEPLOYED CONTRACT
-export const BETLEY_NEW_ADDRESS = '0xF19644783E32fB9BDF6B09B37BE009C6FaEf67D0' as `0x${string}`
+export const BETLEY_NEW_ADDRESS = '0xE4cBF75D535F62B84B6D6680dd25AE5A18a903F9' as `0x${string}`
 export const MOCKERC20_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000' as `0x${string}`
 
 // New minimal ABI with privacy-focused functions
