@@ -2,13 +2,14 @@
 // File: frontend/lib/analytics/eventProcessor.ts
 // ============================================================================
 
-import { createPublicClient, http, parseAbi } from 'viem'
+import { createPublicClient, parseAbi } from 'viem'
 import { createServerSupabaseClient } from '@/lib/supabase'  
 import { baseSepolia } from '@reown/appkit/networks'
+import { createFallbackTransport } from '@/lib/config'
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
-  transport: http(process.env.NEXT_PUBLIC_RPC_URL)
+  transport: createFallbackTransport()
 })
 
 const BETLEY_ADDRESS = process.env.NEXT_PUBLIC_BETLEY_ADDRESS as `0x${string}`

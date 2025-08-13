@@ -1,4 +1,4 @@
-'use client'
+import { http, fallback } from 'viem'
 
 // Environment variable helpers
 function getRequiredEnv(key: string, fallback?: string): string {
@@ -30,10 +30,15 @@ function getBooleanEnv(key: string, fallback: boolean): boolean {
 export const config = {
   network: {
     chainId: getNumericEnv('NEXT_PUBLIC_CHAIN_ID', 84532),
-    rpcUrl: getRequiredEnv(
-      'NEXT_PUBLIC_RPC_URL', 
-      'https://base-sepolia.api.onfinality.io/public'
-    ),
+    rpcUrls: [
+      getRequiredEnv(
+        'NEXT_PUBLIC_RPC_URL', 
+        'https://base-sepolia.api.onfinality.io/public'
+      ),
+      'https://sepolia.base.org',
+      'https://base-sepolia-rpc.publicnode.com',
+      'https://base-sepolia.blockpi.network/v1/rpc/public'
+    ],
     explorerUrl: getOptionalEnv(
       'NEXT_PUBLIC_EXPLORER_URL',
       getBooleanEnv('NEXT_PUBLIC_IS_TESTNET', true) 
@@ -115,8 +120,15 @@ export function validateConfig(): void {
     throw new Error('Invalid chain ID')
   }
   
-  if (!config.network.rpcUrl.startsWith('http')) {
-    throw new Error('Invalid RPC URL')
+  // Validate RPC URLs array
+  if (!Array.isArray(config.network.rpcUrls) || config.network.rpcUrls.length === 0) {
+    throw new Error('Invalid RPC URLs - must be non-empty array')
+  }
+  
+  for (const [index, rpcUrl] of config.network.rpcUrls.entries()) {
+    if (!rpcUrl || !rpcUrl.startsWith('http')) {
+      throw new Error(`Invalid RPC URL at index ${index}: ${rpcUrl}`)
+    }
   }
   
   // Validate timeouts - silent validation (no console warnings)
@@ -133,6 +145,32 @@ export const isTestnet = config.network.isTestnet
 // Only log if explicitly enabled and in development
 if (isDevelopment && config.dev.enableConsoleLogging) {
   // Silent in production - configuration loads without debug noise
+}
+
+// Shared fallback transport utility
+export const createFallbackTransport = () => {
+  return fallback([
+    http(config.network.rpcUrls[0], { 
+      timeout: 5000, 
+      retryCount: 2 
+    }),
+    http(config.network.rpcUrls[1], { 
+      timeout: 8000, 
+      retryCount: 3 
+    }),
+    http(config.network.rpcUrls[2], { 
+      timeout: 10000, 
+      retryCount: 1 
+    }),
+    http(config.network.rpcUrls[3], { 
+      timeout: 10000, 
+      retryCount: 1 
+    })
+  ], {
+    rank: false,
+    retryCount: 2,
+    retryDelay: 1000
+  })
 }
 
 // Run validation on load
