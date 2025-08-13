@@ -181,11 +181,11 @@ export default function BetPageClient({ id }: BetPageClientProps) {
   // Check if user is creator
   const isCreator = address && creator && address.toLowerCase() === creator.toLowerCase()
 
-  // Calculate time values - FIXED typing
+  // Calculate time values
   const endTimeMs = endTime ? Number(endTime) * 1000 : 0
   const isActive = Date.now() < endTimeMs
 
-  // Check if user has existing bet - FIXED typing
+  // Check if user has existing bet 
   const hasExistingBet = userBets && Array.isArray(userBets) ? 
     userBets.some((bet: bigint) => bet > BigInt(0)) : false
 

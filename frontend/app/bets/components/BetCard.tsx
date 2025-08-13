@@ -72,7 +72,7 @@ export default function BetCard({ bet, decimals }: BetCardProps) {
   // Generate option breakdown text
   const getOptionsBreakdown = () => {
     if (bet.totalAmounts.length === 0 || totalPool === BigInt(0)) {
-      return `${bet.options.length} options • No bets yet`
+      return `No bets yet`
     }
 
     const optionStats = bet.options.map((option, index) => {
@@ -150,19 +150,22 @@ export default function BetCard({ bet, decimals }: BetCardProps) {
           </div>
         )}
 
-        {/* Footer: Role + Creator */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-700/50">
-          <div className="flex items-center gap-3">
+        {/* Footer */}
+        <div className="pt-3 border-t border-gray-700/50">
+          {/* Row 1: Role + View */}
+          <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-green-400 font-medium">
               {getRoleDisplay()}
             </span>
-            <span className="text-xs text-gray-500">
-              by {bet.creator.slice(0, 6)}...{bet.creator.slice(-4)}
+            <span className="text-xs text-green-400 group-hover:translate-x-1 transition-transform">
+              View →
             </span>
           </div>
-          <span className="text-xs text-green-400 group-hover:translate-x-1 transition-transform">
-            View →
-          </span>
+          
+          {/* Row 2: Creator */}
+          <div className="text-xs text-gray-500">
+            by {bet.creator.slice(0, 6)}...{bet.creator.slice(-4)}
+          </div>
         </div>
 
       </div>

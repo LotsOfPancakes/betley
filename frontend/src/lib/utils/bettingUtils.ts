@@ -98,7 +98,7 @@ export function getBetStatusDisplay(
     color: 'bg-gradient-to-r from-blue-500 to-blue-600',
     textColor: 'text-white',
     timeInfo: timeLeft > 0 ? formatTimeRemaining(timeLeft) : null,
-    icon: '🎯'
+    icon: ''
   }
 }
 
