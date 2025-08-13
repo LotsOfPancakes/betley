@@ -13,7 +13,7 @@ import "../src/Betley.sol";
  * 1. View current fee status:
  *    forge script script/ConfigureFees.s.sol:ViewFees --rpc-url <RPC>
  *
- * 2. Enable production fees (2% creator + 1% platform):
+ * 2. Enable production fees (1% creator + 0.5% platform):
  *    forge script script/ConfigureFees.s.sol:EnableFees --rpc-url <RPC> --broadcast
  *
  * 3. Disable all fees:

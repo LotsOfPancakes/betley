@@ -137,42 +137,49 @@ export function UnifiedBettingInterface({
         isNativeBet={isNativeBet}
       />
 
-      {/* Options Grid - Betting options selection */}
-      <BetOptionsGrid
-        address={address}
-        options={safeOptions}
-        userBets={safeUserBets}
-        totalAmounts={safeTotalAmounts}
-        selectedOption={selectedOption}
-        setSelectedOption={setSelectedOption}
-        canBet={canBet}
-        hasExistingBet={hasExistingBet || false}
-        resolved={resolved}
-        winningOption={winningOption}
-        decimals={safeDecimals}
-        isNativeBet={isNativeBet}
-      />
+      {/* 2-Column Layout: Options (60%) + Amount Input (40%) */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Left Column - Betting Options (60% on desktop) */}
+        <div className="flex-1 lg:w-[60%]">
+          <BetOptionsGrid
+            address={address}
+            options={safeOptions}
+            userBets={safeUserBets}
+            totalAmounts={safeTotalAmounts}
+            selectedOption={selectedOption}
+            setSelectedOption={setSelectedOption}
+            canBet={canBet}
+            hasExistingBet={hasExistingBet || false}
+            resolved={resolved}
+            winningOption={winningOption}
+            decimals={safeDecimals}
+            isNativeBet={isNativeBet}
+          />
+        </div>
 
-      {/* Amount Input - Only show if user can bet */}
-      {canBet && (
-        <BetAmountInput
-          betAmount={betAmount}
-          setBetAmount={setBetAmount}
-          balance={safeBalance}
-          decimals={safeDecimals}
-          isNativeBet={isNativeBet}
-          hasExistingBet={hasExistingBet || false}
-          needsApproval={needsApproval}
-          isApproving={isApproving}
-          isPending={isPending}
-          handleApprove={handleApprove}
-          handlePlaceBet={handlePlaceBet}
-          selectedOption={selectedOption}
-          options={safeOptions}
-          totalAmounts={safeTotalAmounts}
-          feeParams={feeParams}
-        />
-      )}
+        {/* Right Column - Amount Input (40% on desktop) */}
+        {canBet && (
+          <div className="lg:w-[40%] lg:min-w-[320px]">
+            <BetAmountInput
+              betAmount={betAmount}
+              setBetAmount={setBetAmount}
+              balance={safeBalance}
+              decimals={safeDecimals}
+              isNativeBet={isNativeBet}
+              hasExistingBet={hasExistingBet || false}
+              needsApproval={needsApproval}
+              isApproving={isApproving}
+              isPending={isPending}
+              handleApprove={handleApprove}
+              handlePlaceBet={handlePlaceBet}
+              selectedOption={selectedOption}
+              options={safeOptions}
+              totalAmounts={safeTotalAmounts}
+              feeParams={feeParams}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -57,49 +57,59 @@ export function BetStatusHeader({
   const hasPool = totalPool > BigInt(0)
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-      <div className="flex-1">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 leading-tight">
-          {name}
+    <div className="space-y-3 mb-6">
+       {/* Title Row with Status + Timer */}
+       <div className="flex items-center gap-4">
+        {/* Title - truncated if too long */}
+        <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight flex-1 min-w-0">
+          <span className="truncate block">
+            {name}
+          </span>
         </h1>
         
-        <div className="flex items-center gap-3 flex-wrap">
+        {/* Right side - Status + Timer */}
+        <div className="flex items-center gap-3 flex-shrink-0">
           {/* Combined Status and Time Pill */}
           <span 
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium ${status.color} ${status.textColor} shadow-lg`}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium ${status.color} ${status.textColor} shadow-lg whitespace-nowrap`}
           >
             <span>{status.icon}</span>
             {status.text}
             {status.timeInfo && <span>• {status.timeInfo}</span>}
           </span>
-          
-          {/* Pool Total Pill */}
-          {hasPool && (
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium bg-gradient-to-r from-gray-400 to-slate-500 text-black shadow-lg">
-              <span>💰</span>
-              Pool TVL: {formatDynamicDecimals(formatUnits(totalPool, decimals))} {tokenSymbol}
-            </span>
-          )}
         </div>
       </div>
       
-      {/* Share Button */}
-      <button
-        onClick={copyLink}
-        className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-5 py-2 rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl flex items-center gap-2"
-      >
-        {linkCopied ? (
-          <>
-            <span className="text-green-400">✓</span>
-            Copied!
-          </>
-        ) : (
-          <>
-            <span>🔗</span>
-            Share
-          </>
-        )}
-      </button>
+      {/* Pool TVL and Share Button Row */}
+      <div className="flex items-center justify-between gap-4">
+        {/* Left side - Pool TVL */}
+        <div className="flex items-center">
+          {hasPool && (
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 border border-emerald-500/30 shadow-lg">
+              <span>💰</span>
+              Pool: {formatDynamicDecimals(formatUnits(totalPool, decimals))} {tokenSymbol}
+            </span>
+          )}
+        </div>
+        
+        {/* Right side - Share Button */}
+        <button
+          onClick={copyLink}
+          className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-5 py-2 rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl flex items-center gap-2 whitespace-nowrap"
+        >
+          {linkCopied ? (
+            <>
+              <span className="text-green-400">✓</span>
+              Copied!
+            </>
+          ) : (
+            <>
+              <span>🔗</span>
+              Share
+            </>
+          )}
+        </button>
+      </div>
     </div>
   )
 }

@@ -13,9 +13,31 @@ interface DurationSelectorProps {
   error?: string
 }
 
+// Calculate duration until next UTC midnight (hours and minutes)
+const getTimeUntilNextUTCMidnight = () => {
+  const now = new Date()
+  const tomorrow = new Date(now)
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
+  tomorrow.setUTCHours(0, 0, 0, 0)
+  
+  const msUntilMidnight = tomorrow.getTime() - now.getTime()
+  const totalMinutes = Math.ceil(msUntilMidnight / (1000 * 60))
+  
+  // Ensure minimum 1 minute
+  const safeMinutes = Math.max(1, totalMinutes)
+  
+  const hours = Math.floor(safeMinutes / 60)
+  const minutes = safeMinutes % 60
+  
+  return { hours, minutes }
+}
+
+const nextMidnightTime = getTimeUntilNextUTCMidnight()
+const midnightLabel = `${nextMidnightTime.hours}h${nextMidnightTime.minutes > 0 ? ` ${nextMidnightTime.minutes}m` : ''}`
+
 const quickPresets = [
   { label: '1h', hours: 1, minutes: 0, description: 'Default - Quick Bet' },
-  { label: '1d', hours: 24, minutes: 0, description: 'Full day Bet' },
+  { label: midnightLabel, hours: nextMidnightTime.hours, minutes: nextMidnightTime.minutes, description: 'Until Next Day 0000 UTC', isUTCMidnight: true },
 ]
 
 export default function DurationSelector({ duration, onChange, error }: DurationSelectorProps) {
@@ -29,8 +51,14 @@ export default function DurationSelector({ duration, onChange, error }: Duration
     onChange({ ...duration, minutes: Math.max(0, Math.min(59, minutes)) })
   }
 
-  const setPreset = (preset: { hours: number; minutes: number }) => {
-    onChange(preset)
+  const setPreset = (preset: { hours: number; minutes: number; isUTCMidnight?: boolean }) => {
+    if (preset.isUTCMidnight) {
+      // Recalculate time until next UTC midnight
+      const timeUntilMidnight = getTimeUntilNextUTCMidnight()
+      onChange(timeUntilMidnight)
+    } else {
+      onChange({ hours: preset.hours, minutes: preset.minutes })
+    }
   }
 
   const handleCustomClick = () => {
@@ -58,7 +86,12 @@ export default function DurationSelector({ duration, onChange, error }: Duration
   const isTooLong = totalMinutes > 7 * 24 * 60 // More than 1 week
 
   // Check if current duration matches any preset
-  const isPresetSelected = (preset: { hours: number; minutes: number }) => {
+  const isPresetSelected = (preset: { hours: number; minutes: number; isUTCMidnight?: boolean }) => {
+    if (preset.isUTCMidnight) {
+      // For UTC midnight preset, check if it matches the current calculated value
+      const currentMidnightTime = getTimeUntilNextUTCMidnight()
+      return duration.hours === currentMidnightTime.hours && duration.minutes === currentMidnightTime.minutes
+    }
     return duration.hours === preset.hours && duration.minutes === preset.minutes
   }
 
@@ -170,8 +203,8 @@ export default function DurationSelector({ duration, onChange, error }: Duration
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-lg">{preset.label}</div>
-                  <div className="text-xs opacity-75">{preset.description}</div>
+                  <div className="font-bold text-sm leading-tight">{preset.label}</div>
+                  <div className="text-xs opacity-75 mt-1">{preset.description}</div>
                 </div>
                 {isSelected && (
                   // <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">

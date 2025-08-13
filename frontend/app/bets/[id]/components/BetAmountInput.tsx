@@ -51,7 +51,7 @@ export function BetAmountInput({
   const isValidAmount = isValidBetAmount(betAmount)
   const hasBalance = hasWalletBalance(betAmount, balance, decimals)
 
-  // Calculate potential winnings
+  // Calculate potential winnings (net profit after deducting bet amount)
   const potentialWinnings = useMemo(() => {
     if (!isValidAmount || selectedOption === null || !totalAmounts || !betAmount) {
       return BigInt(0)
@@ -85,53 +85,60 @@ export function BetAmountInput({
   )
 
   return (
-    <div className="space-y-4">
+    <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/80 backdrop-blur-sm border border-green-600/20 rounded-3xl p-5 space-y-4">
       {/* Amount Input */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-3">
-          {hasExistingBet ? 'Additional bet:' : 'Bet amount:'}
-        </label>
-        
-        <div className="relative">
-          <input
-            type="text"
-            value={betAmount}
-            onChange={(e) => setBetAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-            placeholder="0.00"
-            className="w-full bg-gray-800/60 backdrop-blur-sm border border-gray-600/50 rounded-2xl px-6 py-4 text-white placeholder-gray-500 focus:border-green-500 focus:outline-none transition-all duration-300"
-            style={{
-              boxShadow: 'inset 0 0 0 1px transparent',
-            }}
-            onFocus={(e) => {
-              e.target.style.boxShadow = '0 0 30px rgba(34, 197, 94, 0.3), 0 0 60px rgba(34, 197, 94, 0.2), 0 0 100px rgba(34, 197, 94, 0.1)'
-            }}
-            onBlur={(e) => {
-              e.target.style.boxShadow = 'inset 0 0 0 1px transparent'
-            }}
-          />
+        {/* Input Row */}
+        <div className="flex items-center justify-between">
+          {/* Left - Label */}
+          <span className="text-sm font-medium text-gray-300">
+            {hasExistingBet ? 'Additional Bet' : 'Bet Amount'}
+          </span>
           
-          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">
-            {tokenSymbol}
+          {/* Right - Input with Sticky Token */}
+          <div className="flex-1 max-w-[200px]">
+            <div className="flex items-center text-2xl text-white justify-end">
+              <input
+                type="text"
+                value={betAmount}
+                onChange={(e) => setBetAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                placeholder="0"
+                className="outline-none placeholder-gray-500 text-right flex-1 min-w-0 py-2"
+              />
+              <span className={`ml-1.5 font-medium ${betAmount ? 'text-white' : 'text-gray-500'}`}>
+                {tokenSymbol}
+              </span>
+            </div>
           </div>
         </div>
         
         {/* Balance Display */}
-        {balance && (
+        {/* {balance && (
           <div className="mt-2 text-sm text-gray-400">
             Balance: {formatDynamicDecimals(formatUnits(balance, decimals))} {tokenSymbol}
+          </div>
+        )} */}
+
+        {/* Separator Line */}
+        {shouldShowPotentialWinnings && (
+          <div className="mt-3 mb-3">
+            <div className="h-px bg-gradient-to-r from-transparent via-green-400/30 to-transparent"></div>
           </div>
         )}
 
         {/* Potential Winnings Preview */}
         {shouldShowPotentialWinnings && (
-          <div className="mt-2 text-sm text-green-400">
-            Potential winnings: {formattedPotentialWinnings} {tokenSymbol} if &quot;{options[selectedOption!]}&quot; wins
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-green-400">Potential win:</span>
+            <span className="text-green-400 font-medium text-lg">
+              {formattedPotentialWinnings} {tokenSymbol}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-3">
+      {/* Action Button */}
+      <div>
         {needsApproval ? (
           <button
             onClick={handleApprove}
@@ -147,8 +154,12 @@ export function BetAmountInput({
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 Approving...
               </div>
+            ) : !isValidAmount && betAmount ? (
+              'Please enter a valid amount'
+            ) : !hasBalance && isValidAmount ? (
+              `Insufficient ${tokenSymbol} balance`
             ) : (
-              'Approve Token'
+              `Approve ${tokenSymbol}`
             )}
           </button>
         ) : (
@@ -166,29 +177,18 @@ export function BetAmountInput({
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 Placing Bet...
               </div>
+            ) : !isValidAmount && betAmount ? (
+              'Please enter a valid amount'
+            ) : !hasBalance && isValidAmount ? (
+              `Insufficient ${tokenSymbol} balance`
+            ) : selectedOption === null && isValidAmount && hasBalance ? (
+              'Please select an option above'
+            ) : selectedOption !== null && options ? (
+              `Place Bet on "${options[selectedOption]}"`
             ) : (
-              `Place Bet${selectedOption !== null && options ? ` on ${options[selectedOption]}` : ''}`
+              'Place Bet'
             )}
           </button>
-        )}
-        
-        {/* Validation Messages */}
-        {!isValidAmount && betAmount && (
-          <p className="text-red-400 text-sm text-center bg-red-900/20 border border-red-500/30 rounded-xl p-3">
-            Please enter a valid amount
-          </p>
-        )}
-        
-        {!hasBalance && isValidAmount && (
-          <p className="text-red-400 text-sm text-center bg-red-900/20 border border-red-500/30 rounded-xl p-3">
-            Insufficient balance
-          </p>
-        )}
-        
-        {selectedOption === null && isValidAmount && hasBalance && (
-          <p className="text-yellow-400 text-sm text-center bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-3">
-            Please select an option to bet on
-          </p>
         )}
       </div>
     </div>

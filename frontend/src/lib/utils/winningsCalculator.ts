@@ -107,11 +107,12 @@ export function calculateWinningsBreakdown(
 
 /**
  * Calculate potential winnings preview (for betting interface)
+ * Shows net profit only (excludes original bet amount)
  * @param userBetAmount - Amount user wants to bet
  * @param selectedOption - Option user wants to bet on
  * @param totalAmounts - Current total amounts per option
  * @param feeParams - Current fee parameters
- * @returns Estimated winnings if this option wins
+ * @returns Estimated net profit if this option wins
  */
 export function calculatePotentialWinningsPreview(
   userBetAmount: bigint,
@@ -123,16 +124,14 @@ export function calculatePotentialWinningsPreview(
     return BigInt(0)
   }
 
-  // Simulate new totals after user's bet
-  const newTotalAmounts = totalAmounts.map((amount, index) => 
-    index === selectedOption ? amount + userBetAmount : amount
-  )
-
-  // Calculate what the losing pool would be if selected option wins
-  const simulatedLosingPool = calculateLosingPool(newTotalAmounts, selectedOption)
+  // Current selected pool (before user's bet)
+  const currentSelectedPool = totalAmounts[selectedOption]
   
-  if (simulatedLosingPool === BigInt(0)) {
-    return userBetAmount // Just get original bet back
+  // Calculate losing pools (all other options)
+  const losingPools = calculateLosingPool(totalAmounts, selectedOption)
+  
+  if (losingPools === BigInt(0)) {
+    return BigInt(0) // No profit if no losing pools
   }
 
   // Calculate fees if parameters available
@@ -140,7 +139,7 @@ export function calculatePotentialWinningsPreview(
   if (feeParams) {
     const [creatorEnabled, creatorRate, platformEnabled, platformRate] = feeParams
     const { totalFees: calculatedFees } = calculateAllFees(
-      simulatedLosingPool,
+      losingPools,
       creatorRate,
       creatorEnabled,
       platformRate,
@@ -149,14 +148,14 @@ export function calculatePotentialWinningsPreview(
     totalFees = calculatedFees
   }
 
-  // Available winnings after fees
-  const availableForWinners = simulatedLosingPool - totalFees
-  const newWinningPool = newTotalAmounts[selectedOption]
+  // Available winnings after fees from losing pools
+  const availableFromLosingPools = losingPools - totalFees
 
-  // Calculate proportional share
-  const winningsFromLosers = (userBetAmount * availableForWinners) / newWinningPool
+  // User's formula: betAmount/(betAmount + selectedPool) * amounts in other pools
+  // This gives the user's proportional share of the losing pools
+  const userProportionalShare = (userBetAmount * availableFromLosingPools) / (userBetAmount + currentSelectedPool)
 
-  return winningsFromLosers //exclude userBetAmount from the final returned value. Previous formula was userBetAmount + wininngsFromLosers
+  return userProportionalShare // This is pure profit (net winnings)
 }
 
 /**
