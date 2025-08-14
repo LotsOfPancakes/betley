@@ -198,14 +198,15 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
             // Use async IIFE to handle the API call
             (async () => {
               try {
-                await fetch('/api/bets/place', {
+                 await fetch('/api/bets/place', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     betId: numericBetId,
                     userAddress: userAddress,
                     amount: parseUnits(betAmount, 18).toString(),
-                    txHash: receipt.transactionHash
+                    txHash: receipt.transactionHash,
+                    optionIndex: selectedOption  // NEW: Pass the selected option for real-time totals
                   })
                 })
 

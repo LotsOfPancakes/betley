@@ -8,6 +8,12 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
 import { createAuthMessage, generateNonce, createAuthHeader } from './verifySignature'
+import { 
+  saveSessionToStorage, 
+  loadSessionFromStorage, 
+  clearSessionFromStorage,
+  STORAGE_KEY
+} from './sessionStorage'
 
 // Authentication state interface
 interface AuthSession {
@@ -85,7 +91,8 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
   const clearAuth = useCallback(() => {
     setSession(null)
     setAuthError(null)
-    console.debug('[WalletAuth] Session cleared')
+    clearSessionFromStorage()  // NEW: Clear from localStorage
+    console.debug('[WalletAuth] Session cleared from memory and storage')
   }, [])
   
   // Get authorization header for API requests
@@ -158,6 +165,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       })
       
       setSession(newSession)
+      saveSessionToStorage(newSession)  // NEW: Save to localStorage
       setIsAuthenticating(false)
       console.debug('[WalletAuth] Authentication successful for:', address.slice(0, 8))
       return true
@@ -193,6 +201,14 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       console.debug('[WalletAuth] Address changed, clearing session')
       clearAuth()
       setIsInitialized(true)
+    } else if (!session && address) {
+      // NEW: Try to load existing session from localStorage
+      const savedSession = loadSessionFromStorage()
+      if (savedSession && savedSession.address.toLowerCase() === address.toLowerCase()) {
+        console.debug('[WalletAuth] Restored session from localStorage for:', address.slice(0, 8))
+        setSession(savedSession)
+      }
+      setIsInitialized(true)
     } else {
       // Wallet connected and address matches (or no session yet)
       setIsInitialized(true)
@@ -216,6 +232,46 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
     
     return () => clearTimeout(timeout)
   }, [session, timeUntilExpiry, clearAuth])
+
+  // NEW: Cross-tab session synchronization
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      // Only react to changes to our session storage key
+      if (e.key !== STORAGE_KEY) return
+      
+      console.debug('[WalletAuth] Storage change detected:', { 
+        key: e.key, 
+        newValue: e.newValue ? 'session exists' : 'session cleared',
+        currentAddress: address?.slice(0, 8)
+      })
+      
+      if (e.newValue === null) {
+        // Session was cleared in another tab
+        console.debug('[WalletAuth] Session cleared in another tab, syncing...')
+        setSession(null)
+        setAuthError(null)
+      } else if (address) {
+        // Session was updated in another tab, check if it's for current address
+        try {
+          const newSession = JSON.parse(e.newValue)
+          if (newSession.address.toLowerCase() === address.toLowerCase()) {
+            console.debug('[WalletAuth] Session updated in another tab, syncing...')
+            setSession(newSession)
+            setAuthError(null)
+          }
+        } catch (error) {
+          console.warn('[WalletAuth] Failed to parse session from storage change:', error)
+        }
+      }
+    }
+    
+    // Listen for storage changes from other tabs
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [address])
   
   const contextValue: WalletAuthContextType = {
     // State

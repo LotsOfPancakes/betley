@@ -7,6 +7,15 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'
 import { parseAuthHeader, verifyWalletSignature } from '@/lib/auth/verifySignature'
+import { createPublicClient, http } from 'viem'
+import { baseSepolia } from '@reown/appkit/networks'
+import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
+
+// Create RPC client for live data fallback
+const publicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(process.env.NEXT_PUBLIC_RPC_URL)
+})
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -17,6 +26,23 @@ function getClientIP(request: NextRequest): string {
   if (vercelIP) return vercelIP.split(',')[0].trim()
   
   return '127.0.0.1'
+}
+
+// Helper function to fetch live bet amounts when database data is stale/missing
+async function getLiveBetAmounts(betId: number): Promise<number[]> {
+  try {
+    const betAmounts = await publicClient.readContract({
+      address: BETLEY_NEW_ADDRESS,
+      abi: BETLEY_NEW_ABI,
+      functionName: 'getBetAmounts',
+      args: [BigInt(betId)]
+    }) as readonly bigint[]
+
+    return betAmounts.map(amount => Number(amount))
+  } catch (error) {
+    console.error(`Error fetching live amounts for bet ${betId}:`, error)
+    return []
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -175,8 +201,11 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // ✅ STEP 5: Transform data for frontend consumption
-    const transformedBets = (betDetails || []).map(bet => {
+    // ✅ STEP 5: Transform data for frontend consumption with live data fallback
+    const transformedBets = []
+    
+    // Process bets sequentially to avoid rate limits
+    for (const bet of betDetails || []) {
       // Determine user role
       const isCreator = bet.creator_address.toLowerCase() === address.toLowerCase()
       const hasBetActivity = userActivities?.some(
@@ -188,7 +217,22 @@ export async function POST(request: NextRequest) {
       else if (isCreator) userRole = 'creator'
       else userRole = 'bettor'
 
-      return {
+      // Check if database total_amounts are missing or all zeros
+      let totalAmounts = bet.total_amounts || []
+      const hasValidAmounts = totalAmounts.length > 0 && totalAmounts.some((amount: string) => amount > '0')
+      
+      if (!hasValidAmounts) {
+        console.log(`[UserBets] Database amounts missing/zero for bet ${bet.numeric_id}, fetching live data...`)
+        totalAmounts = await getLiveBetAmounts(bet.numeric_id)
+        console.log(`[UserBets] Live amounts for bet ${bet.numeric_id}:`, totalAmounts)
+        
+        // Add small delay to avoid rate limiting
+        if (transformedBets.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 200)) // 200ms delay
+        }
+      }
+
+      const transformedBet = {
         id: bet.numeric_id,
         randomId: bet.random_id,
         name: bet.bet_name,
@@ -197,12 +241,14 @@ export async function POST(request: NextRequest) {
         endTime: bet.end_time || 0, // Keep as number for JSON serialization
         resolved: bet.resolved || false,
         winningOption: bet.winning_option || 0,
-        totalAmounts: bet.total_amounts || [], // Keep as number array
+        totalAmounts, // Use live data if database was stale
         userRole,
         userTotalBet: 0, // TODO: Calculate from user_activities
         isPublic: false // Default to false since column might not exist
       }
-    })
+      
+      transformedBets.push(transformedBet)
+    }
 
     return Response.json({
       bets: transformedBets,

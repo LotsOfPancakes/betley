@@ -52,9 +52,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { betId, userAddress, amount, txHash } = body
-
-
+    const { betId, userAddress, amount, txHash, optionIndex } = body
 
     // Basic validation
     if (typeof betId !== 'number' || betId < 0) {
@@ -73,10 +71,15 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Invalid transaction hash' }, { status: 400 })
     }
 
-    // Track bet placement activity
-    await trackBetPlacement(userAddress, betId, amount, txHash)
+    // NEW: Validate optionIndex if provided (backward compatible - optional)
+    if (optionIndex !== undefined && (typeof optionIndex !== 'number' || optionIndex < 0)) {
+      return Response.json({ error: 'Invalid option index' }, { status: 400 })
+    }
 
-    console.log(`Successfully tracked bet placement: User ${userAddress} bet ${amount} on bet ${betId}`)
+    // Track bet placement activity with optional option index
+    await trackBetPlacement(userAddress, betId, amount, txHash, optionIndex)
+
+    console.log(`Successfully tracked bet placement: User ${userAddress} bet ${amount} on option ${optionIndex ?? 'unknown'} for bet ${betId}`)
 
     // Return success response
     return Response.json({ 

@@ -43,7 +43,8 @@ export async function trackBetPlacement(
   userAddress: string, 
   betId: number, 
   amount: string, 
-  txHash: string
+  txHash: string,
+  optionIndex?: number  // NEW: Optional for backward compatibility
 ): Promise<void> {
   const supabase = createServerSupabaseClient()
 
@@ -53,12 +54,11 @@ export async function trackBetPlacement(
       bet_id: betId,
       activity_type: 'bet',
       amount: amount,
+      option_index: optionIndex ?? null,  // NEW: Store which option was selected
       block_number: 0, // Use 0 for real-time activities (not from blockchain scan)
       transaction_hash: txHash,
       created_at: new Date().toISOString()
     }
-
-
 
     const { data, error } = await supabase
       .from('user_activities')
@@ -69,7 +69,26 @@ export async function trackBetPlacement(
       throw error
     }
 
-    console.log(`Tracked bet placement: ${userAddress} bet ${amount} on bet ${betId}`, data)
+    console.log(`Tracked bet placement: ${userAddress} bet ${amount} on option ${optionIndex} for bet ${betId}`, data)
+
+    // NEW: Update bet totals in real-time if option provided
+    if (optionIndex !== undefined && optionIndex !== null) {
+      try {
+        const { error: totalsError } = await supabase.rpc('update_bet_totals', {
+          bet_id_param: betId
+        })
+
+        if (totalsError) {
+          console.error('Error updating bet totals:', totalsError)
+          // Don't throw - bet placement should still succeed even if totals update fails
+        } else {
+          console.log(`Updated real-time totals for bet ${betId}`)
+        }
+      } catch (totalsUpdateError) {
+        console.error('Error calling update_bet_totals:', totalsUpdateError)
+        // Don't throw - analytics failure shouldn't break bet placement
+      }
+    }
   } catch (error) {
     console.error('Error tracking bet placement:', error)
     // Don't throw - analytics failure shouldn't break bet placement
