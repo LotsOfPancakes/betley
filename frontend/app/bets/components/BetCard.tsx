@@ -69,10 +69,10 @@ export default function BetCard({ bet, decimals }: BetCardProps) {
   const totalPool = bet.totalAmounts.reduce((sum, amount) => sum + amount, BigInt(0))
   const formatAmount = (amount: bigint) => formatDynamicDecimals(formatUnits(amount, decimals))
   
-  // Generate option breakdown text
+  // Generate option breakdown data
   const getOptionsBreakdown = () => {
     if (bet.totalAmounts.length === 0 || totalPool === BigInt(0)) {
-      return `No bets yet`
+      return []
     }
 
     const optionStats = bet.options.map((option, index) => {
@@ -88,10 +88,7 @@ export default function BetCard({ bet, decimals }: BetCardProps) {
     // Sort by amount to show largest first
     optionStats.sort((a, b) => Number(b.amount - a.amount))
 
-    // Format as "Yes: 45.2 ETH (67%) • No: 22.1 ETH (33%)"
     return optionStats
-      .map(stat => `${stat.name}: ${formatAmount(stat.amount)} ${tokenSymbol} (${stat.percentage}%)`)
-      .join(' • ')
   }
 
   // Get user's position if they have bets
@@ -134,14 +131,23 @@ export default function BetCard({ bet, decimals }: BetCardProps) {
         </div>
 
         {/* Options Breakdown */}
-        <div className="text-sm text-gray-300 mb-3">
-          {getOptionsBreakdown()}
+        <div className="text-sm text-gray-300 mb-3 space-y-1">
+          {getOptionsBreakdown().length > 0 ? (
+            getOptionsBreakdown().map((stat, index) => (
+              <div key={index} className="flex justify-between items-center">
+                <span className="font-medium">{stat.name}:</span>
+                <span>{formatAmount(stat.amount)} {tokenSymbol} ({stat.percentage}%)</span>
+              </div>
+            ))
+          ) : (
+            <div className="text-gray-400 italic">No bets yet</div>
+          )}
         </div>
 
         {/* Total Pool */}
-        <div className="text-sm font-medium text-emerald-300 mb-3">
+        {/* <div className="text-sm font-medium text-emerald-300 mb-3">
           Total: {formatAmount(totalPool)} {tokenSymbol}
-        </div>
+        </div> */}
 
         {/* User Position (if any) */}
         {getUserPosition() && (
