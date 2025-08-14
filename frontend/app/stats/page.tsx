@@ -7,7 +7,7 @@ import { formatEther } from 'viem'
 // AppKit buttons are web components - no import needed
 import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 import { useWalletAuth } from '@/lib/auth/WalletAuthContext'
-import { AuthModal } from '@/components/auth/AuthModal'
+import BetsSearchLoading from '../bets/components/BetsSearchLoading'
 
 // Custom hook for fetching user stats with authentication
 function useUserStats(address: string | undefined) {
@@ -133,8 +133,6 @@ export default function UserStatsPage() {
   const { address } = useAccount()
   const { isAuthenticated, authenticate, isInitialized, isAuthenticating } = useWalletAuth()
   const { data: stats, isLoading, error } = useUserStats(address)
-  const [showAuthModal, setShowAuthModal] = React.useState(false)
-
   // Handle authentication requirement
   React.useEffect(() => {
     // Only proceed if context is initialized and we have an address
@@ -143,19 +141,11 @@ export default function UserStatsPage() {
     }
 
     if (!isAuthenticated) {
-      // Try silent authentication first (will succeed if there's a valid session)
-      authenticate().then(success => {
-        if (!success) {
-          // If silent auth fails, show modal
-          setShowAuthModal(true)
-        }
-      })
+      // Direct authentication - wallet signature request will handle the UI
+      authenticate()
+      // No need for modal fallback - user can retry from error state if needed
     }
   }, [address, isAuthenticated, isInitialized, isAuthenticating, authenticate])
-
-  const handleAuthSuccess = () => {
-    setShowAuthModal(false)
-  }
 
   // Simple wallet check - exactly like your existing pages
   if (!address) {
@@ -246,17 +236,15 @@ export default function UserStatsPage() {
         {/* Stats Grid */}
         <div className="max-w-6xl mx-auto px-4 py-8">
           {/* Show loading when context initializing, authenticating, or fetching data */}
-          {(isLoading || !isInitialized || (address && !isAuthenticated && !showAuthModal && isAuthenticating)) && <LoadingStats />}
+          {(isLoading || !isInitialized || (address && !isAuthenticated && isAuthenticating)) && <LoadingStats />}
           
           {/* Show authentication required message */}
-          {address && !isAuthenticated && showAuthModal && (
-            <div className="text-center py-12">
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-yellow-500/30 rounded-3xl p-8 max-w-md mx-auto">
-                <div className="text-yellow-400 text-4xl mb-4">🔐</div>
-                <h3 className="text-xl font-semibold text-white mb-4">Authentication Required</h3>
-                <p className="text-gray-300 mb-6">Please sign the message to access your personal stats.</p>
-              </div>
-            </div>
+          {address && !isAuthenticated && isAuthenticating && (
+            <BetsSearchLoading 
+              variant="auth" 
+              customMessage="Please sign to access your stats..."
+              customSubtitle="Check your wallet for the signature request"
+            />
           )}
           
           {error && (
@@ -272,10 +260,10 @@ export default function UserStatsPage() {
                 </p>
                 {error.message.includes('Authentication') && (
                   <button
-                    onClick={() => setShowAuthModal(true)}
+                    onClick={() => authenticate()}
                     className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-2xl font-semibold hover:from-green-400 hover:to-emerald-500 transition-all duration-300"
                   >
-                    Try Again
+                    Sign Message to Access Stats
                   </button>
                 )}
               </div>
@@ -337,15 +325,6 @@ export default function UserStatsPage() {
           )}
         </div>
       </div>
-
-      {/* Authentication Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={handleAuthSuccess}
-        title="Access Your Stats"
-        description="To view your personal betting statistics, please sign a message to verify wallet ownership."
-      />
     </div>
   )
 }

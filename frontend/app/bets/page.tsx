@@ -14,7 +14,6 @@ import { useBetsFiltering } from './hooks/useBetsFiltering'
 import { usePublicBets } from '@/lib/hooks/usePublicBets'
 import { COLORS, DIMENSIONS, ANIMATIONS, SHADOWS } from '@/lib/constants/ui'
 import { useWalletAuth } from '@/lib/auth/WalletAuthContext'
-import { AuthModal } from '@/components/auth/AuthModal'
 
 type TabType = 'my' | 'public'
 
@@ -30,7 +29,6 @@ export default function BetsPage() {
   
   // Tab state management
   const [activeTab, setActiveTab] = useState<TabType>('my')
-  const [showAuthModal, setShowAuthModal] = useState(false)
 
   // Handle authentication requirement for My Bets tab
   React.useEffect(() => {
@@ -40,19 +38,11 @@ export default function BetsPage() {
     }
 
     if (!isAuthenticated) {
-      // Try silent authentication first (will succeed if there's a valid session)
-      authenticate().then(success => {
-        if (!success) {
-          // If silent auth fails, show modal
-          setShowAuthModal(true)
-        }
-      })
+      // Direct authentication - wallet signature request will handle the UI
+      authenticate()
+      // No need for modal fallback - user can retry from error state if needed
     }
   }, [activeTab, address, isAuthenticated, isInitialized, isAuthenticating, authenticate])
-
-  const handleAuthSuccess = () => {
-    setShowAuthModal(false)
-  }
 
   // My Bets (database-first approach - Phase 2)
   const { 
@@ -83,7 +73,7 @@ export default function BetsPage() {
 
   // Determine what to show based on active tab
   const isInitialLoading = activeTab === 'my' 
-    ? (myBetsLoading || !isInitialized || (address && !isAuthenticated && !showAuthModal))
+    ? (myBetsLoading || !isInitialized || (address && !isAuthenticated && isAuthenticating))
     : publicBetsLoading
   const isFetching = activeTab === 'my' ? myBetsFetching : publicBetsFetching
   const error = activeTab === 'my' ? myBetsError : publicBetsError?.message
@@ -150,14 +140,8 @@ export default function BetsPage() {
                 </div>
               </div>
             </div>
-          ) : activeTab === 'my' && address && !isAuthenticated && showAuthModal ? (
-            <div className="text-center py-12">
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-yellow-500/30 rounded-3xl p-8 max-w-md mx-auto">
-                <div className="text-yellow-400 text-4xl mb-4">🔐</div>
-                <h3 className="text-xl font-semibold text-white mb-4">Authentication Required</h3>
-                <p className="text-gray-300 mb-6">Please sign the message to access your betting history.</p>
-              </div>
-            </div>
+          ) : activeTab === 'my' && address && !isAuthenticated && isAuthenticating ? (
+            <BetsSearchLoading variant="auth" />
           ) : (
             <>
               {/* Error state */}
@@ -166,10 +150,10 @@ export default function BetsPage() {
                   <p className="text-red-300">{error}</p>
                   {error.includes('Authentication') && (
                     <button
-                      onClick={() => setShowAuthModal(true)}
+                      onClick={() => authenticate()}
                       className="mt-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl font-medium hover:from-green-400 hover:to-emerald-500 transition-all duration-300"
                     >
-                      Try Authentication Again
+                      Sign Message to Access Bets
                     </button>
                   )}
                 </div>
@@ -240,15 +224,6 @@ export default function BetsPage() {
           )}
         </div>
       </div>
-
-      {/* Authentication Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={handleAuthSuccess}
-        title="Access Your Bets"
-        description="To view your personal betting history, please sign a message to verify wallet ownership."
-      />
     </div>
   )
 }

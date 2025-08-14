@@ -4,22 +4,30 @@
 import Image from 'next/image'
 
 interface BetsSearchLoadingProps {
-  variant?: 'initial' | 'refetch' | 'retry'
+  variant?: 'initial' | 'refetch' | 'retry' | 'auth'
   retryAttempt?: number
   maxRetries?: number
+  customMessage?: string
+  customSubtitle?: string
 }
 
 export default function BetsSearchLoading({ 
   variant = 'initial', 
   retryAttempt = 0, 
-  maxRetries = 5 
+  maxRetries = 5,
+  customMessage,
+  customSubtitle
 }: BetsSearchLoadingProps) {
   const getLoadingMessage = () => {
+    if (customMessage) return customMessage
+    
     switch (variant) {
       case 'refetch':
         return 'Betley is looking for updates...'
       case 'retry':
         return `Betley is still looking... (${retryAttempt}/${maxRetries})`
+      case 'auth':
+        return 'Betley needs your permissions to look for bets'
       default:
         return 'Betley is looking around for bets...'
     }
@@ -31,6 +39,8 @@ export default function BetsSearchLoading({
         return 'animate-spin'
       case 'retry':
         return 'animate-bounce'
+      case 'auth':
+        return 'animate-pulse'
       default:
         return 'animate-pulse'
     }
@@ -51,7 +61,7 @@ export default function BetsSearchLoading({
             height={64}
             className={`object-contain ${getImageAnimation()}`}
             style={{
-              animation: variant === 'initial' 
+              animation: (variant === 'initial' || variant === 'auth')
                 ? 'pulse 2s infinite, float 3s ease-in-out infinite'
                 : undefined
             }}
@@ -64,6 +74,12 @@ export default function BetsSearchLoading({
           />
         </div>
         <p className="text-white">{getLoadingMessage()}</p>
+        
+        {(variant === 'auth' || customSubtitle) && (
+          <p className="text-gray-400 text-sm mt-2">
+            {customSubtitle || 'Check your wallet for the signature request'}
+          </p>
+        )}
         
         {variant === 'retry' && (
           <div className="mt-3">
