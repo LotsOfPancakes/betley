@@ -3,6 +3,7 @@
 
 import { useMemo } from 'react'
 import { formatUnits, parseUnits } from 'viem'
+import { useAppKit } from '@reown/appkit/react'
 import { formatDynamicDecimals, isValidBetAmount, hasWalletBalance } from '@/lib/utils/bettingUtils'
 import { calculatePotentialWinningsPreview } from '@/lib/utils/winningsCalculator'
 import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
@@ -24,6 +25,10 @@ interface BetAmountInputProps {
   // New props for potential winnings calculation
   totalAmounts?: readonly bigint[]
   feeParams?: readonly [boolean, bigint, boolean, bigint, string]
+  // New props for wallet connection flow
+  address?: string
+  isActive: boolean
+  resolved: boolean
 }
 
 export function BetAmountInput({
@@ -41,15 +46,39 @@ export function BetAmountInput({
   selectedOption,
   options,
   totalAmounts,
-  feeParams
+  feeParams,
+  address,
+  isActive,
+  resolved
 }: BetAmountInputProps) {
+
+  // AppKit hook for wallet connection
+  const { open } = useAppKit()
 
   // Get token symbol
   const tokenSymbol = getTokenSymbol(isNativeBet)
 
-  // Validation logic
+  // Connection and betting state
+  const isConnected = Boolean(address)
+
+  // Validation logic - only check balance if connected
   const isValidAmount = isValidBetAmount(betAmount)
-  const hasBalance = hasWalletBalance(betAmount, balance, decimals)
+  const hasBalance = isConnected ? hasWalletBalance(betAmount, balance, decimals) : true
+
+  // Button click handler
+  const handleButtonClick = () => {
+    if (!isConnected) {
+      open() // Use AppKit's open method - same as setup page
+      return
+    }
+    
+    // Existing connected user logic
+    if (needsApproval) {
+      handleApprove()
+    } else {
+      handlePlaceBet()
+    }
+  }
 
   // Calculate potential winnings (net profit after deducting bet amount)
   const potentialWinnings = useMemo(() => {
@@ -84,6 +113,105 @@ export function BetAmountInput({
     options[selectedOption]
   )
 
+  // Button state helpers
+  const getButtonDisabledState = () => {
+    if (!isConnected) {
+      // Not connected: button is enabled to trigger connection
+      return false
+    }
+
+    if (!isActive || resolved) {
+      // Bet ended or resolved: disable button
+      return true
+    }
+
+    // Connected user: check validation states
+    const hasValidationErrors = !isValidAmount || !hasBalance || selectedOption === null
+    const isProcessing = isPending || isApproving
+    
+    return hasValidationErrors || isProcessing
+  }
+
+  const getButtonStyles = () => {
+    if (!isConnected) {
+      // Connection button: Blue gradient
+      return 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white shadow-lg shadow-blue-500/25 hover:scale-105'
+    }
+
+    if (!isActive || resolved) {
+      // Inactive/resolved: Gray
+      return 'bg-gray-600 text-gray-400 cursor-not-allowed'
+    }
+
+    if (getButtonDisabledState()) {
+      // Disabled: Gray
+      return 'bg-gray-600 text-gray-400 cursor-not-allowed'
+    }
+
+    if (needsApproval) {
+      // Approval: Blue gradient
+      return 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white shadow-lg shadow-blue-500/25 hover:scale-105'
+    }
+
+    // Place bet: Green gradient
+    return 'bg-gradient-to-r from-green-600 to-emerald-500/90 hover:from-green-500/90 hover:to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:scale-105'
+  }
+
+  const getButtonContent = () => {
+    if (!isConnected) {
+      return 'Connect Wallet to Bet'
+    }
+
+    if (!isActive) {
+      return 'Betting Closed'
+    }
+
+    if (resolved) {
+      return 'Bet Resolved'
+    }
+
+    // Connected user states
+    if (isPending) {
+      return (
+        <div className="flex items-center justify-center gap-2">
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          Placing Bet...
+        </div>
+      )
+    }
+
+    if (isApproving) {
+      return (
+        <div className="flex items-center justify-center gap-2">
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          Approving...
+        </div>
+      )
+    }
+
+    if (!isValidAmount && betAmount) {
+      return 'Please enter a valid amount'
+    }
+
+    if (!hasBalance && isValidAmount) {
+      return `Insufficient ${tokenSymbol} balance`
+    }
+
+    if (selectedOption === null && isValidAmount && hasBalance) {
+      return 'Please select an option above'
+    }
+
+    if (needsApproval) {
+      return `Approve ${tokenSymbol}`
+    }
+
+    if (selectedOption !== null && options) {
+      return `Place Bet on "${options[selectedOption]}"`
+    }
+
+    return 'Place Bet'
+  }
+
   return (
     <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/80 backdrop-blur-sm border border-green-600/20 rounded-3xl p-5 space-y-4">
       {/* Amount Input */}
@@ -112,8 +240,8 @@ export function BetAmountInput({
           </div>
         </div>
         
-        {/* Balance Display */}
-        {balance && (
+        {/* Balance Display - only show if connected */}
+        {isConnected && balance && (
           <div className="mt-2 text-xs text-gray-400 text-right">
             Balance: {formatDynamicDecimals(formatUnits(balance, decimals))} {tokenSymbol}
           </div>
@@ -126,8 +254,8 @@ export function BetAmountInput({
           </div>
         )}
 
-        {/* Potential Winnings Preview */}
-        {shouldShowPotentialWinnings && (
+        {/* Potential Winnings Preview - only show if connected */}
+        {isConnected && shouldShowPotentialWinnings && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-green-400">Potential win:</span>
             <span className="text-green-400 font-medium text-lg">
@@ -139,57 +267,13 @@ export function BetAmountInput({
 
       {/* Action Button */}
       <div>
-        {needsApproval ? (
-          <button
-            onClick={handleApprove}
-            disabled={!isValidAmount || !hasBalance || isApproving}
-            className={`w-full py-4 px-6 rounded-2xl font-semibold text-center transition-all duration-300 ${
-              !isValidAmount || !hasBalance || isApproving
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white shadow-lg shadow-blue-500/25 hover:scale-105'
-            }`}
-          >
-            {isApproving ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Approving...
-              </div>
-            ) : !isValidAmount && betAmount ? (
-              'Please enter a valid amount'
-            ) : !hasBalance && isValidAmount ? (
-              `Insufficient ${tokenSymbol} balance`
-            ) : (
-              `Approve ${tokenSymbol}`
-            )}
-          </button>
-        ) : (
-          <button
-            onClick={handlePlaceBet}
-            disabled={!isValidAmount || !hasBalance || selectedOption === null || isPending}
-            className={`w-full py-4 px-6 rounded-2xl font-semibold text-center transition-all duration-300 ${
-              !isValidAmount || !hasBalance || selectedOption === null || isPending
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-green-600 to-emerald-500/90 hover:from-green-500/90 hover:to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:scale-105'
-            }`}
-          >
-            {isPending ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Placing Bet...
-              </div>
-            ) : !isValidAmount && betAmount ? (
-              'Please enter a valid amount'
-            ) : !hasBalance && isValidAmount ? (
-              `Insufficient ${tokenSymbol} balance`
-            ) : selectedOption === null && isValidAmount && hasBalance ? (
-              'Please select an option above'
-            ) : selectedOption !== null && options ? (
-              `Place Bet on "${options[selectedOption]}"`
-            ) : (
-              'Place Bet'
-            )}
-          </button>
-        )}
+        <button
+          onClick={handleButtonClick}
+          disabled={getButtonDisabledState()}
+          className={`w-full py-4 px-6 rounded-2xl font-semibold text-center transition-all duration-300 ${getButtonStyles()}`}
+        >
+          {getButtonContent()}
+        </button>
       </div>
     </div>
   )

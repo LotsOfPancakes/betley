@@ -11,13 +11,11 @@ import {
 import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 
 interface BetOptionsGridProps {
-  address?: string
   options: readonly string[]
   userBets: readonly bigint[]
   totalAmounts: readonly bigint[]
   selectedOption: number | null
   setSelectedOption: (option: number | null) => void
-  canBet: boolean
   hasExistingBet: boolean
   resolved: boolean
   winningOption?: number
@@ -26,13 +24,11 @@ interface BetOptionsGridProps {
 }
 
 export function BetOptionsGrid({
-  address,
   options,
   userBets,
   totalAmounts,
   selectedOption,
   setSelectedOption,
-  canBet,
   hasExistingBet,
   resolved,
   winningOption,
@@ -48,17 +44,7 @@ export function BetOptionsGrid({
   // Get token symbol
   const tokenSymbol = getTokenSymbol(isNativeBet)
 
-  // Show wallet connection prompt if not connected
-  if (!address) {
-    return (
-      <div className="flex justify-center mb-6 p-6 bg-gray-800/40 rounded-2xl">
-        <div className="text-center">
-          <p className="text-gray-300 mb-4">Connect your wallet to start Betting</p>
-          <appkit-button />
-        </div>
-      </div>
-    )
-  }
+
 
   return (
     <div className="space-y-6">
@@ -71,7 +57,9 @@ export function BetOptionsGrid({
             const percentage = calculateOptionPercentage(totalForOption, totalPool)
             
             const isUserCurrentOption = hasExistingBet && index === userExistingOptionIndex
-            const isDisabled = !canBet || (hasExistingBet && !isUserCurrentOption)
+            
+            // Allow selection for disconnected users, but respect other disable conditions
+            const canClick = !resolved && (!hasExistingBet || isUserCurrentOption)
             const isSelected = effectiveSelectedOption === index
             const isWinningOption = resolved && winningOption === index
             const isUserWinningBet = isUserCurrentOption && isWinningOption
@@ -91,19 +79,19 @@ export function BetOptionsGrid({
             } else if (isUserCurrentOption && !resolved) {
               // User's current bet (active): Lighter green
               buttonStyle = 'border-green-500/40 bg-gradient-to-br from-green-900/25 to-emerald-900/25 text-green-300'
-            } else if (isDisabled) {
-              // Disabled: Gray
+            } else if (!canClick) {
+              // Not clickable (resolved or existing bet conflict): Gray with no-click cursor
               buttonStyle = 'border-gray-700/30 bg-gray-800/20 text-gray-500 cursor-not-allowed opacity-50'
             } else {
-              // Default: Gray with hover
-              buttonStyle = 'border-gray-600/30 bg-gray-800/20 text-gray-300 hover:border-gray-500/50 hover:bg-gray-700/30 hover:scale-105'
+              // Default clickable: Gray with hover and pointer cursor
+              buttonStyle = 'border-gray-600/30 bg-gray-800/20 text-gray-300 hover:border-gray-500/50 hover:bg-gray-700/30 hover:scale-105 cursor-pointer'
             }
             
             return (
               <button
                 key={index}
-                onClick={() => !isDisabled && setSelectedOption(index)}
-                disabled={isDisabled}
+                onClick={() => canClick && setSelectedOption(index)}
+                disabled={!canClick}
                 className={`p-4 rounded-2xl text-left transition-all duration-300 ${buttonStyle}`}
               >
                 <div className="flex justify-between items-center mb-3">

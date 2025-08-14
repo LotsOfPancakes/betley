@@ -3,7 +3,6 @@
 
 import { useEffect } from 'react'
 import { 
-  canUserBet, 
   getUserExistingOptionIndex
 } from '@/lib/utils/bettingUtils'
 import { useBetFeeData } from '../hooks/useBetFeeData'
@@ -93,7 +92,6 @@ export function UnifiedBettingInterface({
   // Calculate totals and user state
   const totalPool = safeTotalAmounts.reduce((a, b) => a + b, BigInt(0))
   const userExistingOptionIndex = getUserExistingOptionIndex(safeUserBets)
-  const canBet = canUserBet(address, isActive, resolved)
 
   // ============================================================================
   // HOOKS - Fee data for potential winnings calculation
@@ -145,13 +143,11 @@ export function UnifiedBettingInterface({
         {/* Left Column - Betting Options (60% on desktop) */}
         <div className="flex-1 lg:w-[60%]">
           <BetOptionsGrid
-            address={address}
             options={safeOptions}
             userBets={safeUserBets}
             totalAmounts={safeTotalAmounts}
             selectedOption={selectedOption}
             setSelectedOption={setSelectedOption}
-            canBet={canBet}
             hasExistingBet={hasExistingBet || false}
             resolved={resolved}
             winningOption={winningOption}
@@ -161,27 +157,28 @@ export function UnifiedBettingInterface({
         </div>
 
         {/* Right Column - Amount Input (40% on desktop) */}
-        {canBet && (
-          <div className="lg:w-[40%] lg:min-w-[320px]">
-            <BetAmountInput
-              betAmount={betAmount}
-              setBetAmount={setBetAmount}
-              balance={safeBalance}
-              decimals={safeDecimals}
-              isNativeBet={isNativeBet}
-              hasExistingBet={hasExistingBet || false}
-              needsApproval={needsApproval}
-              isApproving={isApproving}
-              isPending={isPending}
-              handleApprove={handleApprove}
-              handlePlaceBet={handlePlaceBet}
-              selectedOption={selectedOption}
-              options={safeOptions}
-              totalAmounts={safeTotalAmounts}
-              feeParams={feeParams}
-            />
-          </div>
-        )}
+        <div className="lg:w-[40%] lg:min-w-[320px]">
+          <BetAmountInput
+            betAmount={betAmount}
+            setBetAmount={setBetAmount}
+            balance={safeBalance}
+            decimals={safeDecimals}
+            isNativeBet={isNativeBet}
+            hasExistingBet={hasExistingBet || false}
+            needsApproval={needsApproval}
+            isApproving={isApproving}
+            isPending={isPending}
+            handleApprove={handleApprove}
+            handlePlaceBet={handlePlaceBet}
+            selectedOption={selectedOption}
+            options={safeOptions}
+            totalAmounts={safeTotalAmounts}
+            feeParams={feeParams}
+            address={address}
+            isActive={isActive}
+            resolved={resolved}
+          />
+        </div>
       </div>
     </div>
   )

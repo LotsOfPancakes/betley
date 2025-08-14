@@ -1,6 +1,5 @@
 // lib/utils/bettingUtils.ts
 // Pure utility functions for betting-related operations
-// Extracted from UnifiedBettingInterface.tsx for reusability and testing
 
 /**
  * Format time remaining in human-readable format
@@ -170,17 +169,6 @@ export function hasWalletBalance(betAmount: string, balance: bigint, decimals: n
   } catch {
     return false
   }
-}
-
-/**
- * Check if user can place a bet
- * @param address - User's wallet address
- * @param isActive - Whether betting is active
- * @param resolved - Whether bet is resolved
- * @returns True if user can bet
- */
-export function canUserBet(address: string | undefined, isActive: boolean, resolved: boolean): boolean {
-  return Boolean(address && isActive && !resolved)
 }
 
 /**
