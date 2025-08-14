@@ -1,9 +1,11 @@
-// frontend/app/api/bets/public/route.ts
+// ============================================================================
+// File: frontend/app/api/bets/public/route.ts
+// Database-first public bets API
+// Purpose: Fast, reliable public bet listings without blockchain dependencies
+// ============================================================================
+
 import { NextRequest } from 'next/server'
-import { supabase, checkRateLimit } from '@/lib/supabase'
-import { createPublicClient, http } from 'viem'
-import { baseSepolia } from 'viem/chains'
-import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
+import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -16,12 +18,28 @@ function getClientIP(request: NextRequest): string {
   return '127.0.0.1'
 }
 
+// Helper function to format time remaining
+function formatTimeRemaining(endTimeSeconds: number): string {
+  const now = Math.floor(Date.now() / 1000)
+  const timeLeft = endTimeSeconds - now
+  
+  if (timeLeft <= 0) {
+    return 'Ended'
+  }
+  
+  const hoursLeft = Math.ceil(timeLeft / 3600)
+  if (hoursLeft < 24) {
+    return `${hoursLeft}h left`
+  }
+  
+  const daysLeft = Math.ceil(hoursLeft / 24)
+  return `${daysLeft}d left`
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // ✅ SECURITY: Get client IP for rate limiting
+    // ✅ SECURITY: Rate limiting for public endpoint
     const clientIp = getClientIP(request)
-
-    // ✅ SECURITY: Rate limit public bets queries (100 requests per hour)
     const rateLimitOk = await checkRateLimit(clientIp, 'public-bets', 100, 60)
     if (!rateLimitOk) {
       return Response.json(
@@ -30,33 +48,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ✅ Parse query parameters for pagination and filtering
+    // ✅ Parse query parameters for pagination
     const url = new URL(request.url)
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100) // Max 100
     const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0)
 
-    // ✅ SECURITY: Query only public bets with essential info
-    // First try with is_public column, fallback if column doesn't exist
-    let { data, error } = await supabase
+    const supabase = createServerSupabaseClient()
+
+    // ✅ DATABASE-FIRST: Query only public bets with all needed data
+    const { data: publicBets, error } = await supabase
       .from('bet_mappings')
       .select(`
         random_id,
-        numeric_id,
         bet_name,
         creator_address,
         created_at,
-        is_public
+        is_public,
+        end_time,
+        resolved,
+        winning_option,
+        total_amounts
       `)
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
-
-    // If query failed due to missing is_public column, return empty results
-    if (error && error.message?.includes('is_public')) {
-      console.log('is_public column not found, returning empty results until migration is run')
-      data = []
-      error = null
-    }
 
     if (error) {
       console.error('Database error:', error)
@@ -66,64 +81,42 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ✅ Transform data and fetch real end times from blockchain
-    const publicClient = createPublicClient({
-      chain: baseSepolia,
-      transport: http()
-    })
-    
-    const publicBets = await Promise.all((data || []).map(async (bet) => {
-      let endTime = '0'
-      let timeRemaining = 'Public Bet'
-      
-      try {
-        // Fetch real end time from blockchain
-        const betBasics = await publicClient.readContract({
-          address: BETLEY_NEW_ADDRESS,
-          abi: BETLEY_NEW_ABI,
-          functionName: 'getBetBasics',
-          args: [BigInt(bet.numeric_id)],
-        }) as readonly [string, bigint, boolean, number, number, string]
-        
-        const blockchainEndTime = betBasics[1] // endTime is second element
-        endTime = (Number(blockchainEndTime) * 1000).toString() // Convert to milliseconds
-        
-        // Calculate time remaining
-        const now = Date.now()
-        const endTimeMs = Number(blockchainEndTime) * 1000
-        if (endTimeMs > now) {
-          const hoursLeft = Math.ceil((endTimeMs - now) / (1000 * 60 * 60))
-          timeRemaining = `${hoursLeft}h left`
-        } else {
-          timeRemaining = 'Ended'
-        }
-      } catch (error) {
-        console.log(`Failed to fetch end time for bet ${bet.numeric_id}:`, error)
-        // Keep placeholder values
-      }
+    // ✅ Transform data for frontend (no blockchain calls needed!)
+    const transformedBets = (publicBets || []).map(bet => {
+      // Convert Unix timestamp to milliseconds for frontend consistency
+      const endTimeMs = bet.end_time * 1000
       
       return {
         randomId: bet.random_id,
-        // ✅ SECURITY: numericId removed to prevent contract enumeration
         name: bet.bet_name,
-        creator: bet.creator_address.slice(0, 6) + '...' + bet.creator_address.slice(-4), // ✅ PRIVACY: Anonymize creator address
+        creator: bet.creator_address.slice(0, 6) + '...' + bet.creator_address.slice(-4), // Anonymize
         createdAt: bet.created_at,
         isPublic: bet.is_public,
-        endTime,
-        timeRemaining
+        endTime: endTimeMs.toString(), // Frontend expects string
+        timeRemaining: formatTimeRemaining(bet.end_time),
+        resolved: bet.resolved || false,
+        winningOption: bet.winning_option,
+        totalAmounts: bet.total_amounts || []
       }
-    }))
+    })
 
-    // ✅ Return clean response with caching
+    // ✅ Filter to show only active bets (not ended)
+    const now = Date.now()
+    const activeBets = transformedBets.filter(bet => {
+      const endTime = parseInt(bet.endTime)
+      return endTime > now
+    })
+
     return Response.json(
       { 
-        bets: publicBets,
-        count: publicBets.length,
-        hasMore: publicBets.length === limit
+        bets: activeBets,
+        count: activeBets.length,
+        hasMore: activeBets.length === limit,
+        source: 'database' // Indicates this is database-only (vs blockchain hybrid)
       },
       {
         headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=120', // Standard cache time
+          'Cache-Control': 'public, max-age=60, s-maxage=120', // Can cache public data
           'X-Content-Type-Options': 'nosniff'
         }
       }

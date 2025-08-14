@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
       betName, 
       betOptions = [],
       tokenAddress,
-      durationInSeconds = 0
+      durationInSeconds = 0,
+      isPublic = false
     } = body
 
 
@@ -104,6 +105,11 @@ export async function POST(request: NextRequest) {
     // ✅ VALIDATION: Validate duration (required)
     if (typeof durationInSeconds !== 'number' || durationInSeconds <= 0) {
       return Response.json({ error: 'Invalid duration' }, { status: 400 })
+    }
+
+    // ✅ VALIDATION: Validate isPublic flag
+    if (typeof isPublic !== 'boolean') {
+      return Response.json({ error: 'Invalid isPublic flag' }, { status: 400 })
     }
 
     // ✅ RLS FIX: Use server Supabase client with full permissions
@@ -175,6 +181,9 @@ export async function POST(request: NextRequest) {
       
       // Timing
       end_time: endTime,
+      
+      // Visibility
+      is_public: isPublic,
       
       // Initial state (will be updated by sync process)
       resolved: false,

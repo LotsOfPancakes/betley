@@ -28,6 +28,7 @@ export function useBetCreationNew() {
     duration: number
     tokenAddress: string
     creatorAddress: string
+    isPublic: boolean
   } | null>(null)
   
   const [betCounterWhenStarted, setBetCounterWhenStarted] = useState<number | null>(null)
@@ -84,6 +85,7 @@ export function useBetCreationNew() {
               betOptions: pendingBetDetails.options,
               tokenAddress: pendingBetDetails.tokenAddress,
               durationInSeconds: pendingBetDetails.duration,
+              isPublic: pendingBetDetails.isPublic,
             }),
           })
           
@@ -128,7 +130,8 @@ export function useBetCreationNew() {
     betName: string,
     options: string[],
     durationInSeconds: number,
-    tokenAddress: string = '0x0000000000000000000000000000000000000000'
+    tokenAddress: string = '0x0000000000000000000000000000000000000000',
+    isPublic: boolean = false
   ) => {
     // Validate chain first - properly await the async validation
     const isValidChain = await validateChain(true)
@@ -160,7 +163,8 @@ export function useBetCreationNew() {
         options: validOptions,
         duration: durationInSeconds,
         tokenAddress: tokenAddress,
-        creatorAddress: address
+        creatorAddress: address,
+        isPublic: isPublic
       })
       
       setBetCounterWhenStarted(Number(betCounter))

@@ -8,14 +8,18 @@ interface PublicBet {
   creator: string
   createdAt: string
   isPublic: boolean
-  endTime: string // NEW: Contract end time as string (converted from bigint)
-  timeRemaining: string // NEW: Formatted time remaining
+  endTime: string // Database end time as string (converted to milliseconds)
+  timeRemaining: string // Formatted time remaining from database
+  resolved?: boolean // NEW: Resolution status from database
+  winningOption?: number | null // NEW: Winning option from database
+  totalAmounts?: number[] // NEW: Bet amounts from database
 }
 
 interface PublicBetsResponse {
   bets: PublicBet[]
   count: number
   hasMore: boolean
+  source?: string // NEW: Indicates data source (database vs blockchain)
 }
 
 interface UsePublicBetsOptions {
@@ -44,8 +48,8 @@ export function usePublicBets(options: UsePublicBetsOptions = {}) {
       return response.json()
     },
     enabled,
-    staleTime: 30 * 1000, // 30 seconds (reduced due to time-sensitive active bets)
-    refetchInterval: 300 * 1000, // 5 minutes
+    staleTime: 60 * 1000, // 1 minute (can be longer since no blockchain dependency)
+    refetchInterval: 120 * 1000, // 2 minutes (faster refresh for new public bets)
     retry: 2
   })
 }

@@ -19,7 +19,7 @@ import { AuthModal } from '@/components/auth/AuthModal'
 
 type TabType = 'my' | 'public'
 
-// ✅ NEW: Public bet interface (different from BetDetails)
+// ✅ NEW: Public bet interface (database-first approach)
 interface PublicBet {
   randomId: string
   // ✅ SECURITY: numericId removed to prevent contract enumeration
@@ -27,8 +27,11 @@ interface PublicBet {
   creator: string
   createdAt: string
   isPublic: boolean
-  endTime: string // NEW: Contract end time as string
-  timeRemaining: string // NEW: Formatted time remaining
+  endTime: string // Database end time as string
+  timeRemaining: string // Formatted time remaining
+  resolved?: boolean // Resolution status from database
+  winningOption?: number | null // Winning option from database
+  totalAmounts?: number[] // Bet amounts from database
 }
 
 
@@ -86,16 +89,9 @@ export default function BetsPage() {
     enabled: activeTab === 'public'
   })
 
-  // Filter public bets to show only active ones (bets that haven't ended yet)
+  // Public bets are already filtered for active bets by the API
   const filteredPublicBets = useMemo(() => {
-    if (!publicBetsData?.bets) return []
-    
-    return publicBetsData.bets.filter(bet => {
-      const now = Date.now()
-      const endTime = new Date(bet.endTime).getTime()
-      // Show only bets that haven't ended yet (active bets)
-      return endTime > now
-    })
+    return publicBetsData?.bets || []
   }, [publicBetsData?.bets])
 
   // Determine what to show based on active tab

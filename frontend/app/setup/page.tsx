@@ -70,7 +70,8 @@ function SetupPageContent() {
       formData.name,           // betName
       filledOptions,           // options array
       durationInSeconds,       // duration
-      '0x0000000000000000000000000000000000000000' // native ETH
+      '0x0000000000000000000000000000000000000000', // native ETH
+      formData.isPublic        // isPublic flag
     )
   }
 
