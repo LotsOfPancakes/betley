@@ -64,7 +64,9 @@ export function createServerSupabaseClient(): SupabaseClient {
     },
     global: {
       headers: {
-        'X-Client-Info': 'betley-server'
+        'X-Client-Info': 'betley-server',
+        'Cache-Control': 'no-cache',  // ✅ Force fresh connection
+        'Connection': 'close'         // ✅ Disable connection pooling
       }
     }
   })

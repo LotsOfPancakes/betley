@@ -58,11 +58,25 @@ const nativeTokenSymbol = getTokenSymbol(true)
 // Utility functions
 function formatETH(weiAmount: string): string {
   if (weiAmount === '0') return '0'
-  const formatted = formatEther(BigInt(weiAmount))
-  return parseFloat(formatted).toLocaleString(undefined, { 
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2 
-  })
+  
+  try {
+    const bigIntValue = BigInt(weiAmount)
+    const formatted = formatEther(bigIntValue)
+    const numValue = parseFloat(formatted)
+    
+    // Handle small amounts properly
+    if (numValue === 0) return '0'
+    if (numValue < 0.001) return numValue.toFixed(6) // Show up to 6 decimals for very small amounts
+    if (numValue < 1) return numValue.toFixed(3)     // Show up to 3 decimals for amounts < 1
+    
+    return numValue.toLocaleString(undefined, { 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2 
+    })
+  } catch (error) {
+    console.error('formatETH error:', error, 'for input:', weiAmount)
+    return '0'
+  }
 }
 
 function formatDate(dateString: string | null): string {
@@ -213,8 +227,8 @@ export default function UserStatsPage() {
           <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-lime-400 bg-clip-text text-transparent">Your Stats</h1>
-                <p className="text-gray-300 mt-2">Track your betting performance on Betley</p>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-lime-400 bg-clip-text text-transparent">Betting Stats</h1>
+                <p className="text-gray-300 mt-2">Your betting stats on Betley</p>
               </div>
               <div className="text-right">
                 {/* <div className="text-sm text-gray-400">Wallet</div> */}
@@ -242,8 +256,8 @@ export default function UserStatsPage() {
           {address && !isAuthenticated && isAuthenticating && (
             <BetsSearchLoading 
               variant="auth" 
-              customMessage="Please sign to access your stats..."
-              customSubtitle="Check your wallet for the signature request"
+              customMessage="Verify Ownership"
+              customSubtitle="Please sign this message to give Betley permissions to look for your stats."
             />
           )}
           

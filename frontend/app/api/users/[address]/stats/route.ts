@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { supabase, checkRateLimit } from '@/lib/supabase'
+import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'
 import { parseAuthHeader, verifyWalletSignature } from '@/lib/auth/verifySignature'
 
 // Helper function to get client IP
@@ -11,6 +11,92 @@ function getClientIP(request: NextRequest): string {
   if (vercelIP) return vercelIP.split(',')[0].trim()
   
   return '127.0.0.1'
+}
+
+// Real-time stats calculation from user_activities
+function calculateUserStats(activities: any[]) {
+  const stats = {
+    bets_created: 0,
+    total_volume_bet: 0,
+    total_volume_created: 0,
+    unique_wallets_attracted: new Set<string>(),
+    created_bet_ids: new Set<number>(),
+    first_activity_at: null as string | null,
+    last_activity_at: null as string | null
+  }
+  
+  // Sort activities by date to get first/last activity
+  const sortedActivities = activities.sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
+  
+  if (sortedActivities.length > 0) {
+    stats.first_activity_at = sortedActivities[0].created_at
+    stats.last_activity_at = sortedActivities[sortedActivities.length - 1].created_at
+  }
+  
+  // First pass: collect created bets
+  for (const activity of activities) {
+    if (activity.activity_type === 'create') {
+      stats.bets_created += 1
+      stats.created_bet_ids.add(activity.bet_id)
+    }
+  }
+  
+  // Second pass: process betting activities
+  for (const activity of activities) {
+    if (activity.activity_type === 'bet' && activity.amount) {
+      const amount = parseInt(activity.amount) || 0
+      stats.total_volume_bet += amount
+    }
+  }
+  
+  // Third pass: calculate volume created (others betting on user's bets)
+  // We need to get all betting activities on bets created by this user
+  return {
+    bets_created: stats.bets_created,
+    total_volume_bet: stats.total_volume_bet.toString(),
+    total_volume_created: '0', // Will calculate this separately
+    unique_wallets_attracted: 0, // Will calculate this separately  
+    first_activity_at: stats.first_activity_at,
+    last_activity_at: stats.last_activity_at,
+    last_updated: new Date().toISOString()
+  }
+}
+
+// Calculate volume created and unique wallets (requires cross-user query)
+async function calculateVolumeCreated(supabase: any, userAddress: string, createdBetIds: number[]) {
+  if (createdBetIds.length === 0) {
+    return { total_volume_created: '0', unique_wallets_attracted: 0 }
+  }
+  
+  // Get all betting activities on this user's created bets
+  const { data: bettingActivities, error } = await supabase
+    .from('user_activities')
+    .select('wallet_address, amount, bet_id')
+    .eq('activity_type', 'bet')
+    .in('bet_id', createdBetIds)
+    .neq('wallet_address', userAddress.toLowerCase()) // Exclude user's own bets
+  
+  if (error) {
+    console.error('Error fetching betting activities:', error)
+    return { total_volume_created: '0', unique_wallets_attracted: 0 }
+  }
+  
+  let totalVolumeCreated = 0
+  const uniqueWallets = new Set<string>()
+  
+  for (const activity of bettingActivities || []) {
+    if (activity.amount) {
+      totalVolumeCreated += parseInt(activity.amount) || 0
+      uniqueWallets.add(activity.wallet_address)
+    }
+  }
+  
+  return {
+    total_volume_created: totalVolumeCreated.toString(),
+    unique_wallets_attracted: uniqueWallets.size
+  }
 }
 
 export async function GET(
@@ -76,35 +162,55 @@ export async function GET(
       }, { status: 401 })
     }
     
-    const { data: stats, error } = await supabase
-      .from('user_stats')
-      .select('*')
-      .eq('wallet_address', normalizedAddress)
-      .single()
+    // Create fresh Supabase client for this request
+    const supabase = createServerSupabaseClient()
     
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-      throw error
+    // ✅ NEW APPROACH: Get all user activities for real-time calculation
+    const { data: activities, error: activitiesError } = await supabase
+      .from('user_activities')
+      .select('wallet_address, bet_id, activity_type, amount, created_at')
+      .eq('wallet_address', normalizedAddress)
+      .order('created_at', { ascending: true })
+    
+    if (activitiesError) {
+      console.error('Error fetching user activities:', activitiesError)
+      throw activitiesError
     }
     
-    // Return stats or defaults if user not found
-    return Response.json({
+    // Calculate basic stats from user's own activities
+    const basicStats = calculateUserStats(activities || [])
+    
+    // Get created bet IDs for volume calculation
+    const createdBetIds = (activities || [])
+      .filter(a => a.activity_type === 'create')
+      .map(a => a.bet_id)
+    
+    // Calculate volume created and unique wallets attracted
+    const volumeStats = await calculateVolumeCreated(supabase, normalizedAddress, createdBetIds)
+    
+    // Combine all stats
+    const finalStats = {
       wallet_address: normalizedAddress,
-      bets_created: stats?.bets_created || 0,
-      total_volume_created: stats?.total_volume_created || '0',
-      total_volume_bet: stats?.total_volume_bet || '0',
-      unique_wallets_attracted: stats?.unique_wallets_attracted || 0,
-      last_updated: stats?.last_updated || null
-    }, {
+      bets_created: basicStats.bets_created,
+      total_volume_bet: basicStats.total_volume_bet,
+      total_volume_created: volumeStats.total_volume_created,
+      unique_wallets_attracted: volumeStats.unique_wallets_attracted,
+      first_activity_at: basicStats.first_activity_at,
+      last_activity_at: basicStats.last_activity_at,
+      last_updated: basicStats.last_updated
+    }
+    
+    return Response.json(finalStats, {
       headers: {
-        'Cache-Control': 'private, max-age=300', // 5 minutes cache for authenticated data
+        'Cache-Control': 'private, max-age=60', // Short cache for real-time data
         'X-Content-Type-Options': 'nosniff'
       }
     })
     
   } catch (error) {
-    console.error('Error fetching user stats:', error)
+    console.error('Error calculating user stats:', error)
     return Response.json({ 
-      error: 'Failed to fetch user stats' 
+      error: 'Failed to calculate user stats' 
     }, { status: 500 })
   }
 }
