@@ -64,7 +64,7 @@ export default function BetCard({ bet, decimals, variant = 'auto' }: BetCardProp
 
   const getRoleDisplay = () => {
     // ✅ Handle unified bet types (null userRole for public bets)
-    if (isPublicBet) return '' // No role display for public bets
+    if (isPublicBet) return '🌍 Public' // Show public indicator for public bets
     
     switch (bet.userRole) {
       case 'creator': return '👑 Creator'
