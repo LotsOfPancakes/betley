@@ -4,9 +4,9 @@ import { BetFormData } from '../types/setup.types'
 
 const initialFormData: BetFormData = {
   name: '',
-  options: ['Yes', 'No'],
+  options: ['✅ - Yes', '❌ - No'],
   duration: { hours: 1, minutes: 0 },
-  isPublic: false  // ✅ NEW FIELD - Default to private
+  isPublic: false  // defaults to private
 }
 
 export function useBetForm(initialTitle?: string) {
@@ -54,7 +54,7 @@ export function useBetForm(initialTitle?: string) {
     updateName,
     updateOptions,
     updateDuration,
-    updateIsPublic,  // ✅ NEW FUNCTION
+    updateIsPublic, 
     resetForm,
     getFilledOptions,
     getDurationInSeconds

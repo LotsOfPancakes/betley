@@ -113,11 +113,11 @@ export function BetAmountInput({
         </div>
         
         {/* Balance Display */}
-        {/* {balance && (
-          <div className="mt-2 text-sm text-gray-400">
+        {balance && (
+          <div className="mt-2 text-xs text-gray-400 text-right">
             Balance: {formatDynamicDecimals(formatUnits(balance, decimals))} {tokenSymbol}
           </div>
-        )} */}
+        )}
 
         {/* Separator Line */}
         {shouldShowPotentialWinnings && (
@@ -169,7 +169,7 @@ export function BetAmountInput({
             className={`w-full py-4 px-6 rounded-2xl font-semibold text-center transition-all duration-300 ${
               !isValidAmount || !hasBalance || selectedOption === null || isPending
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white shadow-lg shadow-green-500/25 hover:scale-105'
+                : 'bg-gradient-to-r from-green-600 to-emerald-500/90 hover:from-green-500/90 hover:to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:scale-105'
             }`}
           >
             {isPending ? (

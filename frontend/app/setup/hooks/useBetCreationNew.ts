@@ -130,8 +130,9 @@ export function useBetCreationNew() {
     durationInSeconds: number,
     tokenAddress: string = '0x0000000000000000000000000000000000000000'
   ) => {
-    // Validate chain first
-    if (!validateChain()) return
+    // Validate chain first - properly await the async validation
+    const isValidChain = await validateChain(true)
+    if (!isValidChain) return
 
     if (!address || betCounter == null) {
       showError('Please connect your wallet first')

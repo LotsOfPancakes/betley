@@ -12,7 +12,7 @@ import BetNameInput from './components/BetNameInput'
 
 import OptionsManager from './components/OptionsManager'
 import DurationSelector from './components/DurationSelector'
-import BetVisibilitySelector from './components/BetVisibilitySelector'  // ✅ NEW IMPORT
+import BetVisibilitySelector from './components/BetVisibilitySelector'
 import SubmitSection from './components/SubmitSection'
 
 import { useBetForm } from './hooks/useBetForm'

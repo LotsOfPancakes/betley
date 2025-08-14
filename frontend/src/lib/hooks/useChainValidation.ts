@@ -10,7 +10,8 @@ import { useEffect, useState, useCallback } from 'react'
  * 
  * Usage:
  * const { validateChain, isCorrectChain, switchToCorrectChain } = useChainValidation()
- * if (!validateChain()) return // Don't proceed with transaction
+ * const isValid = await validateChain(true) // true for during transaction
+ * if (!isValid) return // Don't proceed with transaction
  */
 export function useChainValidation() {
   const chainId = useChainId()
@@ -56,7 +57,7 @@ export function useChainValidation() {
     }
   }, [isConnected])
 
-  const validateChain = (): boolean => {
+  const validateChain = async (duringTransaction = false): Promise<boolean> => {
     // If not connected, let the wallet connection flow handle it
     if (!isConnected) {
       return true
@@ -64,11 +65,18 @@ export function useChainValidation() {
 
     // Check if on correct chain
     if (!isCorrectChain) {
-      showError(
-        `Please switch to ${networkConfig.name} to use Betley. Click the network indicator to switch automatically.`,
-        'Wrong Network'
-      )
-      return false
+      if (duringTransaction) {
+        // During transactions, don't auto-switch - show clear error message
+        showError(
+          `Please switch to ${networkConfig.name} to continue with this transaction.`,
+          'Wrong Network'
+        )
+        return false
+      }
+      
+      // For non-transaction flows, attempt auto-switch
+      const switched = await switchToCorrectChain()
+      return switched
     }
 
     return true

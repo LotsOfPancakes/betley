@@ -62,7 +62,7 @@ export default function BetVisibilitySelector({ isPublic, onChange }: BetVisibil
                 <span className="font-bold">Public</span>
               </div>
               <p className="text-xs opacity-75">
-                Discoverable as a public Bet
+                Discoverable as a Public Bet
               </p>
             </div>
             {isPublic && (

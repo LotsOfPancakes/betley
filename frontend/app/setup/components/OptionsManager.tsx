@@ -74,7 +74,7 @@ export default function OptionsManager({
         {options.map((option, index) => (
           <div key={index} className="relative group">
             <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center mt-2">
+              <div className="flex-shrink-0 w-8 h-8 bg-gray-700/80 rounded-full flex items-center justify-center mt-2">
                 <span className="text-white font-bold text-sm">{index + 1}</span>
               </div>
               

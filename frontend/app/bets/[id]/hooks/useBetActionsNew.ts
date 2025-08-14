@@ -46,8 +46,9 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
   const handleApprove = async () => {
     if (!betAmount || isWritePending) return
     
-    // ✅ VALIDATE CHAIN FIRST
-    if (!validateChain()) return
+    // ✅ VALIDATE CHAIN FIRST - properly await the async validation
+    const isValidChain = await validateChain(true)
+    if (!isValidChain) return
     
     try {
       setCurrentTxType('approve')
@@ -64,16 +65,16 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     } catch (error) {
       console.error('Approve error:', error)
       showError('Failed to approve tokens')
-      setIsSubmitting(false)
-      setCurrentTxType(null)
+      cleanupTransactionState()
     }
   }
 
   const handlePlaceBet = async () => {
     if (!betAmount || selectedOption === null || isWritePending) return
     
-    // ✅ VALIDATE CHAIN FIRST
-    if (!validateChain()) return
+    // ✅ VALIDATE CHAIN FIRST - properly await the async validation
+    const isValidChain = await validateChain(true)
+    if (!isValidChain) return
     
     try {
       setCurrentTxType('placeBet')
@@ -93,16 +94,16 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     } catch (error) {
       console.error('Place bet error:', error)
       showError('Failed to place bet')
-      setIsSubmitting(false)
-      setCurrentTxType(null)
+      cleanupTransactionState()
     }
   }
 
   const handleClaimWinnings = async () => {
     if (isWritePending) return
     
-    // ✅ VALIDATE CHAIN FIRST
-    if (!validateChain()) return
+    // ✅ VALIDATE CHAIN FIRST - properly await the async validation
+    const isValidChain = await validateChain(true)
+    if (!isValidChain) return
     
     try {
       setCurrentTxType('claimWinnings')
@@ -117,16 +118,16 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     } catch (error) {
       console.error('Claim winnings error:', error)
       showError('Failed to claim winnings')
-      setIsSubmitting(false)
-      setCurrentTxType(null)
+      cleanupTransactionState()
     }
   }
 
   const handleClaimCreatorFees = async () => {
     if (isWritePending) return
     
-    // ✅ VALIDATE CHAIN FIRST
-    if (!validateChain()) return
+    // ✅ VALIDATE CHAIN FIRST - properly await the async validation
+    const isValidChain = await validateChain(true)
+    if (!isValidChain) return
     
     try {
       setCurrentTxType('claimCreatorFees')
@@ -141,16 +142,16 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     } catch (error) {
       console.error('Claim creator fees error:', error)
       showError('Failed to claim creator fees')
-      setIsSubmitting(false)
-      setCurrentTxType(null)
+      cleanupTransactionState()
     }
   }
 
   const handleResolveBet = async (winningOption: number) => {
     if (isWritePending) return
     
-    // ✅ VALIDATE CHAIN FIRST
-    if (!validateChain()) return
+    // ✅ VALIDATE CHAIN FIRST - properly await the async validation
+    const isValidChain = await validateChain(true)
+    if (!isValidChain) return
     
     try {
       setCurrentTxType('resolveBet')
@@ -166,9 +167,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     } catch (error) {
       console.error('Resolve bet error:', error)
       showError('Failed to resolve bet')
-      setIsSubmitting(false)
-      setCurrentTxType(null)
-      setResolutionWinningOption(null)
+      cleanupTransactionState()
     }
   }
 
@@ -300,14 +299,18 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
         showError(`Transaction failed: ${writeError.message}`)
       }
       
-      // Reset state
-      setIsSubmitting(false)
-      setCurrentTxType(null)
-      setResolutionWinningOption(null)
+      // Reset state using cleanup function
+      cleanupTransactionState()
     }
   }, [writeError, showError])
 
   // === HELPER FUNCTIONS ===
+  const cleanupTransactionState = () => {
+    setIsSubmitting(false)
+    setCurrentTxType(null)
+    setResolutionWinningOption(null)
+  }
+
   const syncResolutionToDatabase = async (betId: number, winningOption: number) => {
     try {
       await fetch('/api/bets/sync-resolution', {
