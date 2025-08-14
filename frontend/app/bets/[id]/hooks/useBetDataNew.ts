@@ -27,6 +27,7 @@ interface DatabaseBetDetails {
   winningOption: number | null
   resolutionDeadline: number
   totalAmounts: number[]
+  isPublic: boolean
   canAccess: boolean
   isActive: boolean
   hasEnded: boolean

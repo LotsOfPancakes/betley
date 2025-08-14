@@ -16,6 +16,7 @@ import { BetAmountInput } from './BetAmountInput'
 interface UnifiedBettingInterfaceProps {
   // Bet Info props
   name: string
+  isPublic?: boolean
   isActive: boolean
   resolved: boolean
   winningOption?: number
@@ -48,6 +49,7 @@ interface UnifiedBettingInterfaceProps {
 export function UnifiedBettingInterface({
   // Bet info
   name,
+  isPublic = false,
   isActive,
   resolved,
   winningOption,
@@ -127,6 +129,7 @@ export function UnifiedBettingInterface({
       {/* Header Section - Status, title, share */}
       <BetStatusHeader
         name={name}
+        isPublic={isPublic}
         isActive={isActive}
         resolved={resolved}
         resolutionDeadlinePassed={resolutionDeadlinePassed}

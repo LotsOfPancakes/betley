@@ -8,6 +8,7 @@ import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 
 interface BetStatusHeaderProps {
   name: string
+  isPublic: boolean
   isActive: boolean
   resolved: boolean
   resolutionDeadlinePassed: boolean
@@ -20,6 +21,7 @@ interface BetStatusHeaderProps {
 
 export function BetStatusHeader({
   name,
+  isPublic,
   isActive,
   resolved,
   resolutionDeadlinePassed,
@@ -71,7 +73,7 @@ export function BetStatusHeader({
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Combined Status and Time Pill */}
           <span 
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-base font-medium ${status.color} ${status.textColor} shadow-lg whitespace-nowrap`}
+            className={`inline-flex items-center gap-1 px-4 py-2 rounded-2xl text-sm font-medium ${status.color} ${status.textColor} shadow-lg whitespace-nowrap`}
           >
             <span>{status.icon}</span>
             {status.text}
@@ -82,8 +84,19 @@ export function BetStatusHeader({
       
       {/* Pool TVL and Share Button Row */}
       <div className="flex items-center justify-between gap-4">
-        {/* Left side - Pool TVL */}
-        <div className="flex items-center">
+        {/* Left side - Visibility + Pool TVL */}
+        <div className="flex items-center gap-3">
+          {/* Visibility Indicator Pill */}
+          <span className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-medium ${
+            isPublic 
+              ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border border-blue-500/30' 
+              : 'bg-gradient-to-r from-gray-600/20 to-gray-700/20 text-gray-300 border border-gray-600/30'
+          } shadow-lg whitespace-nowrap`}>
+            <span>{isPublic ? '🌍' : '🔒'}</span>
+            {isPublic ? 'Public' : 'Private'}
+          </span>
+          
+          {/* Pool TVL Pill */}
           {hasPool && (
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 border border-emerald-500/30 shadow-lg">
               <span>💰</span>
@@ -95,7 +108,7 @@ export function BetStatusHeader({
         {/* Right side - Share Button */}
         <button
           onClick={copyLink}
-          className="text-sm bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-5 py-2 rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl flex items-center gap-2 whitespace-nowrap"
+          className="text-sm bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-1.5 rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl flex items-center gap-2 whitespace-nowrap"
         >
           {linkCopied ? (
             <>

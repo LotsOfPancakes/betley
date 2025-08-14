@@ -108,7 +108,8 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     resolutionTimeLeft,
     resolutionDeadlinePassed,
     isValidBetId,
-    numericBetId
+    numericBetId,
+    databaseBet
   } = useBetDataNew(randomBetId as string, { useReactQuery: true })
 
   // Extract bet data with proper typing - FIXED TypeScript issues
@@ -213,6 +214,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
               <ComponentErrorBoundary>
                 <UnifiedBettingInterface
                   name={name || ''}
+                  isPublic={databaseBet?.isPublic ?? false}
                   options={options as readonly string[] || []}
                   userBets={userBets as readonly bigint[] || []}
                   selectedOption={selectedOption}

@@ -67,7 +67,8 @@ export async function GET(
         total_amounts,
         resolution_deadline,
         created_at,
-        updated_at
+        updated_at,
+        is_public
       `)
       .eq('random_id', randomId)
       .single()
@@ -117,6 +118,7 @@ export async function GET(
         
         // Metadata
         lastUpdated: bet.updated_at,
+        isPublic: bet.is_public,
         
         // Status flags for frontend
         canAccess: true, // Anyone with the link can access
