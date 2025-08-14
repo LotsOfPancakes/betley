@@ -37,10 +37,8 @@ export async function GET(
 
     // ✅ SECURITY: Verify wallet signature authentication
     const authHeader = request.headers.get('authorization')
-    console.debug('[UserStats API] Auth header present:', !!authHeader)
     
     if (!authHeader) {
-      console.debug('[UserStats API] No auth header provided')
       return Response.json({ 
         error: 'Authentication required',
         code: 'AUTH_REQUIRED'
@@ -48,10 +46,8 @@ export async function GET(
     }
 
     const authData = parseAuthHeader(authHeader)
-    console.debug('[UserStats API] Auth data parsed:', !!authData, authData ? { address: authData.address.slice(0, 8), timestamp: authData.timestamp } : null)
     
     if (!authData) {
-      console.debug('[UserStats API] Failed to parse auth header')
       return Response.json({ 
         error: 'Invalid authentication format',
         code: 'AUTH_INVALID_FORMAT'
@@ -60,7 +56,6 @@ export async function GET(
 
     // Verify the signature matches the requested address
     if (authData.address.toLowerCase() !== normalizedAddress) {
-      console.debug('[UserStats API] Address mismatch:', { authAddress: authData.address.slice(0, 8), requestedAddress: normalizedAddress.slice(0, 8) })
       return Response.json({ 
         error: 'Authentication address mismatch',
         code: 'AUTH_ADDRESS_MISMATCH'
@@ -68,15 +63,12 @@ export async function GET(
     }
 
     // Verify the signature is valid
-    console.debug('[UserStats API] Verifying signature for:', authData.address.slice(0, 8))
     const isValidSignature = await verifyWalletSignature(
       authData.address,
       authData.signature,
       authData.timestamp,
       authData.nonce
     )
-
-    console.debug('[UserStats API] Signature verification result:', isValidSignature)
     if (!isValidSignature) {
       return Response.json({ 
         error: 'Invalid or expired signature',

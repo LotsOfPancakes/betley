@@ -16,17 +16,12 @@ function useUserStats(address: string | undefined) {
   return useQuery({
     queryKey: ['userStats', address, isAuthenticated],
     queryFn: async () => {
-      console.debug('[useUserStats] Query function called:', { address: address?.slice(0, 8), isAuthenticated, isInitialized })
-      
       if (!address) throw new Error('No address')
       
       const authHeader = getAuthHeader()
       if (!authHeader) {
-        console.debug('[useUserStats] No auth header available')
         throw new Error('Authentication required')
       }
-
-      console.debug('[useUserStats] Making API request with auth header')
       
       const response = await fetch(`/api/users/${address}/stats`, {
         headers: {
@@ -142,8 +137,6 @@ export default function UserStatsPage() {
 
   // Handle authentication requirement
   React.useEffect(() => {
-    console.debug('[StatsPage] Auth state changed:', { address: address?.slice(0, 8), isAuthenticated, isInitialized, isAuthenticating })
-    
     // Only proceed if context is initialized and we have an address
     if (!isInitialized || !address || isAuthenticating) {
       return
@@ -152,7 +145,6 @@ export default function UserStatsPage() {
     if (!isAuthenticated) {
       // Try silent authentication first (will succeed if there's a valid session)
       authenticate().then(success => {
-        console.debug('[StatsPage] Silent auth result:', success)
         if (!success) {
           // If silent auth fails, show modal
           setShowAuthModal(true)

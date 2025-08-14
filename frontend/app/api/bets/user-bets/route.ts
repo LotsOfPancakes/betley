@@ -222,9 +222,7 @@ export async function POST(request: NextRequest) {
       const hasValidAmounts = totalAmounts.length > 0 && totalAmounts.some((amount: string) => amount > '0')
       
       if (!hasValidAmounts) {
-        console.log(`[UserBets] Database amounts missing/zero for bet ${bet.numeric_id}, fetching live data...`)
         totalAmounts = await getLiveBetAmounts(bet.numeric_id)
-        console.log(`[UserBets] Live amounts for bet ${bet.numeric_id}:`, totalAmounts)
         
         // Add small delay to avoid rate limiting
         if (transformedBets.length > 0) {

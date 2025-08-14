@@ -42,7 +42,7 @@ export default function BetsSearchLoading({
 
   return (
     <div className="text-center py-12">
-      <div className={`bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 ${getContainerSize()} mx-auto`}>
+      <div className={`bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8 ${getContainerSize()} mx-auto`}>
         <div className="w-16 h-16 mx-auto mb-4 relative">
           <Image
             src="/images/betley-searching.png"

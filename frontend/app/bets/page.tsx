@@ -44,8 +44,6 @@ export default function BetsPage() {
 
   // Handle authentication requirement for My Bets tab
   React.useEffect(() => {
-    console.debug('[BetsPage] Auth state changed:', { activeTab, address: address?.slice(0, 8), isAuthenticated, isInitialized, isAuthenticating })
-    
     // Only proceed if context is initialized and we're on My Bets tab
     if (activeTab !== 'my' || !isInitialized || !address || isAuthenticating) {
       return
@@ -54,7 +52,6 @@ export default function BetsPage() {
     if (!isAuthenticated) {
       // Try silent authentication first (will succeed if there's a valid session)
       authenticate().then(success => {
-        console.debug('[BetsPage] Silent auth result:', success)
         if (!success) {
           // If silent auth fails, show modal
           setShowAuthModal(true)

@@ -37,19 +37,14 @@ export function useBetsListV2() {
   return useQuery({
     queryKey: ['user-bets-v2', address, isAuthenticated],
     queryFn: async (): Promise<DatabaseBetsResponse> => {
-      console.debug('[useBetsListV2] Query function called:', { address: address?.slice(0, 8), isAuthenticated, isInitialized })
-      
       if (!address) {
         return { bets: [], count: 0 }
       }
 
       const authHeader = getAuthHeader()
       if (!authHeader) {
-        console.debug('[useBetsListV2] No auth header available')
         throw new Error('Authentication required')
       }
-
-      console.debug('[useBetsListV2] Making API request with auth header')
 
       const response = await fetch('/api/bets/user-bets', {
         method: 'POST',
