@@ -8,7 +8,6 @@ import BackgroundElements from '@/app/components/BackgroundElements'
 import BetCard from './components/BetCard'
 import BetFilters from './components/BetFilters'
 import EmptyState from './components/EmptyState'
-import PublicBetCard from './components/PublicBetCard' 
 import BetsSearchLoading from './components/BetsSearchLoading'
 import { useBetsListDatabase } from './hooks/useBetsListV2'
 import { useBetsFiltering } from './hooks/useBetsFiltering'
@@ -19,20 +18,8 @@ import { AuthModal } from '@/components/auth/AuthModal'
 
 type TabType = 'my' | 'public'
 
-// ✅ NEW: Public bet interface (database-first approach)
-interface PublicBet {
-  randomId: string
-  // ✅ SECURITY: numericId removed to prevent contract enumeration
-  name: string
-  creator: string
-  createdAt: string
-  isPublic: boolean
-  endTime: string // Database end time as string
-  timeRemaining: string // Formatted time remaining
-  resolved?: boolean // Resolution status from database
-  winningOption?: number | null // Winning option from database
-  totalAmounts?: number[] // Bet amounts from database
-}
+// ✅ UNIFIED: Import unified bet types
+import type { PublicBet } from './types/bet.types'
 
 
 
@@ -226,14 +213,24 @@ export default function BetsPage() {
                   
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {activeTab === 'my' ? (
-                    // Render My Bets (existing BetCard)
+                    // Render My Bets (private bets with user data)
                     filteredMyBets.map((bet) => (
-                      <BetCard key={bet.id} bet={bet} decimals={Number(decimals) || 18} />
+                      <BetCard 
+                        key={bet.id} 
+                        bet={bet} 
+                        decimals={Number(decimals) || 18}
+                        variant="private"
+                      />
                     ))
                   ) : (
-                    // ✅ NEW: Render Public Bets (simplified cards)
+                    // ✅ UNIFIED: Render Public Bets using same BetCard component
                     filteredPublicBets.map((bet: PublicBet) => (
-                      <PublicBetCard key={bet.randomId} bet={bet} />
+                      <BetCard 
+                        key={bet.randomId} 
+                        bet={bet} 
+                        decimals={18} // Default decimals for public bets
+                        variant="public"
+                      />
                     ))
                   )}
                   </div>

@@ -6,12 +6,12 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useAccount } from 'wagmi'
-import { BetDetails } from '../types/bet.types'
+import { PrivateBet } from '../types/bet.types'
 import { BET_CONSTANTS } from '@/lib/constants/bets'
 import { useWalletAuth } from '@/lib/auth/WalletAuthContext'
 
 interface DatabaseBetsResponse {
-  bets: BetDetails[]
+  bets: PrivateBet[] // ✅ Use unified format
   count: number
 }
 
@@ -65,12 +65,21 @@ export function useBetsListV2() {
 
       const data = await response.json()
 
-      // Convert numbers back to BigInt for frontend compatibility
-      const transformedBets = data.bets.map((bet: ApiBetResponse) => ({
-        ...bet,
-        endTime: BigInt(bet.endTime || 0),
-        totalAmounts: (bet.totalAmounts || []).map((amount: number) => BigInt(amount)),
-        userTotalBet: BigInt(bet.userTotalBet || 0)
+      // ✅ Transform to unified PrivateBet format (no BigInt conversion)
+      const transformedBets = data.bets.map((bet: ApiBetResponse): PrivateBet => ({
+        id: bet.id,
+        randomId: bet.randomId,
+        name: bet.name,
+        options: bet.options,
+        creator: bet.creator,
+        endTime: bet.endTime || 0,
+        resolved: bet.resolved,
+        winningOption: bet.winningOption,
+        totalAmounts: bet.totalAmounts || [],
+        userRole: bet.userRole,
+        userTotalBet: bet.userTotalBet || 0,
+        isPublic: bet.isPublic,
+        token: undefined // Optional field for legacy compatibility
       }))
 
       return {

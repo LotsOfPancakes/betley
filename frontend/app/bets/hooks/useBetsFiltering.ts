@@ -1,19 +1,18 @@
 // frontend/app/bets/hooks/useBetsFiltering.ts
 import { useState, useMemo } from 'react'
-import { BetDetails, FilterType } from '../types/bet.types'
-import { isBetEmpty } from '@/lib/utils/bettingUtils'
+import { FilterType, PrivateBet } from '../types/bet.types'
 import { BET_CONSTANTS } from '@/lib/constants/bets'
 
-export function useBetsFiltering(bets: BetDetails[]) {
+export function useBetsFiltering(bets: PrivateBet[]) {
   const [filter, setFilter] = useState<FilterType>('active')
 
   // Filter bets based on selected filter
   const filteredBets = useMemo(() => {
     return bets.filter(bet => {
       const now = Math.floor(Date.now() / 1000)
-      const hasEnded = Number(bet.endTime) <= now
-      const resolutionDeadlinePassed = now > (Number(bet.endTime) + (BET_CONSTANTS.timeouts.resolutionDeadline / 1000))
-      const isEmpty = isBetEmpty(bet.totalAmounts)
+      const hasEnded = bet.endTime <= now
+      const resolutionDeadlinePassed = now > (bet.endTime + (BET_CONSTANTS.timeouts.resolutionDeadline / 1000))
+      const isEmpty = bet.totalAmounts.reduce((sum, amount) => sum + amount, 0) === 0
       const isRefundAvailable = hasEnded && !bet.resolved && resolutionDeadlinePassed && !isEmpty
       const isExpired = hasEnded && !bet.resolved && resolutionDeadlinePassed && isEmpty
 

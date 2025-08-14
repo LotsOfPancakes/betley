@@ -3,33 +3,39 @@
 
 import Link from 'next/link'
 import { formatUnits } from 'viem'
-import { BetDetails } from '../types/bet.types'
-import { isBetEmpty, formatDynamicDecimals } from '@/lib/utils/bettingUtils'
+import { UnifiedBet } from '../types/bet.types'
+import { formatDynamicDecimals } from '@/lib/utils/bettingUtils'
 import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 import { BET_CONSTANTS } from '@/lib/constants/bets'
 
 interface BetCardProps {
-  bet: BetDetails
+  bet: UnifiedBet // ✅ Now accepts both public and private bets
   decimals: number
+  variant?: 'auto' | 'public' | 'private' // ✅ Optional explicit variant
 }
 
-export default function BetCard({ bet, decimals }: BetCardProps) {
-  // ✅ Only use random ID - no fallback to numeric ID
+export default function BetCard({ bet, decimals, variant = 'auto' }: BetCardProps) {
+  // ✅ Auto-detect variant based on data structure
+  const isPublicBet = variant === 'public' || 
+                     (variant === 'auto' && bet.userRole === null)
+  // Auto-detect if this is a public bet (userRole is null for public bets)
+
+  // ✅ Unified bet should always have randomId
   if (!bet.randomId) {
-    // This shouldn't happen if useBetsList is filtering correctly
-    console.warn(`Bet ${bet.id} has no random ID mapping`)
+    console.warn(`Bet has no random ID mapping`)
     return null
   }
   
   const betUrl = `/bets/${bet.randomId}`
-  const isActive = Date.now() < Number(bet.endTime) * 1000
-  const isNativeBet = !bet.token || bet.token === '0x0000000000000000000000000000000000000000'
+  const isActive = Date.now() < (bet.endTime * 1000) // ✅ endTime is now Unix timestamp (number)
+  const isNativeBet = !('token' in bet) || !bet.token || bet.token === '0x0000000000000000000000000000000000000000'
   const tokenSymbol = getTokenSymbol(isNativeBet)
   
   const now = Date.now()
-  const hasEnded = now >= Number(bet.endTime) * 1000
-  const resolutionDeadlinePassed = hasEnded && now > (Number(bet.endTime) * 1000 + BET_CONSTANTS.timeouts.resolutionDeadline)
-  const isEmpty = isBetEmpty(bet.totalAmounts)
+  const hasEnded = now >= (bet.endTime * 1000)
+  const resolutionDeadlinePassed = hasEnded && now > (bet.endTime * 1000 + BET_CONSTANTS.timeouts.resolutionDeadline)
+  // ✅ Handle unified format for isBetEmpty check
+  const isEmpty = bet.totalAmounts.reduce((sum, amount) => sum + amount, 0) === 0
   
   const getStatus = () => {
     if (bet.resolved) return BET_CONSTANTS.status.labels.resolved
@@ -46,17 +52,20 @@ export default function BetCard({ bet, decimals }: BetCardProps) {
                      (hasEnded && resolutionDeadlinePassed) ? BET_CONSTANTS.status.colors.refundAvailable :
                      (isActive ? BET_CONSTANTS.status.colors.active : BET_CONSTANTS.status.colors.pending)
   
-  const timeLeft = isActive ? Number(bet.endTime) * 1000 - Date.now() : 0
+  const timeLeft = isActive ? bet.endTime * 1000 - Date.now() : 0
   const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60))
   const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
   
   // Calculate resolution time left for pending bets
   const resolutionTimeLeft = hasEnded && !resolutionDeadlinePassed ? 
-    (Number(bet.endTime) * 1000 + BET_CONSTANTS.timeouts.resolutionDeadline) - now : 0
+    (bet.endTime * 1000 + BET_CONSTANTS.timeouts.resolutionDeadline) - now : 0
   const resolutionHoursLeft = Math.floor(resolutionTimeLeft / (1000 * 60 * 60))
   const resolutionMinutesLeft = Math.floor((resolutionTimeLeft % (1000 * 60 * 60)) / (1000 * 60))
 
   const getRoleDisplay = () => {
+    // ✅ Handle unified bet types (null userRole for public bets)
+    if (isPublicBet) return '' // No role display for public bets
+    
     switch (bet.userRole) {
       case 'creator': return '👑 Creator'
       case 'bettor': return '🎯 Bettor'  
@@ -65,19 +74,19 @@ export default function BetCard({ bet, decimals }: BetCardProps) {
     }
   }
 
-  // Calculate pool statistics
-  const totalPool = bet.totalAmounts.reduce((sum, amount) => sum + amount, BigInt(0))
-  const formatAmount = (amount: bigint) => formatDynamicDecimals(formatUnits(amount, decimals))
+  // ✅ Calculate pool statistics - handle unified format (number[] vs bigint[])
+  const totalPool = bet.totalAmounts.reduce((sum, amount) => sum + amount, 0)
+  const formatAmount = (amount: number) => formatDynamicDecimals(formatUnits(BigInt(amount), decimals))
   
-  // Generate option breakdown data
+  // ✅ Generate option breakdown data - unified format
   const getOptionsBreakdown = () => {
-    if (bet.totalAmounts.length === 0 || totalPool === BigInt(0)) {
+    if (bet.totalAmounts.length === 0 || totalPool === 0) {
       return []
     }
 
     const optionStats = bet.options.map((option, index) => {
-      const amount = bet.totalAmounts[index] || BigInt(0)
-      const percentage = totalPool > BigInt(0) ? Number((amount * BigInt(100)) / totalPool) : 0
+      const amount = bet.totalAmounts[index] || 0
+      const percentage = totalPool > 0 ? Math.round((amount * 100) / totalPool) : 0
       return {
         name: option,
         amount,
@@ -86,14 +95,14 @@ export default function BetCard({ bet, decimals }: BetCardProps) {
     })
 
     // Sort by amount to show largest first
-    optionStats.sort((a, b) => Number(b.amount - a.amount))
+    optionStats.sort((a, b) => b.amount - a.amount)
 
     return optionStats
   }
 
-  // Get user's position if they have bets
+  // ✅ Get user's position if they have bets - unified format
   const getUserPosition = () => {
-    if (bet.userTotalBet === BigInt(0)) return null
+    if (isPublicBet || bet.userTotalBet === 0) return null
     
     const userBetFormatted = formatAmount(bet.userTotalBet)
     

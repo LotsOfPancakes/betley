@@ -1,25 +1,12 @@
 // frontend/lib/hooks/usePublicBets.ts
 import { useQuery } from '@tanstack/react-query'
-
-interface PublicBet {
-  randomId: string
-  // ✅ SECURITY: numericId removed to prevent contract enumeration
-  name: string
-  creator: string
-  createdAt: string
-  isPublic: boolean
-  endTime: string // Database end time as string (converted to milliseconds)
-  timeRemaining: string // Formatted time remaining from database
-  resolved?: boolean // NEW: Resolution status from database
-  winningOption?: number | null // NEW: Winning option from database
-  totalAmounts?: number[] // NEW: Bet amounts from database
-}
+import type { PublicBet } from '@/app/bets/types/bet.types'
 
 interface PublicBetsResponse {
   bets: PublicBet[]
   count: number
-  hasMore: boolean
-  source?: string // NEW: Indicates data source (database vs blockchain)
+  hasMore?: boolean
+  source?: string // Indicates data source (database vs blockchain)
 }
 
 interface UsePublicBetsOptions {

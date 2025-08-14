@@ -18,23 +18,7 @@ function getClientIP(request: NextRequest): string {
   return '127.0.0.1'
 }
 
-// Helper function to format time remaining
-function formatTimeRemaining(endTimeSeconds: number): string {
-  const now = Math.floor(Date.now() / 1000)
-  const timeLeft = endTimeSeconds - now
-  
-  if (timeLeft <= 0) {
-    return 'Ended'
-  }
-  
-  const hoursLeft = Math.ceil(timeLeft / 3600)
-  if (hoursLeft < 24) {
-    return `${hoursLeft}h left`
-  }
-  
-  const daysLeft = Math.ceil(hoursLeft / 24)
-  return `${daysLeft}d left`
-}
+// Helper function to format time remaining (removed - not used in unified format)
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,6 +45,7 @@ export async function GET(request: NextRequest) {
       .select(`
         random_id,
         bet_name,
+        bet_options,
         creator_address,
         created_at,
         is_public,
@@ -81,30 +66,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ✅ Transform data for frontend (no blockchain calls needed!)
+    // ✅ Transform data to match private bets format (unified component compatibility)
     const transformedBets = (publicBets || []).map(bet => {
-      // Convert Unix timestamp to milliseconds for frontend consistency
-      const endTimeMs = bet.end_time * 1000
-      
       return {
+        // ✅ SECURITY: NO numeric_id for public bets (prevent enumeration)
         randomId: bet.random_id,
         name: bet.bet_name,
-        creator: bet.creator_address.slice(0, 6) + '...' + bet.creator_address.slice(-4), // Anonymize
-        createdAt: bet.created_at,
-        isPublic: bet.is_public,
-        endTime: endTimeMs.toString(), // Frontend expects string
-        timeRemaining: formatTimeRemaining(bet.end_time),
+        options: bet.bet_options || [],
+        creator: bet.creator_address, // ✅ Full address (no hiding needed per requirements)
+        endTime: bet.end_time || 0, // ✅ Unix timestamp as number (matches private format)
         resolved: bet.resolved || false,
-        winningOption: bet.winning_option,
-        totalAmounts: bet.total_amounts || []
+        winningOption: bet.winning_option || 0,
+        totalAmounts: bet.total_amounts || [],
+        // ✅ Public bet specific fields
+        userRole: null, // ✅ No user role for public view
+        userTotalBet: 0, // ✅ No user data for public view
+        isPublic: true, // ✅ Always true for public bets
+        createdAt: bet.created_at // ✅ Additional metadata
       }
     })
 
-    // ✅ Filter to show only active bets (not ended)
-    const now = Date.now()
+    // ✅ Filter to show only active bets (not ended) 
+    const now = Math.floor(Date.now() / 1000) // Convert to Unix timestamp
     const activeBets = transformedBets.filter(bet => {
-      const endTime = parseInt(bet.endTime)
-      return endTime > now
+      return bet.endTime > now
     })
 
     return Response.json(

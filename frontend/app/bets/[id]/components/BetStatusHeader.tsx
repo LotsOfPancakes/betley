@@ -71,11 +71,11 @@ export function BetStatusHeader({
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Combined Status and Time Pill */}
           <span 
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium ${status.color} ${status.textColor} shadow-lg whitespace-nowrap`}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-base font-medium ${status.color} ${status.textColor} shadow-lg whitespace-nowrap`}
           >
             <span>{status.icon}</span>
             {status.text}
-            {status.timeInfo && <span>• {status.timeInfo}</span>}
+            {status.timeInfo&&<span>• {status.timeInfo}</span>}
           </span>
         </div>
       </div>
@@ -95,12 +95,12 @@ export function BetStatusHeader({
         {/* Right side - Share Button */}
         <button
           onClick={copyLink}
-          className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-5 py-2 rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl flex items-center gap-2 whitespace-nowrap"
+          className="text-sm bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-5 py-2 rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl flex items-center gap-2 whitespace-nowrap"
         >
           {linkCopied ? (
             <>
               <span className="text-green-400">✓</span>
-              Copied!
+              Link Copied!
             </>
           ) : (
             <>
