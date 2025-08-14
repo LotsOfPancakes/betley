@@ -22,7 +22,7 @@ export default function HeroSection({
         <div className="text-center">
           <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight">
             <span className={COLORS.gradients.brandText}>
-              Betting,
+              Betting
             </span>
             <br/>
             <span className={COLORS.text.primary}> Simplified</span>
