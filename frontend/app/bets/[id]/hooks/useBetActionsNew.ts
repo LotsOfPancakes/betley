@@ -189,6 +189,31 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     }
   }
 
+  // === HELPER FUNCTIONS ===
+  const cleanupTransactionState = useCallback(() => {
+    setIsSubmitting(false)
+    setCurrentTxType(null)
+    setResolutionWinningOption(null)
+  }, [])
+
+  const syncResolutionToDatabase = useCallback(async (betId: number, winningOption: number) => {
+    try {
+      await fetch('/api/bets/sync-resolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          numericId: betId,
+          resolved: true,
+          winningOption,
+          totalAmounts: [] // Will be updated by blockchain sync later
+        })
+      })
+    } catch {
+      showError('Failed to claim winnings')
+      cleanupTransactionState()
+    }
+  }, [showError, cleanupTransactionState])
+
   // === TRANSACTION SUCCESS HANDLING ===
   useEffect(() => {
     if (isConfirmed && receipt && currentTxType) {
@@ -328,31 +353,6 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       cleanupTransactionState()
     }
   }, [writeError, showError, cleanupTransactionState])
-
-  // === HELPER FUNCTIONS ===
-  const cleanupTransactionState = useCallback(() => {
-    setIsSubmitting(false)
-    setCurrentTxType(null)
-    setResolutionWinningOption(null)
-  }, [])
-
-  const syncResolutionToDatabase = useCallback(async (betId: number, winningOption: number) => {
-    try {
-      await fetch('/api/bets/sync-resolution', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          numericId: betId,
-          resolved: true,
-          winningOption,
-          totalAmounts: [] // Will be updated by blockchain sync later
-        })
-      })
-    } catch {
-      showError('Failed to claim winnings')
-      cleanupTransactionState()
-    }
-  }, [showError, cleanupTransactionState])
 
   // === COMPUTED STATE ===
   const isPending = isWritePending || isConfirming || isSubmitting
