@@ -122,6 +122,30 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     }
   }
 
+  const handleClaimRefund = async () => {
+    if (isWritePending) return
+    
+    // ✅ VALIDATE CHAIN FIRST - properly await the async validation
+    const isValidChain = await validateChain(true)
+    if (!isValidChain) return
+    
+    try {
+      setCurrentTxType('claimRefund')
+      setIsSubmitting(true)
+      
+      writeContract({
+        address: BETLEY_NEW_ADDRESS,
+        abi: BETLEY_NEW_ABI,
+        functionName: 'claimRefund',
+        args: [BigInt(numericBetId)],
+      })
+    } catch (error) {
+      console.error('Claim refund error:', error)
+      showError('Failed to claim refund')
+      cleanupTransactionState()
+    }
+  }
+
   const handleClaimCreatorFees = async () => {
     if (isWritePending) return
     
@@ -230,6 +254,13 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
           
         case 'claimWinnings':
           showSuccess('Winnings claimed successfully!')
+          // Invalidate claim status and balance queries
+          queryClient.invalidateQueries({ queryKey: ['hasClaimed'] })
+          queryClient.invalidateQueries({ queryKey: ['balance'] })
+          break
+          
+        case 'claimRefund':
+          showSuccess('Refund claimed successfully!')
           // Invalidate claim status and balance queries
           queryClient.invalidateQueries({ queryKey: ['hasClaimed'] })
           queryClient.invalidateQueries({ queryKey: ['balance'] })
@@ -348,6 +379,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
+    handleClaimRefund,
     handleClaimCreatorFees,
     handleResolveBet,
     

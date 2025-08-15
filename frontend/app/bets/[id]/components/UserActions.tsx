@@ -31,6 +31,7 @@ interface UserActionsProps {
   decimals?: number
   isPending: boolean
   handleClaimWinnings: () => void
+  handleClaimRefund: () => void
   handleClaimCreatorFees: () => void
   betId: string
   isNativeBet?: boolean
@@ -106,7 +107,22 @@ const determineClaimStatus = (
 
   if (hasClaimed) {
     const userWon = resolved && winningOption !== undefined && hasUserWon(userBets, winningOption)
-    const claimType = userWon ? 'winnings' : (isCreator ? 'creator fees' : 'refund')
+    
+    // Determine claim type with proper priority
+    let claimType: string
+    if (!resolved && resolutionDeadlinePassed) {
+      // Unresolved bet past deadline = refund (regardless of creator status)
+      claimType = 'refund'
+    } else if (userWon) {
+      // Resolved bet + user won = winnings
+      claimType = 'winnings'
+    } else if (isCreator) {
+      // Creator claiming fees on resolved bet
+      claimType = 'creator fees'
+    } else {
+      // Fallback for other scenarios
+      claimType = 'refund'
+    }
     
     // For refunds, use totalBet; for winnings, use breakdown amount
     let amount: bigint | undefined
@@ -368,13 +384,13 @@ function WinningsClaimable({
  */
 function RefundClaimable({ 
   claimStatus, 
-  handleClaimWinnings, 
+  handleClaimRefund, 
   isPending, 
   decimals, 
   isNativeBet 
 }: {
   claimStatus: Extract<ClaimStatus, { type: 'can-claim-refund' }>
-  handleClaimWinnings: () => void
+  handleClaimRefund: () => void
   isPending: boolean
   decimals: number
   isNativeBet: boolean
@@ -389,7 +405,7 @@ function RefundClaimable({
         Your total bet: {formatTokenAmount(claimStatus.amount, decimals, isNativeBet)}
       </p>
       <ClaimButton
-        onClick={handleClaimWinnings}
+        onClick={handleClaimRefund}
         disabled={isPending}
         variant="info"
       >
@@ -495,6 +511,7 @@ export function UserActions({
   decimals = 18,
   isPending,
   handleClaimWinnings,
+  handleClaimRefund,
   handleClaimCreatorFees,
   betId,
   isNativeBet = false,
@@ -647,7 +664,7 @@ export function UserActions({
             return (
               <RefundClaimable
                 claimStatus={claimStatus}
-                handleClaimWinnings={handleClaimWinnings}
+                handleClaimRefund={handleClaimRefund}
                 isPending={isPending}
                 decimals={decimals}
                 isNativeBet={isNativeBet}

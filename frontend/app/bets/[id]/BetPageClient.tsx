@@ -133,6 +133,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
+    handleClaimRefund,
     handleClaimCreatorFees,
     handleResolveBet,
     isPending,
@@ -272,6 +273,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   decimals={Number(decimals) || 18}
                   isPending={isPending}
                   handleClaimWinnings={handleClaimWinnings}
+                  handleClaimRefund={handleClaimRefund}
                   handleClaimCreatorFees={handleClaimCreatorFees}
                   betId={numericBetId?.toString() || '0'}
                   isNativeBet={isNativeBet || false}
