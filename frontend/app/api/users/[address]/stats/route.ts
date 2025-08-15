@@ -1,6 +1,16 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'
 import { parseAuthHeader, verifyWalletSignature } from '@/lib/auth/verifySignature'
+import { SupabaseClient } from '@supabase/supabase-js'
+
+// Type definitions for user activities
+interface UserActivity {
+  wallet_address: string
+  bet_id: number
+  activity_type: 'create' | 'bet'
+  amount?: string
+  created_at: string
+}
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -14,7 +24,7 @@ function getClientIP(request: NextRequest): string {
 }
 
 // Real-time stats calculation from user_activities
-function calculateUserStats(activities: any[]) {
+function calculateUserStats(activities: UserActivity[]) {
   const stats = {
     bets_created: 0,
     total_volume_bet: 0,
@@ -65,7 +75,7 @@ function calculateUserStats(activities: any[]) {
 }
 
 // Calculate volume created and unique wallets (requires cross-user query)
-async function calculateVolumeCreated(supabase: any, userAddress: string, createdBetIds: number[]) {
+async function calculateVolumeCreated(supabase: SupabaseClient, userAddress: string, createdBetIds: number[]) {
   if (createdBetIds.length === 0) {
     return { total_volume_created: '0', unique_wallets_attracted: 0 }
   }
