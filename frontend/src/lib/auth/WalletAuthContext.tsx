@@ -31,11 +31,13 @@ interface WalletAuthContextType {
   isAuthenticating: boolean
   isInitialized: boolean
   authError: string | null
+  hasUserDeniedSignature: boolean
   
   // Actions
   authenticate: () => Promise<boolean>
   clearAuth: () => void
   getAuthHeader: () => string | null
+  resetDenialState: () => void
   
   // Utilities
   isSessionValid: () => boolean
@@ -63,6 +65,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [hasUserDeniedSignature, setHasUserDeniedSignature] = useState(false)
   
   // Check if current session is valid
   const isSessionValid = useCallback((): boolean => {
@@ -91,8 +94,16 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
   const clearAuth = useCallback(() => {
     setSession(null)
     setAuthError(null)
+    setHasUserDeniedSignature(false)
     clearSessionFromStorage()  // NEW: Clear from localStorage
     console.debug('[WalletAuth] Session cleared from memory and storage')
+  }, [])
+
+  // Reset signature denial state (for manual retry)
+  const resetDenialState = useCallback(() => {
+    setHasUserDeniedSignature(false)
+    setAuthError(null)
+    console.debug('[WalletAuth] Signature denial state reset')
   }, [])
   
   // Get authorization header for API requests
@@ -117,6 +128,12 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
     // If already authenticated for this address, return true
     if (isSessionValid()) {
       return true
+    }
+    
+    // Don't auto-retry if user has denied signature
+    if (hasUserDeniedSignature) {
+      console.debug('[WalletAuth] Skipping authentication - user has denied signature')
+      return false
     }
     
     setIsAuthenticating(true)
@@ -176,7 +193,9 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       // Handle user rejection gracefully
       if (error instanceof Error) {
         if (error.message.includes('rejected') || error.message.includes('denied')) {
-          setAuthError('Authentication cancelled. You can try again anytime.')
+          setAuthError('Signature request denied')
+          setHasUserDeniedSignature(true)
+          console.debug('[WalletAuth] User denied signature request')
         } else {
           setAuthError('Authentication failed. Please try again.')
         }
@@ -187,7 +206,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       setIsAuthenticating(false)
       return false
     }
-  }, [address, isConnected, signMessageAsync, isSessionValid])
+  }, [address, isConnected, signMessageAsync, isSessionValid, hasUserDeniedSignature])
   
   // Initialize context and handle wallet changes
   useEffect(() => {
@@ -197,8 +216,8 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       clearAuth()
       setIsInitialized(true)
     } else if (session && session.address.toLowerCase() !== address.toLowerCase()) {
-      // Address changed, clear old session
-      console.debug('[WalletAuth] Address changed, clearing session')
+      // Address changed, clear old session and denial state
+      console.debug('[WalletAuth] Address changed, clearing session and denial state')
       clearAuth()
       setIsInitialized(true)
     } else if (!session && address) {
@@ -280,11 +299,13 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
     isAuthenticating,
     isInitialized,
     authError,
+    hasUserDeniedSignature,
     
     // Actions
     authenticate,
     clearAuth,
     getAuthHeader,
+    resetDenialState,
     
     // Utilities
     isSessionValid,

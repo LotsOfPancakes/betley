@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { useQuery } from '@tanstack/react-query'
 import { formatEther } from 'viem'
@@ -142,10 +142,41 @@ function LoadingStats() {
   )
 }
 
+// Signature Denial Component
+function SignatureDeniedUI({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="text-center py-12">
+      <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-orange-500/30 rounded-3xl p-8 max-w-md mx-auto">
+        <div className="text-orange-400 text-4xl mb-4">🚫</div>
+        <h3 className="text-xl font-semibold text-white mb-2">Signature Request Denied</h3>
+        <p className="text-gray-400 text-sm mb-6">
+          You need to sign a message to verify wallet ownership and access your betting statistics.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={onRetry}
+            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-2xl font-semibold hover:from-green-400 hover:to-emerald-500 transition-all duration-300"
+          >
+            Try Again
+          </button>
+          <a
+            href="https://support.metamask.io/hc/en-us/articles/4405506066331-User-guide-Transactions-and-gas#:~:text=What%20is%20a%20signature%20request"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-300 hover:text-white px-6 py-3 rounded-2xl border border-gray-600 hover:border-gray-500 transition-all duration-300"
+          >
+            Learn More
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Main Page Component
 export default function UserStatsPage() {
   const { address } = useAccount()
-  const { isAuthenticated, authenticate, isInitialized, isAuthenticating } = useWalletAuth()
+  const { isAuthenticated, authenticate, isInitialized, isAuthenticating, hasUserDeniedSignature, resetDenialState } = useWalletAuth()
   const { data: stats, isLoading, error } = useUserStats(address)
   // Handle authentication requirement
   React.useEffect(() => {
@@ -154,12 +185,19 @@ export default function UserStatsPage() {
       return
     }
 
-    if (!isAuthenticated) {
+    // Don't auto-authenticate if user has denied signature
+    if (!isAuthenticated && !hasUserDeniedSignature) {
       // Direct authentication - wallet signature request will handle the UI
       authenticate()
       // No need for modal fallback - user can retry from error state if needed
     }
-  }, [address, isAuthenticated, isInitialized, isAuthenticating, authenticate])
+  }, [address, isAuthenticated, isInitialized, isAuthenticating, hasUserDeniedSignature, authenticate])
+
+  // Handle manual retry after signature denial
+  const handleRetryAuthentication = useCallback(async () => {
+    resetDenialState()
+    await authenticate()
+  }, [resetDenialState, authenticate])
 
   // Simple wallet check - exactly like your existing pages
   if (!address) {
@@ -249,11 +287,16 @@ export default function UserStatsPage() {
 
         {/* Stats Grid */}
         <div className="max-w-6xl mx-auto px-4 py-8">
+          {/* Show signature denial UI */}
+          {address && hasUserDeniedSignature && (
+            <SignatureDeniedUI onRetry={handleRetryAuthentication} />
+          )}
+          
           {/* Show loading when context initializing, authenticating, or fetching data */}
-          {(isLoading || !isInitialized || (address && !isAuthenticated && isAuthenticating)) && <LoadingStats />}
+          {!hasUserDeniedSignature && (isLoading || !isInitialized || (address && !isAuthenticated && isAuthenticating)) && <LoadingStats />}
           
           {/* Show authentication required message */}
-          {address && !isAuthenticated && isAuthenticating && (
+          {!hasUserDeniedSignature && address && !isAuthenticated && isAuthenticating && (
             <BetsSearchLoading 
               variant="auth" 
               customMessage="Verify Ownership"
@@ -261,7 +304,7 @@ export default function UserStatsPage() {
             />
           )}
           
-          {error && (
+          {!hasUserDeniedSignature && error && (
             <div className="text-center py-12">
               <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-red-500/30 rounded-3xl p-8 max-w-md mx-auto">
                 <div className="text-red-400 text-4xl mb-4">⚠️</div>
@@ -274,7 +317,7 @@ export default function UserStatsPage() {
                 </p>
                 {error.message.includes('Authentication') && (
                   <button
-                    onClick={() => authenticate()}
+                    onClick={handleRetryAuthentication}
                     className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-2xl font-semibold hover:from-green-400 hover:to-emerald-500 transition-all duration-300"
                   >
                     Sign Message to Access Stats
@@ -284,7 +327,7 @@ export default function UserStatsPage() {
             </div>
           )}
 
-          {stats && (
+          {!hasUserDeniedSignature && stats && (
             <>
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
                 <StatCard

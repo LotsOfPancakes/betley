@@ -1,7 +1,7 @@
 // frontend/app/bets/page.tsx
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import BackgroundElements from '@/app/components/BackgroundElements'
@@ -20,12 +20,43 @@ type TabType = 'my' | 'public'
 // ✅ UNIFIED: Import unified bet types
 import type { PublicBet } from './types/bet.types'
 
+// Signature Denial Component for Bets Page
+function SignatureDeniedUI({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="text-center py-12">
+      <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-orange-500/30 rounded-3xl p-8 max-w-md mx-auto">
+        <div className="text-orange-400 text-4xl mb-4">🚫</div>
+        <h3 className="text-xl font-semibold text-white mb-2">Signature Request Denied</h3>
+        <p className="text-gray-400 text-sm mb-6">
+          You need to sign a message to verify wallet ownership and access your bets. You can still view public bets without signing.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={onRetry}
+            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-2xl font-semibold hover:from-green-400 hover:to-emerald-500 transition-all duration-300"
+          >
+            Try Again
+          </button>
+          <a
+            href="https://support.metamask.io/hc/en-us/articles/4405506066331-User-guide-Transactions-and-gas#:~:text=What%20is%20a%20signature%20request"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-300 hover:text-white px-6 py-3 rounded-2xl border border-gray-600 hover:border-gray-500 transition-all duration-300"
+          >
+            Learn More
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 
 
 export default function BetsPage() {
   const router = useRouter()
   const { address } = useAccount()
-  const { isAuthenticated, authenticate, isInitialized, isAuthenticating } = useWalletAuth()
+  const { isAuthenticated, authenticate, isInitialized, isAuthenticating, hasUserDeniedSignature, resetDenialState } = useWalletAuth()
   
   // Tab state management
   const [activeTab, setActiveTab] = useState<TabType>('my')
@@ -37,12 +68,19 @@ export default function BetsPage() {
       return
     }
 
-    if (!isAuthenticated) {
+    // Don't auto-authenticate if user has denied signature
+    if (!isAuthenticated && !hasUserDeniedSignature) {
       // Direct authentication - wallet signature request will handle the UI
       authenticate()
       // No need for modal fallback - user can retry from error state if needed
     }
-  }, [activeTab, address, isAuthenticated, isInitialized, isAuthenticating, authenticate])
+  }, [activeTab, address, isAuthenticated, isInitialized, isAuthenticating, hasUserDeniedSignature, authenticate])
+
+  // Handle manual retry after signature denial
+  const handleRetryAuthentication = useCallback(async () => {
+    resetDenialState()
+    await authenticate()
+  }, [resetDenialState, authenticate])
 
   // My Bets (database-first approach - Phase 2)
   const { 
@@ -140,6 +178,8 @@ export default function BetsPage() {
                 </div>
               </div>
             </div>
+          ) : activeTab === 'my' && address && hasUserDeniedSignature ? (
+            <SignatureDeniedUI onRetry={handleRetryAuthentication} />
           ) : activeTab === 'my' && address && !isAuthenticated && isAuthenticating ? (
             <BetsSearchLoading variant="auth" />
           ) : (
@@ -150,7 +190,7 @@ export default function BetsPage() {
                   <p className="text-red-300">{error}</p>
                   {error.includes('Authentication') && (
                     <button
-                      onClick={() => authenticate()}
+                      onClick={handleRetryAuthentication}
                       className="mt-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl font-medium hover:from-green-400 hover:to-emerald-500 transition-all duration-300"
                     >
                       Sign Message to Access Bets

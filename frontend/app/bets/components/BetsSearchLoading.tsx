@@ -27,7 +27,7 @@ export default function BetsSearchLoading({
       case 'retry':
         return `Betley is still looking... (${retryAttempt}/${maxRetries})`
       case 'auth':
-        return 'Betley needs your permissions to look for bets'
+        return 'Betley is looking around for bets, but...'
       default:
         return 'Betley is looking around for bets...'
     }
@@ -77,7 +77,7 @@ export default function BetsSearchLoading({
         
         {(variant === 'auth' || customSubtitle) && (
           <p className="text-gray-400 text-sm mt-2">
-            {customSubtitle || 'Check your wallet for the signature request'}
+            {customSubtitle || 'Please sign in your wallet to give Betley permissions to look for your bets'}
           </p>
         )}
         
