@@ -99,7 +99,6 @@ export async function checkRateLimit(
       .single()
 
     if (selectError && selectError.code !== 'PGRST116') {
-      console.error('Rate limit check error:', selectError)
       return true // Allow on error
     }
 
@@ -142,8 +141,7 @@ export async function checkRateLimit(
       })
 
     return true
-  } catch (error) {
-    console.error('Rate limiting error:', error)
+  } catch {
     return true // Allow on error to prevent service disruption
   }
 }
@@ -274,14 +272,12 @@ export async function createBetMappingSecure(
       })
 
     if (error) {
-      console.error('Database error:', error)
       return { randomId: null, error: 'Failed to create mapping' }
     }
 
     return { randomId, error: null }
 
-  } catch (error) {
-    console.error('Unexpected error:', error)
+  } catch {
     return { randomId: null, error: 'Internal server error' }
   }
 }

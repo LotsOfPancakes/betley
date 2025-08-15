@@ -73,8 +73,7 @@ function formatETH(weiAmount: string): string {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2 
     })
-  } catch (error) {
-    console.error('formatETH error:', error, 'for input:', weiAmount)
+  } catch {
     return '0'
   }
 }

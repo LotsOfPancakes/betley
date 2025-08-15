@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { appConfig } from '@/lib/config'
 
 interface ShareButtonProps {
   betUrlId: string
@@ -36,7 +37,7 @@ export function ShareButton({ betUrlId, className = '' }: ShareButtonProps) {
       <div className="flex items-center justify-between">
         {/* URL Display */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-gray-400 text-sm shrink-0">betley.xyz/bets/</span>
+          <span className="text-gray-400 text-sm shrink-0">{new URL(appConfig.url).hostname}/bets/</span>
           <span className="text-white font-mono text-sm truncate">{betUrlId}</span>
         </div>
         

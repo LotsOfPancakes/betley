@@ -1,6 +1,7 @@
 'use client'
 
 import { wagmiAdapter, projectId, networks } from '@/config'
+import { appConfig } from '@/lib/config'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { createAppKit } from '@reown/appkit/react'
@@ -30,8 +31,8 @@ const queryClient = new QueryClient({
 const metadata = {
   name: 'Betley',
   description: 'Easiest way to set up an on-chain bet on anything',
-  url: 'https://www.betley.xyz',
-  icons: ['https://www.betley.xyz/images/betley-logo-128.png']
+  url: appConfig.url,
+  icons: [`${appConfig.url}/images/betley-logo-128.png`]
 }
 
 // Create the modal - this is where createAppKit should be called

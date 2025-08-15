@@ -1,5 +1,5 @@
 // frontend/app/bets/[id]/hooks/useBetActionsNew.ts - New Privacy-Focused Actions
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { parseUnits } from 'viem'
@@ -62,8 +62,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
         functionName: 'approve',
         args: [BETLEY_NEW_ADDRESS, amount],
       })
-    } catch (error) {
-      console.error('Approve error:', error)
+    } catch {
       showError('Failed to approve tokens')
       cleanupTransactionState()
     }
@@ -91,8 +90,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
         args: [BigInt(numericBetId), selectedOption, amount],
         value: isNativeBet ? amount : undefined,
       })
-    } catch (error) {
-      console.error('Place bet error:', error)
+    } catch {
       showError('Failed to place bet')
       cleanupTransactionState()
     }
@@ -115,8 +113,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
         functionName: 'claimWinnings',
         args: [BigInt(numericBetId)],
       })
-    } catch (error) {
-      console.error('Claim winnings error:', error)
+    } catch {
       showError('Failed to claim winnings')
       cleanupTransactionState()
     }
@@ -139,8 +136,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
         functionName: 'claimRefund',
         args: [BigInt(numericBetId)],
       })
-    } catch (error) {
-      console.error('Claim refund error:', error)
+    } catch {
       showError('Failed to claim refund')
       cleanupTransactionState()
     }
@@ -163,8 +159,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
         functionName: 'claimCreatorFees',
         args: [BigInt(numericBetId)],
       })
-    } catch (error) {
-      console.error('Claim creator fees error:', error)
+    } catch {
       showError('Failed to claim creator fees')
       cleanupTransactionState()
     }
@@ -188,8 +183,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
         functionName: 'resolveBet',
         args: [BigInt(numericBetId), winningOption],
       })
-    } catch (error) {
-      console.error('Resolve bet error:', error)
+    } catch {
       showError('Failed to resolve bet')
       cleanupTransactionState()
     }
@@ -311,7 +305,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
           break
       }
     }
-  }, [isConfirmed, receipt, currentTxType, resolutionWinningOption, showSuccess, queryClient, numericBetId, userAddress, betAmount, selectedOption])
+  }, [isConfirmed, receipt, currentTxType, resolutionWinningOption, showSuccess, queryClient, numericBetId, userAddress, betAmount, selectedOption, syncResolutionToDatabase])
 
   // === ERROR HANDLING ===
   useEffect(() => {
@@ -333,16 +327,16 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       // Reset state using cleanup function
       cleanupTransactionState()
     }
-  }, [writeError, showError])
+  }, [writeError, showError, cleanupTransactionState])
 
   // === HELPER FUNCTIONS ===
-  const cleanupTransactionState = () => {
+  const cleanupTransactionState = useCallback(() => {
     setIsSubmitting(false)
     setCurrentTxType(null)
     setResolutionWinningOption(null)
-  }
+  }, [])
 
-  const syncResolutionToDatabase = async (betId: number, winningOption: number) => {
+  const syncResolutionToDatabase = useCallback(async (betId: number, winningOption: number) => {
     try {
       await fetch('/api/bets/sync-resolution', {
         method: 'POST',
@@ -354,10 +348,11 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
           totalAmounts: [] // Will be updated by blockchain sync later
         })
       })
-    } catch (error) {
-      console.error('Failed to sync resolution to database:', error)
+    } catch {
+      showError('Failed to claim winnings')
+      cleanupTransactionState()
     }
-  }
+  }, [showError, cleanupTransactionState])
 
   // === COMPUTED STATE ===
   const isPending = isWritePending || isConfirming || isSubmitting

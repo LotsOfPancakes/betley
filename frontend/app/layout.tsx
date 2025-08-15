@@ -7,6 +7,7 @@ import { NotificationToast } from './components/ui/NotificationToast'
 import { Navigation } from '@/components/Navigation'
 import { CriticalErrorBoundary } from '@/components/ErrorBoundary'
 import { Footer } from '@/components/Footer'
+import { appConfig } from '@/lib/config'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -20,7 +21,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://www.betley.xyz'),
+  metadataBase: new URL(appConfig.url),
   title: "Betley - Bet Anything",
   description: "Easiest way to set up an on-chain bet on anything",
   
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     title: "Betley - Bet Anything",
     description: "Easiest way to set up an on-chain bet on anything", 
     type: "website",
-    url: "https://www.betley.xyz/", 
+    url: appConfig.url, 
     siteName: "Betley",
     images: [
       {
@@ -145,7 +146,7 @@ export default async function RootLayout({
               "@type": "WebApplication",
               "name": "Betley",
               "description": "Easiest way to set up an on-chain bet on anything",
-              "url": "https://www.betley.xyz/",
+              "url": appConfig.url,
               "applicationCategory": "GameApplication",
               "operatingSystem": "Web Browser",
               "offers": {
@@ -153,7 +154,7 @@ export default async function RootLayout({
                 "price": "0",
                 "priceCurrency": "USD"
               },
-              "screenshot": "https://www.betley.xyz/og-image.png"
+              "screenshot": `${appConfig.url}/og-image.png`
             })
           }}
         />

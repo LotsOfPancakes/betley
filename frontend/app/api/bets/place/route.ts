@@ -79,8 +79,6 @@ export async function POST(request: NextRequest) {
     // Track bet placement activity with optional option index
     await trackBetPlacement(userAddress, betId, amount, txHash, optionIndex)
 
-    console.log(`Successfully tracked bet placement: User ${userAddress} bet ${amount} on option ${optionIndex ?? 'unknown'} for bet ${betId}`)
-
     // Return success response
     return Response.json({ 
       success: true,

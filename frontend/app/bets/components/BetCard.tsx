@@ -22,7 +22,6 @@ export default function BetCard({ bet, decimals, variant = 'auto' }: BetCardProp
 
   // ✅ Unified bet should always have randomId
   if (!bet.randomId) {
-    console.warn(`Bet has no random ID mapping`)
     return null
   }
   

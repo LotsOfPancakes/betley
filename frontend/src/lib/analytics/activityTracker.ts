@@ -20,9 +20,7 @@ export async function trackBetCreation(creatorAddress: string, betId: number): P
       created_at: new Date().toISOString()
     }
 
-
-
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('user_activities')
       .insert(insertData)
 
@@ -31,7 +29,7 @@ export async function trackBetCreation(creatorAddress: string, betId: number): P
       throw error
     }
 
-    console.log(`Tracked bet creation: ${creatorAddress} created bet ${betId}`, data)
+
   } catch (error) {
     console.error('Error tracking bet creation:', error)
     // Don't throw - analytics failure shouldn't break bet creation
@@ -60,7 +58,7 @@ export async function trackBetPlacement(
       created_at: new Date().toISOString()
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('user_activities')
       .insert(insertData)
 
@@ -69,7 +67,7 @@ export async function trackBetPlacement(
       throw error
     }
 
-    console.log(`Tracked bet placement: ${userAddress} bet ${amount} on option ${optionIndex} for bet ${betId}`, data)
+
 
     // NEW: Update bet totals in real-time if option provided
     if (optionIndex !== undefined && optionIndex !== null) {
@@ -82,7 +80,7 @@ export async function trackBetPlacement(
           console.error('Error updating bet totals:', totalsError)
           // Don't throw - bet placement should still succeed even if totals update fails
         } else {
-          console.log(`Updated real-time totals for bet ${betId}`)
+
         }
       } catch (totalsUpdateError) {
         console.error('Error calling update_bet_totals:', totalsUpdateError)
@@ -118,7 +116,7 @@ export async function trackBetResolution(
 
 
 
-    const { data: activityResult, error: activityError } = await supabase
+    const { error: activityError } = await supabase
       .from('user_activities')
       .insert(activityData)
 
@@ -128,7 +126,7 @@ export async function trackBetResolution(
     }
 
     // Update bet_mappings with resolution status
-    const { data: updateResult, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('bet_mappings')
       .update({
         resolved: true,
@@ -141,10 +139,7 @@ export async function trackBetResolution(
       throw updateError
     }
 
-    console.log(`Tracked bet resolution: ${resolverAddress} resolved bet ${betId} with winning option ${winningOption}`, {
-      activity: activityResult,
-      update: updateResult
-    })
+
   } catch (error) {
     console.error('Error tracking bet resolution:', error)
     // Don't throw - analytics failure shouldn't break bet resolution

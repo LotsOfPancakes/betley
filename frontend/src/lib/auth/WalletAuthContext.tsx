@@ -15,6 +15,12 @@ import {
   STORAGE_KEY
 } from './sessionStorage'
 
+// Development-only debugging
+const DEBUG = process.env.NODE_ENV === 'development'
+const debugLog = (message: string, ...args: unknown[]) => {
+  if (DEBUG) console.debug(message, ...args)
+}
+
 // Authentication state interface
 interface AuthSession {
   address: string
@@ -96,14 +102,14 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
     setAuthError(null)
     setHasUserDeniedSignature(false)
     clearSessionFromStorage()  // NEW: Clear from localStorage
-    console.debug('[WalletAuth] Session cleared from memory and storage')
+    debugLog('[WalletAuth] Session cleared from memory and storage')
   }, [])
 
   // Reset signature denial state (for manual retry)
   const resetDenialState = useCallback(() => {
     setHasUserDeniedSignature(false)
     setAuthError(null)
-    console.debug('[WalletAuth] Signature denial state reset')
+    debugLog('[WalletAuth] Signature denial state reset')
   }, [])
   
   // Get authorization header for API requests
@@ -132,7 +138,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
     
     // Don't auto-retry if user has denied signature
     if (hasUserDeniedSignature) {
-      console.debug('[WalletAuth] Skipping authentication - user has denied signature')
+      debugLog('[WalletAuth] Skipping authentication - user has denied signature')
       return false
     }
     
@@ -147,7 +153,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       const normalizedAddress = address.toLowerCase()
       const message = createAuthMessage(normalizedAddress, timestamp, nonce)
       
-      console.debug('[WalletAuth] Signing message:', {
+      debugLog('[WalletAuth] Signing message:', {
         originalAddress: address,
         normalizedAddress,
         timestamp,
@@ -160,7 +166,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       // Request signature from user
       const signature = await signMessageAsync({ message })
       
-      console.debug('[WalletAuth] Signature received:', {
+      debugLog('[WalletAuth] Signature received:', {
         signatureLength: signature.length,
         signaturePreview: signature.substring(0, 20) + '...'
       })
@@ -174,7 +180,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
         expiresAt: timestamp + (24 * 60 * 60 * 1000) // 24 hours
       }
       
-      console.debug('[WalletAuth] Session created:', {
+      debugLog('[WalletAuth] Session created:', {
         address: newSession.address,
         timestamp: newSession.timestamp,
         nonce: newSession.nonce,
@@ -184,7 +190,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       setSession(newSession)
       saveSessionToStorage(newSession)  // NEW: Save to localStorage
       setIsAuthenticating(false)
-      console.debug('[WalletAuth] Authentication successful for:', address.slice(0, 8))
+      debugLog('[WalletAuth] Authentication successful for:', address.slice(0, 8))
       return true
       
     } catch (error) {
@@ -195,7 +201,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
         if (error.message.includes('rejected') || error.message.includes('denied')) {
           setAuthError('Signature request denied')
           setHasUserDeniedSignature(true)
-          console.debug('[WalletAuth] User denied signature request')
+          debugLog('[WalletAuth] User denied signature request')
         } else {
           setAuthError('Authentication failed. Please try again.')
         }
@@ -210,21 +216,21 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
   
   // Initialize context and handle wallet changes
   useEffect(() => {
-    console.debug('[WalletAuth] Wallet state changed:', { isConnected, address: address?.slice(0, 8) })
+    debugLog('[WalletAuth] Wallet state changed:', { isConnected, address: address?.slice(0, 8) })
     
     if (!isConnected || !address) {
       clearAuth()
       setIsInitialized(true)
     } else if (session && session.address.toLowerCase() !== address.toLowerCase()) {
       // Address changed, clear old session and denial state
-      console.debug('[WalletAuth] Address changed, clearing session and denial state')
+      debugLog('[WalletAuth] Address changed, clearing session and denial state')
       clearAuth()
       setIsInitialized(true)
     } else if (!session && address) {
       // NEW: Try to load existing session from localStorage
       const savedSession = loadSessionFromStorage()
       if (savedSession && savedSession.address.toLowerCase() === address.toLowerCase()) {
-        console.debug('[WalletAuth] Restored session from localStorage for:', address.slice(0, 8))
+        debugLog('[WalletAuth] Restored session from localStorage for:', address.slice(0, 8))
         setSession(savedSession)
       }
       setIsInitialized(true)
@@ -258,7 +264,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       // Only react to changes to our session storage key
       if (e.key !== STORAGE_KEY) return
       
-      console.debug('[WalletAuth] Storage change detected:', { 
+      debugLog('[WalletAuth] Storage change detected:', { 
         key: e.key, 
         newValue: e.newValue ? 'session exists' : 'session cleared',
         currentAddress: address?.slice(0, 8)
@@ -266,7 +272,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
       
       if (e.newValue === null) {
         // Session was cleared in another tab
-        console.debug('[WalletAuth] Session cleared in another tab, syncing...')
+        debugLog('[WalletAuth] Session cleared in another tab, syncing...')
         setSession(null)
         setAuthError(null)
       } else if (address) {
@@ -274,7 +280,7 @@ export function WalletAuthProvider({ children }: { children: React.ReactNode }) 
         try {
           const newSession = JSON.parse(e.newValue)
           if (newSession.address.toLowerCase() === address.toLowerCase()) {
-            console.debug('[WalletAuth] Session updated in another tab, syncing...')
+            debugLog('[WalletAuth] Session updated in another tab, syncing...')
             setSession(newSession)
             setAuthError(null)
           }

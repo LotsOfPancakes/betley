@@ -51,8 +51,8 @@ export function BetStatusHeader({
       await navigator.clipboard.writeText(window.location.href)
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy link:', err)
+    } catch {
+      // Silently fail - user will notice if copy didn't work
     }
   }
 

@@ -89,7 +89,6 @@ async function calculateVolumeCreated(supabase: SupabaseClient, userAddress: str
     .neq('wallet_address', userAddress.toLowerCase()) // Exclude user's own bets
   
   if (error) {
-    console.error('Error fetching betting activities:', error)
     return { total_volume_created: '0', unique_wallets_attracted: 0 }
   }
   
@@ -183,7 +182,6 @@ export async function GET(
       .order('created_at', { ascending: true })
     
     if (activitiesError) {
-      console.error('Error fetching user activities:', activitiesError)
       throw activitiesError
     }
     
@@ -217,8 +215,7 @@ export async function GET(
       }
     })
     
-  } catch (error) {
-    console.error('Error calculating user stats:', error)
+  } catch {
     return Response.json({ 
       error: 'Failed to calculate user stats' 
     }, { status: 500 })

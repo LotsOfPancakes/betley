@@ -3,6 +3,15 @@
 // Session persistence utilities for 24-hour authentication
 // ============================================================================
 
+// Development-only debugging
+const DEBUG = process.env.NODE_ENV === 'development'
+const debugLog = (message: string, ...args: unknown[]) => {
+  if (DEBUG) console.debug(message, ...args)
+}
+const debugWarn = (message: string, ...args: unknown[]) => {
+  if (DEBUG) console.warn(message, ...args)
+}
+
 interface AuthSession {
   address: string
   signature: string
@@ -28,7 +37,7 @@ export function isStorageAvailable(): boolean {
     
     return true
   } catch (error) {
-    console.warn('[SessionStorage] localStorage not available:', error)
+    debugWarn('[SessionStorage] localStorage not available:', error)
     return false
   }
 }
@@ -62,30 +71,30 @@ function isValidSessionStructure(obj: unknown): obj is AuthSession {
 // Save session to localStorage
 export function saveSessionToStorage(session: AuthSession): void {
   if (!isStorageAvailable()) {
-    console.debug('[SessionStorage] Storage not available, skipping save')
+    debugLog('[SessionStorage] Storage not available, skipping save')
     return
   }
   
   try {
     const serialized = JSON.stringify(session)
     localStorage.setItem(STORAGE_KEY, serialized)
-    console.debug('[SessionStorage] Session saved successfully for:', session.address.slice(0, 8))
+    debugLog('[SessionStorage] Session saved successfully for:', session.address.slice(0, 8))
   } catch (error) {
-    console.warn('[SessionStorage] Failed to save session:', error)
+    debugWarn('[SessionStorage] Failed to save session:', error)
   }
 }
 
 // Load session from localStorage
 export function loadSessionFromStorage(): AuthSession | null {
   if (!isStorageAvailable()) {
-    console.debug('[SessionStorage] Storage not available, returning null')
+    debugLog('[SessionStorage] Storage not available, returning null')
     return null
   }
   
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) {
-      console.debug('[SessionStorage] No stored session found')
+      debugLog('[SessionStorage] No stored session found')
       return null
     }
     
@@ -93,7 +102,7 @@ export function loadSessionFromStorage(): AuthSession | null {
     
     // Validate session structure
     if (!isValidSessionStructure(parsed)) {
-      console.warn('[SessionStorage] Invalid session structure, clearing storage')
+      debugWarn('[SessionStorage] Invalid session structure, clearing storage')
       clearSessionFromStorage()
       return null
     }
@@ -101,18 +110,18 @@ export function loadSessionFromStorage(): AuthSession | null {
     // Check if session is expired
     const now = Date.now()
     if (now >= parsed.expiresAt) {
-      console.debug('[SessionStorage] Session expired, clearing storage')
+      debugLog('[SessionStorage] Session expired, clearing storage')
       clearSessionFromStorage()
       return null
     }
     
-    console.debug('[SessionStorage] Valid session loaded for:', parsed.address.slice(0, 8), {
+    debugLog('[SessionStorage] Valid session loaded for:', parsed.address.slice(0, 8), {
       expiresIn: Math.round((parsed.expiresAt - now) / (60 * 1000)) + ' minutes'
     })
     
     return parsed
   } catch (error) {
-    console.warn('[SessionStorage] Failed to load session, clearing storage:', error)
+    debugWarn('[SessionStorage] Failed to load session, clearing storage:', error)
     clearSessionFromStorage()
     return null
   }
@@ -121,15 +130,15 @@ export function loadSessionFromStorage(): AuthSession | null {
 // Clear session from localStorage
 export function clearSessionFromStorage(): void {
   if (!isStorageAvailable()) {
-    console.debug('[SessionStorage] Storage not available, skipping clear')
+    debugLog('[SessionStorage] Storage not available, skipping clear')
     return
   }
   
   try {
     localStorage.removeItem(STORAGE_KEY)
-    console.debug('[SessionStorage] Session cleared from storage')
+    debugLog('[SessionStorage] Session cleared from storage')
   } catch (error) {
-    console.warn('[SessionStorage] Failed to clear session:', error)
+    debugWarn('[SessionStorage] Failed to clear session:', error)
   }
 }
 

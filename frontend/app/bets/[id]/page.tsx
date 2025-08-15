@@ -2,6 +2,7 @@
 
 import type { Metadata } from 'next'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { appConfig } from '@/lib/config'
 import BetPageClient from './BetPageClient'
   
 // ADD THIS: Generate dynamic metadata function
@@ -42,7 +43,7 @@ export async function generateMetadata({
     }
 
     const betTitle = mapping.bet_name
-    const betUrl = `https://www.betley.xyz/bets/${randomId}`
+    const betUrl = `${appConfig.url}/bets/${randomId}`
     
     // Create dynamic metadata with bet title
     return {

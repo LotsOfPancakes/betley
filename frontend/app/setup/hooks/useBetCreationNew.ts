@@ -110,8 +110,7 @@ export function useBetCreationNew() {
           // Redirect to the new bet page
           router.push(`/bets/${randomId}`)
           
-        } catch (error) {
-          console.error('Error creating database mapping:', error)
+        } catch {
           setState(prev => ({ 
             ...prev, 
             isLoading: false, 
@@ -182,8 +181,6 @@ export function useBetCreationNew() {
       })
       
     } catch (error: unknown) {
-      console.error('Error creating bet:', error)
-      
       const errorMessage = error instanceof Error ? error.message : String(error)
       
       // Handle user rejection gracefully
