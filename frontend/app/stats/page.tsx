@@ -159,14 +159,6 @@ function SignatureDeniedUI({ onRetry }: { onRetry: () => void }) {
           >
             Try Again
           </button>
-          <a
-            href="https://support.metamask.io/hc/en-us/articles/4405506066331-User-guide-Transactions-and-gas#:~:text=What%20is%20a%20signature%20request"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-300 hover:text-white px-6 py-3 rounded-2xl border border-gray-600 hover:border-gray-500 transition-all duration-300"
-          >
-            Learn More
-          </a>
         </div>
       </div>
     </div>
