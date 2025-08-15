@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useChainValidation } from '@/lib/hooks/useChainValidation'
 import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
+import { ZERO_ADDRESS } from '@/lib/tokenUtils'
 
 interface BetCreationState {
   isLoading: boolean
@@ -129,7 +130,7 @@ export function useBetCreationNew() {
     betName: string,
     options: string[],
     durationInSeconds: number,
-    tokenAddress: string = '0x0000000000000000000000000000000000000000',
+    tokenAddress: string = ZERO_ADDRESS,
     isPublic: boolean = false
   ) => {
     // Validate chain first - properly await the async validation

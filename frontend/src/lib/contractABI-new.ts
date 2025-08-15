@@ -3,7 +3,6 @@
 
 // Contract addresses - UPDATE THESE TO NEW DEPLOYED CONTRACT
 export const BETLEY_NEW_ADDRESS = '0xE4cBF75D535F62B84B6D6680dd25AE5A18a903F9' as `0x${string}`
-export const MOCKERC20_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000' as `0x${string}`
 
 // New minimal ABI with privacy-focused functions
 export const BETLEY_NEW_ABI = [

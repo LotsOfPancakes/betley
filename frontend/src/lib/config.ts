@@ -1,5 +1,7 @@
 import { http, fallback } from 'viem'
 
+import { ZERO_ADDRESS } from './tokenUtils'
+
 // Environment variable helpers
 function getRequiredEnv(key: string, fallback?: string): string {
   const value = process.env[key] || fallback
@@ -56,7 +58,7 @@ export const config = {
     ) as `0x${string}`,
     mockERC20: getOptionalEnv(
       'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // Placeholder for native ETH betting
-      '0x0000000000000000000000000000000000000000'
+      ZERO_ADDRESS
     ) as `0x${string}`,
   },
   

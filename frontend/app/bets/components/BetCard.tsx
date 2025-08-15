@@ -7,6 +7,7 @@ import { UnifiedBet } from '../types/bet.types'
 import { formatDynamicDecimals } from '@/lib/utils/bettingUtils'
 import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 import { BET_CONSTANTS } from '@/lib/constants/bets'
+import { ZERO_ADDRESS } from '@/lib/tokenUtils'
 
 interface BetCardProps {
   bet: UnifiedBet // ✅ Now accepts both public and private bets
@@ -27,7 +28,7 @@ export default function BetCard({ bet, decimals, variant = 'auto' }: BetCardProp
   
   const betUrl = `/bets/${bet.randomId}`
   const isActive = Date.now() < (bet.endTime * 1000) // ✅ endTime is now Unix timestamp (number)
-  const isNativeBet = !('token' in bet) || !bet.token || bet.token === '0x0000000000000000000000000000000000000000'
+  const isNativeBet = !('token' in bet) || !bet.token || bet.token === ZERO_ADDRESS
   const tokenSymbol = getTokenSymbol(isNativeBet)
   
   const now = Date.now()

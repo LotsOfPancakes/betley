@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBoundary'
+import { ZERO_ADDRESS } from '@/lib/tokenUtils'
 
 // Import our extracted components and hooks
 import BetNameInput from './components/BetNameInput'
@@ -70,7 +71,7 @@ function SetupPageContent() {
       formData.name,           // betName
       filledOptions,           // options array
       durationInSeconds,       // duration
-      '0x0000000000000000000000000000000000000000', // native ETH
+      ZERO_ADDRESS, // native ETH
       formData.isPublic        // isPublic flag
     )
   }
