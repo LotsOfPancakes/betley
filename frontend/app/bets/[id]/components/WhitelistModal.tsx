@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAccount, useWriteContract, useReadContract, usePublicClient, useWatchContractEvent } from 'wagmi'
+import { useAccount, useWriteContract, useReadContract } from 'wagmi'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/src/lib/contractABI'
-import { isAddress, parseAbiItem } from 'viem'
+import { isAddress } from 'viem'
 
 interface WhitelistModalProps {
   isOpen: boolean
@@ -13,22 +13,22 @@ interface WhitelistModalProps {
 }
 
 interface WhitelistedAddress {
-  address: string
-  addedAt: number
+  participant_address: string
+  added_at: string
+  added_by: string
 }
 
 
 
-export default function WhitelistModal({ isOpen, onClose, contractBetId }: WhitelistModalProps) {
+export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }: WhitelistModalProps) {
   const { address } = useAccount()
   const { writeContract, isPending: isTransactionPending } = useWriteContract()
-  const publicClient = usePublicClient()
   
   const [newAddress, setNewAddress] = useState('')
   const [whitelistAddresses, setWhitelistAddresses] = useState<string[]>([])
   const [validationError, setValidationError] = useState('')
   
-  // New state for existing addresses
+  // Database-driven state for existing addresses
   const [existingAddresses, setExistingAddresses] = useState<WhitelistedAddress[]>([])
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false)
   const [removingAddress, setRemovingAddress] = useState<string | null>(null)
@@ -49,117 +49,36 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
     args: [BigInt(contractBetId), address || '0x0'],
   })
 
-  // Load historical whitelist events
-  const loadHistoricalWhitelistEvents = useCallback(async () => {
-    if (!publicClient) return
+  // Fetch existing addresses from database
+  const fetchExistingAddresses = useCallback(async () => {
+    if (!betId) return
     
     setIsLoadingAddresses(true)
     try {
-      console.log('Loading whitelist events for bet:', contractBetId)
+      console.log('Fetching whitelist addresses for bet:', betId)
       
-      // Get logs for AddressWhitelisted events using parseAbiItem
-      const addedLogs = await publicClient.getLogs({
-        address: BETLEY_ADDRESS,
-        event: parseAbiItem('event AddressWhitelisted(uint256 indexed betId, address indexed user)'),
-        args: { betId: BigInt(contractBetId) },
-        fromBlock: 'earliest'
-      })
-
-      // Get logs for AddressRemovedFromWhitelist events  
-      const removedLogs = await publicClient.getLogs({
-        address: BETLEY_ADDRESS,
-        event: parseAbiItem('event AddressRemovedFromWhitelist(uint256 indexed betId, address indexed user)'),
-        args: { betId: BigInt(contractBetId) },
-        fromBlock: 'earliest'
-      })
-
-      console.log('Added logs:', addedLogs)
-      console.log('Removed logs:', removedLogs)
-
-      // Process events to get current state
-      const addressMap = new Map<string, WhitelistedAddress>()
+      const response = await fetch(`/api/bets/${betId}/whitelist`)
+      const data = await response.json()
       
-      // Add all additions
-      addedLogs.forEach(log => {
-        console.log('Processing added log:', log)
-        console.log('Log args:', log.args)
-        if (log.args && log.args.user) {
-          const userAddress = log.args.user as string
-          console.log('Adding user address:', userAddress)
-          addressMap.set(userAddress.toLowerCase(), {
-            address: userAddress,
-            addedAt: Date.now()
-          })
-        }
-      })
-      
-      // Remove all removals
-      removedLogs.forEach(log => {
-        console.log('Processing removed log:', log)
-        console.log('Log args:', log.args)
-        if (log.args && log.args.user) {
-          const userAddress = log.args.user as string
-          console.log('Removing user address:', userAddress)
-          addressMap.delete(userAddress.toLowerCase())
-        }
-      })
-      
-      console.log('Final address map:', Array.from(addressMap.values()))
-      setExistingAddresses(Array.from(addressMap.values()))
+      if (data.success) {
+        console.log('Fetched addresses:', data.data.addresses)
+        setExistingAddresses(data.data.addresses || [])
+      } else {
+        console.error('Failed to fetch addresses:', data.error)
+      }
     } catch (error) {
-      console.error('Error loading whitelist history:', error)
+      console.error('Error fetching whitelist addresses:', error)
     } finally {
       setIsLoadingAddresses(false)
     }
-  }, [publicClient, contractBetId])
+  }, [betId])
 
   // Load addresses when modal opens
   useEffect(() => {
-    if (isOpen && contractBetId && publicClient) {
-      loadHistoricalWhitelistEvents()
+    if (isOpen && betId) {
+      fetchExistingAddresses()
     }
-  }, [isOpen, contractBetId, publicClient, loadHistoricalWhitelistEvents])
-
-  // Watch for addresses being added
-  useWatchContractEvent({
-    address: BETLEY_ADDRESS,
-    abi: BETLEY_ABI,
-    eventName: 'AddressWhitelisted',
-    args: { betId: BigInt(contractBetId) },
-    onLogs: (logs) => {
-      console.log('Real-time AddressWhitelisted event:', logs)
-      logs.forEach((log) => {
-        const userAddress = log.args.user
-        if (userAddress) {
-          console.log('Adding address via event:', userAddress)
-          setExistingAddresses(prev => [
-            ...prev.filter(addr => addr.address.toLowerCase() !== userAddress.toLowerCase()),
-            { address: userAddress, addedAt: Date.now() }
-          ])
-        }
-      })
-    }
-  })
-
-  // Watch for addresses being removed  
-  useWatchContractEvent({
-    address: BETLEY_ADDRESS,
-    abi: BETLEY_ABI,
-    eventName: 'AddressRemovedFromWhitelist', 
-    args: { betId: BigInt(contractBetId) },
-    onLogs: (logs) => {
-      console.log('Real-time AddressRemovedFromWhitelist event:', logs)
-      logs.forEach((log) => {
-        const userAddress = log.args.user
-        if (userAddress) {
-          console.log('Removing address via event:', userAddress)
-          setExistingAddresses(prev => 
-            prev.filter(addr => addr.address.toLowerCase() !== userAddress.toLowerCase())
-          )
-        }
-      })
-    }
-  })
+  }, [isOpen, betId, fetchExistingAddresses])
 
   const validateAddress = (addr: string): boolean => {
     if (!addr.trim()) {
@@ -177,7 +96,7 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
       return false
     }
 
-    if (existingAddresses.some(existing => existing.address.toLowerCase() === addr.toLowerCase())) {
+    if (existingAddresses.some(existing => existing.participant_address.toLowerCase() === addr.toLowerCase())) {
       setValidationError('Address already whitelisted')
       return false
     }
@@ -192,14 +111,30 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
     try {
       setRemovingAddress(addressToRemove)
       
+      // 1. Contract operation (source of truth)
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'removeFromWhitelist',
         args: [BigInt(contractBetId), addressToRemove as `0x${string}`],
       })
-      
-      // State will update automatically via event listener
+
+      // 2. Database operation (convenience storage)
+      const response = await fetch(`/api/bets/${betId}/whitelist`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          address: addressToRemove,
+          removedBy: address 
+        })
+      })
+
+      if (!response.ok) {
+        console.warn('Database update failed, but contract operation succeeded')
+      }
+
+      // 3. Refresh database query (instead of waiting for events)
+      await fetchExistingAddresses()
       await refetchWhitelistStatus()
       await refetchCurrentUserStatus()
       
@@ -225,7 +160,7 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
     if (!address || whitelistAddresses.length === 0) return
 
     try {
-      // Add addresses one by one (could be optimized with batch function)
+      // 1. Contract operations (source of truth)
       for (const addr of whitelistAddresses) {
         await writeContract({
           address: BETLEY_ADDRESS,
@@ -234,9 +169,24 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
           args: [BigInt(contractBetId), addr as `0x${string}`],
         })
       }
-      
-      // Clear pending addresses and refresh data
+
+      // 2. Database operation (convenience storage)
+      const response = await fetch(`/api/bets/${betId}/whitelist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          addresses: whitelistAddresses,
+          addedBy: address
+        })
+      })
+
+      if (!response.ok) {
+        console.warn('Database sync failed, but contract operations succeeded')
+      }
+
+      // 3. Refresh database query (instead of waiting for events)
       setWhitelistAddresses([])
+      await fetchExistingAddresses()
       await refetchWhitelistStatus()
       await refetchCurrentUserStatus()
       
@@ -349,23 +299,23 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
                 <div className="space-y-1 max-h-40 overflow-y-auto">
                   {existingAddresses.map((addr) => (
                     <div
-                      key={addr.address}
+                      key={addr.participant_address}
                       className="flex items-center justify-between p-3 bg-gray-800 rounded-lg"
                     >
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-mono text-white truncate block">
-                          {addr.address}
+                          {addr.participant_address}
                         </span>
                         <span className="text-xs text-gray-400">
-                          Added to whitelist
+                          Added {new Date(addr.added_at).toLocaleDateString()}
                         </span>
                       </div>
                       <button
-                        onClick={() => handleRemoveFromWhitelist(addr.address)}
-                        disabled={removingAddress === addr.address}
+                        onClick={() => handleRemoveFromWhitelist(addr.participant_address)}
+                        disabled={removingAddress === addr.participant_address}
                         className="ml-3 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
                       >
-                        {removingAddress === addr.address ? '...' : '✕'}
+                        {removingAddress === addr.participant_address ? '...' : '✕'}
                       </button>
                     </div>
                   ))}
