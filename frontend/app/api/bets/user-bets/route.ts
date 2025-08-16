@@ -9,7 +9,7 @@ import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'
 import { parseAuthHeader, verifyWalletSignature } from '@/lib/auth/verifySignature'
 import { createPublicClient, http } from 'viem'
 import { baseSepolia } from '@reown/appkit/networks'
-import { BETLEY_NEW_ABI } from '@/lib/contractABI'
+import { BETLEY_ABI } from '@/lib/contractABI'
 import { contractsConfig } from "@/lib/config"
 
 // Create RPC client for live data fallback
@@ -34,7 +34,7 @@ async function getLiveBetAmounts(betId: number): Promise<number[]> {
   try {
     const betAmounts = await publicClient.readContract({
       address: contractsConfig.betley,
-      abi: BETLEY_NEW_ABI,
+      abi: BETLEY_ABI,
       functionName: 'getBetAmounts',
       args: [BigInt(betId)]
     }) as readonly bigint[]

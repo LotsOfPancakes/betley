@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { parseUnits } from 'viem'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useChainValidation } from '@/lib/hooks/useChainValidation'
-import { BETLEY_NEW_ABI } from '@/lib/contractABI'
+import { BETLEY_ABI } from '@/lib/contractABI'
 import { contractsConfig } from '@/lib/config'
 import { ERC20_ABI } from '@/lib/erc20ABI'
 import { isNativeETH } from '@/lib/tokenUtils'
@@ -86,7 +86,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       // For native ETH, amount is also passed as a parameter AND as value
       writeContract({
         address: contractsConfig.betley,
-        abi: BETLEY_NEW_ABI,
+        abi: BETLEY_ABI,
         functionName: 'placeBet',
         args: [BigInt(numericBetId), selectedOption, amount],
         value: isNativeBet ? amount : undefined,
@@ -110,7 +110,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       
       writeContract({
         address: contractsConfig.betley,
-        abi: BETLEY_NEW_ABI,
+        abi: BETLEY_ABI,
         functionName: 'claimWinnings',
         args: [BigInt(numericBetId)],
       })
@@ -133,7 +133,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       
       writeContract({
         address: contractsConfig.betley,
-        abi: BETLEY_NEW_ABI,
+        abi: BETLEY_ABI,
         functionName: 'claimRefund',
         args: [BigInt(numericBetId)],
       })
@@ -156,7 +156,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       
       writeContract({
         address: contractsConfig.betley,
-        abi: BETLEY_NEW_ABI,
+        abi: BETLEY_ABI,
         functionName: 'claimCreatorFees',
         args: [BigInt(numericBetId)],
       })
@@ -180,7 +180,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       
       writeContract({
         address: contractsConfig.betley,
-        abi: BETLEY_NEW_ABI,
+        abi: BETLEY_ABI,
         functionName: 'resolveBet',
         args: [BigInt(numericBetId), winningOption],
       })

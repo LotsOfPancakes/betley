@@ -8,7 +8,7 @@ import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
 import { createPublicClient, http } from 'viem'
 import { baseSepolia } from '@reown/appkit/networks'
-import { BETLEY_NEW_ABI } from '@/lib/contractABI'
+import { BETLEY_ABI } from '@/lib/contractABI'
 import { contractsConfig } from "@/lib/config"
 
 // Create RPC client for contract calls
@@ -64,14 +64,14 @@ export async function POST(request: NextRequest) {
         const [betBasics, betAmounts] = await Promise.all([
           publicClient.readContract({
             address: contractsConfig.betley,
-            abi: BETLEY_NEW_ABI,
+            abi: BETLEY_ABI,
             functionName: 'getBetBasics',
             args: [BigInt(bet.numeric_id)]
           }) as Promise<readonly [`0x${string}`, bigint, boolean, number, number, `0x${string}`]>,
           
           publicClient.readContract({
             address: contractsConfig.betley,
-            abi: BETLEY_NEW_ABI,
+            abi: BETLEY_ABI,
             functionName: 'getBetAmounts',
             args: [BigInt(bet.numeric_id)]
           }) as Promise<readonly bigint[]>

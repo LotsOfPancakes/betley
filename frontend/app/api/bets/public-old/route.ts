@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server'
 import { supabase, checkRateLimit } from '@/lib/supabase'
 import { createPublicClient, http } from 'viem'
 import { baseSepolia } from 'viem/chains'
-import { BETLEY_NEW_ABI } from '@/lib/contractABI'
+import { BETLEY_ABI } from '@/lib/contractABI'
 import { contractsConfig } from "@/lib/config"
 
 // Helper function to get client IP
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
         // Fetch real end time from blockchain
         const betBasics = await publicClient.readContract({
           address: contractsConfig.betley,
-          abi: BETLEY_NEW_ABI,
+          abi: BETLEY_ABI,
           functionName: 'getBetBasics',
           args: [BigInt(bet.numeric_id)],
         }) as readonly [string, bigint, boolean, number, number, string]

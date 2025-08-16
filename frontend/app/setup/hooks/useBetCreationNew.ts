@@ -8,7 +8,7 @@ import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadCont
 import { useQueryClient } from '@tanstack/react-query'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useChainValidation } from '@/lib/hooks/useChainValidation'
-import { BETLEY_NEW_ABI } from '@/lib/contractABI'
+import { BETLEY_ABI } from '@/lib/contractABI'
 import { contractsConfig } from "@/lib/config"
 import { ZERO_ADDRESS } from '@/lib/tokenUtils'
 
@@ -44,7 +44,7 @@ export function useBetCreationNew() {
   // Get current bet counter for ID prediction
   const { data: betCounter } = useReadContract({
     address: contractsConfig.betley,
-    abi: BETLEY_NEW_ABI,
+    abi: BETLEY_ABI,
     functionName: 'betCounter',
     query: {
       staleTime: 5000,
@@ -173,7 +173,7 @@ export function useBetCreationNew() {
       // ✅ NEW CONTRACT CALL: Only operational data, no sensitive info
       writeContract({
         address: contractsConfig.betley,
-        abi: BETLEY_NEW_ABI,
+        abi: BETLEY_ABI,
         functionName: 'createBet',
         args: [
           validOptions.length,  // optionCount (uint8)

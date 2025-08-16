@@ -2,10 +2,10 @@
 // New Privacy-Focused Betley Contract ABI and Configuration
 
 // Contract addresses - UPDATE THESE TO NEW DEPLOYED CONTRACT
-export const BETLEY_NEW_ADDRESS = '0x02Ef4B4d8b1F121dda9E80F641e0bFcaeBd7dEA6' as `0x${string}`
+export const BETLEY_ADDRESS = '0x02Ef4B4d8b1F121dda9E80F641e0bFcaeBd7dEA6' as `0x${string}`
 
 // New minimal ABI with privacy-focused functions
-export const BETLEY_NEW_ABI = [
+export const BETLEY_ABI = [
   // ========== CORE BETTING FUNCTIONS ==========
   
   // Create Bet (minimal data)
