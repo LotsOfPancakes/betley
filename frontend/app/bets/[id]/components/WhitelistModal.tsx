@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useWriteContract, useReadContract, usePublicClient, useWatchContractEvent } from 'wagmi'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/src/lib/contractABI'
-import { isAddress } from 'viem'
+import { isAddress, parseAbiItem } from 'viem'
 
 interface WhitelistModalProps {
   isOpen: boolean
@@ -55,17 +55,12 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
     
     setIsLoadingAddresses(true)
     try {
-      // Get logs for AddressWhitelisted events
+      console.log('Loading whitelist events for bet:', contractBetId)
+      
+      // Get logs for AddressWhitelisted events using parseAbiItem
       const addedLogs = await publicClient.getLogs({
         address: BETLEY_ADDRESS,
-        event: {
-          type: 'event',
-          name: 'AddressWhitelisted',
-          inputs: [
-            { name: 'betId', type: 'uint256', indexed: true },
-            { name: 'user', type: 'address', indexed: true }
-          ]
-        },
+        event: parseAbiItem('event AddressWhitelisted(uint256 indexed betId, address indexed user)'),
         args: { betId: BigInt(contractBetId) },
         fromBlock: 'earliest'
       })
@@ -73,26 +68,26 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
       // Get logs for AddressRemovedFromWhitelist events  
       const removedLogs = await publicClient.getLogs({
         address: BETLEY_ADDRESS,
-        event: {
-          type: 'event', 
-          name: 'AddressRemovedFromWhitelist',
-          inputs: [
-            { name: 'betId', type: 'uint256', indexed: true },
-            { name: 'user', type: 'address', indexed: true }
-          ]
-        },
+        event: parseAbiItem('event AddressRemovedFromWhitelist(uint256 indexed betId, address indexed user)'),
         args: { betId: BigInt(contractBetId) },
         fromBlock: 'earliest'
       })
+
+      console.log('Added logs:', addedLogs)
+      console.log('Removed logs:', removedLogs)
 
       // Process events to get current state
       const addressMap = new Map<string, WhitelistedAddress>()
       
       // Add all additions
       addedLogs.forEach(log => {
-        if (log.args.user) {
-          addressMap.set(log.args.user.toLowerCase(), {
-            address: log.args.user,
+        console.log('Processing added log:', log)
+        console.log('Log args:', log.args)
+        if (log.args && log.args.user) {
+          const userAddress = log.args.user as string
+          console.log('Adding user address:', userAddress)
+          addressMap.set(userAddress.toLowerCase(), {
+            address: userAddress,
             addedAt: Date.now()
           })
         }
@@ -100,11 +95,16 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
       
       // Remove all removals
       removedLogs.forEach(log => {
-        if (log.args.user) {
-          addressMap.delete(log.args.user.toLowerCase())
+        console.log('Processing removed log:', log)
+        console.log('Log args:', log.args)
+        if (log.args && log.args.user) {
+          const userAddress = log.args.user as string
+          console.log('Removing user address:', userAddress)
+          addressMap.delete(userAddress.toLowerCase())
         }
       })
       
+      console.log('Final address map:', Array.from(addressMap.values()))
       setExistingAddresses(Array.from(addressMap.values()))
     } catch (error) {
       console.error('Error loading whitelist history:', error)
@@ -127,9 +127,11 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
     eventName: 'AddressWhitelisted',
     args: { betId: BigInt(contractBetId) },
     onLogs: (logs) => {
+      console.log('Real-time AddressWhitelisted event:', logs)
       logs.forEach((log) => {
         const userAddress = log.args.user
         if (userAddress) {
+          console.log('Adding address via event:', userAddress)
           setExistingAddresses(prev => [
             ...prev.filter(addr => addr.address.toLowerCase() !== userAddress.toLowerCase()),
             { address: userAddress, addedAt: Date.now() }
@@ -146,9 +148,11 @@ export default function WhitelistModal({ isOpen, onClose, contractBetId }: White
     eventName: 'AddressRemovedFromWhitelist', 
     args: { betId: BigInt(contractBetId) },
     onLogs: (logs) => {
+      console.log('Real-time AddressRemovedFromWhitelist event:', logs)
       logs.forEach((log) => {
         const userAddress = log.args.user
         if (userAddress) {
+          console.log('Removing address via event:', userAddress)
           setExistingAddresses(prev => 
             prev.filter(addr => addr.address.toLowerCase() !== userAddress.toLowerCase())
           )
