@@ -58,16 +58,26 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       console.log('Fetching whitelist addresses for bet:', betId)
       
       const response = await fetch(`/api/bets/${betId}/whitelist`)
+      console.log('GET Response Status:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        console.error('GET Request failed:', response.status, response.statusText)
+        const errorText = await response.text()
+        console.error('GET Error Response:', errorText)
+        return
+      }
+      
       const data = await response.json()
+      console.log('GET Response Data:', data)
       
       if (data.success) {
-        console.log('Fetched addresses:', data.data.addresses)
+        console.log('Successfully fetched addresses:', data.data.addresses)
         setExistingAddresses(data.data.addresses || [])
       } else {
-        console.error('Failed to fetch addresses:', data.error)
+        console.error('GET API returned error:', data.error)
       }
     } catch (error) {
-      console.error('Error fetching whitelist addresses:', error)
+      console.error('GET Request exception:', error)
     } finally {
       setIsLoadingAddresses(false)
     }
@@ -120,6 +130,12 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       })
 
       // 2. Database operation (convenience storage)
+      console.log('Sending DELETE request with data:', {
+        address: addressToRemove,
+        removedBy: address,
+        betId: betId
+      })
+      
       const response = await fetch(`/api/bets/${betId}/whitelist`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -129,11 +145,28 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         })
       })
 
+      console.log('DELETE Response Status:', response.status, response.statusText)
+
       if (!response.ok) {
-        console.warn('Database update failed, but contract operation succeeded')
+        const errorText = await response.text()
+        console.error('DELETE Request failed:', response.status, response.statusText)
+        console.error('DELETE Error Response:', errorText)
+        // Don't continue if DELETE failed
+        return
       }
 
-      // 3. Refresh database query (instead of waiting for events)
+      const result = await response.json()
+      console.log('DELETE Response Data:', result)
+
+      if (!result.success) {
+        console.error('DELETE API returned error:', result.error)
+        return
+      }
+
+      console.log('DELETE Success:', result.message)
+
+      // 3. Refresh database query (should work now that DELETE succeeded)
+      console.log('DELETE succeeded, now refreshing data...')
       await fetchExistingAddresses()
       await refetchWhitelistStatus()
       await refetchCurrentUserStatus()
@@ -171,6 +204,12 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       }
 
       // 2. Database operation (convenience storage)
+      console.log('Sending POST request with data:', {
+        addresses: whitelistAddresses,
+        addedBy: address,
+        betId: betId
+      })
+      
       const response = await fetch(`/api/bets/${betId}/whitelist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -180,11 +219,28 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         })
       })
 
+      console.log('POST Response Status:', response.status, response.statusText)
+
       if (!response.ok) {
-        console.warn('Database sync failed, but contract operations succeeded')
+        const errorText = await response.text()
+        console.error('POST Request failed:', response.status, response.statusText)
+        console.error('POST Error Response:', errorText)
+        // Don't continue if POST failed
+        return
       }
 
-      // 3. Refresh database query (instead of waiting for events)
+      const result = await response.json()
+      console.log('POST Response Data:', result)
+
+      if (!result.success) {
+        console.error('POST API returned error:', result.error)
+        return
+      }
+
+      console.log('POST Success:', result.message)
+
+      // 3. Refresh database query (should work now that POST succeeded)
+      console.log('POST succeeded, now refreshing data...')
       setWhitelistAddresses([])
       await fetchExistingAddresses()
       await refetchWhitelistStatus()
