@@ -120,8 +120,10 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
 
     try {
       setRemovingAddress(addressToRemove)
+      console.log('Starting remove operation for address:', addressToRemove)
       
-      // 1. Contract operation (source of truth)
+      // 1. Contract operation (source of truth) - wait for transaction success
+      console.log('Submitting remove transaction...')
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
@@ -129,7 +131,10 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         args: [BigInt(contractBetId), addressToRemove as `0x${string}`],
       })
 
-      // 2. Database operation (convenience storage)
+      console.log('Transaction submitted and confirmed successfully')
+
+      // 2. Database operation (convenience storage) - only after contract success
+      console.log('Contract succeeded, now updating database...')
       console.log('Sending DELETE request with data:', {
         address: addressToRemove,
         removedBy: address,
@@ -151,28 +156,28 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         const errorText = await response.text()
         console.error('DELETE Request failed:', response.status, response.statusText)
         console.error('DELETE Error Response:', errorText)
-        // Don't continue if DELETE failed
-        return
+        // Contract succeeded but database failed - still refresh UI to match contract state
+        console.warn('Contract succeeded but database update failed, refreshing UI to match contract state')
+      } else {
+        const result = await response.json()
+        console.log('DELETE Response Data:', result)
+
+        if (!result.success) {
+          console.error('DELETE API returned error:', result.error)
+        } else {
+          console.log('DELETE Success:', result.message)
+        }
       }
 
-      const result = await response.json()
-      console.log('DELETE Response Data:', result)
-
-      if (!result.success) {
-        console.error('DELETE API returned error:', result.error)
-        return
-      }
-
-      console.log('DELETE Success:', result.message)
-
-      // 3. Refresh database query (should work now that DELETE succeeded)
-      console.log('DELETE succeeded, now refreshing data...')
+      // 3. Refresh UI (always do this after successful contract operation)
+      console.log('Refreshing UI to reflect successful removal...')
       await fetchExistingAddresses()
       await refetchWhitelistStatus()
       await refetchCurrentUserStatus()
       
     } catch (error) {
-      console.error('Error removing from whitelist:', error)
+      console.error('Remove operation failed:', error)
+      // Address stays in UI since operation failed
     } finally {
       setRemovingAddress(null)
     }
@@ -193,19 +198,39 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
     if (!address || whitelistAddresses.length === 0) return
 
     try {
-      // 1. Contract operations (source of truth)
+      console.log('Starting add operation for addresses:', whitelistAddresses)
+      const successfulAddresses: string[] = []
+      
+      // 1. Contract operations (source of truth) - wait for each transaction success
       for (const addr of whitelistAddresses) {
-        await writeContract({
-          address: BETLEY_ADDRESS,
-          abi: BETLEY_ABI,
-          functionName: 'addToWhitelist',
-          args: [BigInt(contractBetId), addr as `0x${string}`],
-        })
+        try {
+          console.log('Submitting add transaction for:', addr)
+          await writeContract({
+            address: BETLEY_ADDRESS,
+            abi: BETLEY_ABI,
+            functionName: 'addToWhitelist',
+            args: [BigInt(contractBetId), addr as `0x${string}`],
+          })
+
+          console.log('Transaction submitted and confirmed for:', addr)
+          successfulAddresses.push(addr)
+        } catch (error) {
+          console.error('Failed to add address', addr, ':', error)
+          // Continue with other addresses even if one fails
+        }
       }
 
-      // 2. Database operation (convenience storage)
+      if (successfulAddresses.length === 0) {
+        console.error('All transactions failed')
+        return
+      }
+
+      console.log('Successfully added addresses to contract:', successfulAddresses)
+
+      // 2. Database operation (convenience storage) - only for successful addresses
+      console.log('Contracts succeeded, now updating database...')
       console.log('Sending POST request with data:', {
-        addresses: whitelistAddresses,
+        addresses: successfulAddresses,
         addedBy: address,
         betId: betId
       })
@@ -214,7 +239,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          addresses: whitelistAddresses,
+          addresses: successfulAddresses,
           addedBy: address
         })
       })
@@ -225,29 +250,29 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         const errorText = await response.text()
         console.error('POST Request failed:', response.status, response.statusText)
         console.error('POST Error Response:', errorText)
-        // Don't continue if POST failed
-        return
+        // Contract succeeded but database failed - still refresh UI to match contract state
+        console.warn('Contract succeeded but database update failed, refreshing UI to match contract state')
+      } else {
+        const result = await response.json()
+        console.log('POST Response Data:', result)
+
+        if (!result.success) {
+          console.error('POST API returned error:', result.error)
+        } else {
+          console.log('POST Success:', result.message)
+        }
       }
 
-      const result = await response.json()
-      console.log('POST Response Data:', result)
-
-      if (!result.success) {
-        console.error('POST API returned error:', result.error)
-        return
-      }
-
-      console.log('POST Success:', result.message)
-
-      // 3. Refresh database query (should work now that POST succeeded)
-      console.log('POST succeeded, now refreshing data...')
+      // 3. Clear pending addresses and refresh UI (only after successful contract operations)
+      console.log('Clearing pending addresses and refreshing UI...')
       setWhitelistAddresses([])
       await fetchExistingAddresses()
       await refetchWhitelistStatus()
       await refetchCurrentUserStatus()
       
     } catch (error) {
-      console.error('Error adding to whitelist:', error)
+      console.error('Add operation failed:', error)
+      // Pending addresses stay in UI since operation failed
     }
   }
 
