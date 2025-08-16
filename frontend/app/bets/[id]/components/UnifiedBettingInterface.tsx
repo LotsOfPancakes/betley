@@ -45,6 +45,7 @@ interface UnifiedBettingInterfaceProps {
   isNativeBet?: boolean
   betId?: string // Added for fee data hook
   onResolveEarly: () => void
+  onManageWhitelist: () => void
 }
 
 export function UnifiedBettingInterface({
@@ -79,6 +80,7 @@ export function UnifiedBettingInterface({
   hasExistingBet,
   isNativeBet,
   onResolveEarly,
+  onManageWhitelist,
   betId
 }: UnifiedBettingInterfaceProps) {
 
@@ -143,6 +145,7 @@ export function UnifiedBettingInterface({
         address={address}
         creator={creator}
         onResolveEarly={onResolveEarly}
+        onManageWhitelist={onManageWhitelist}
       />
 
       {/* 2-Column Layout: Options (60%) + Amount Input (40%) */}

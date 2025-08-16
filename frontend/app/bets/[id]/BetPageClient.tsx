@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { UserActions } from './components/UserActions'
 import { UnifiedBettingInterface } from './components/UnifiedBettingInterface'
 import { ResolveModal } from './components/ResolveModal'
+import WhitelistModal from './components/WhitelistModal'
 import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBoundary'
 import BackgroundElements from '@/app/components/BackgroundElements'
 
@@ -85,6 +86,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
   const { address } = useAccount()
   const randomBetId = id
   const [showResolveModal, setShowResolveModal] = useState(false)
+  const [showWhitelistModal, setShowWhitelistModal] = useState(false)
 
   // Get bet data using the new privacy-focused approach
   const {
@@ -226,6 +228,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   address={address}
                   creator={creator || ''}
                   onResolveEarly={() => setShowResolveModal(true)}
+                  onManageWhitelist={() => setShowWhitelistModal(true)}
                 />
               </ComponentErrorBoundary>
 
@@ -269,6 +272,16 @@ export default function BetPageClient({ id }: BetPageClientProps) {
             betName={name || ''}
             options={options as readonly string[] || []}
             totalAmounts={totalAmounts as readonly bigint[] || []}
+          />
+        )}
+
+        {/* Whitelist Modal */}
+        {showWhitelistModal && (
+          <WhitelistModal
+            isOpen={showWhitelistModal}
+            onClose={() => setShowWhitelistModal(false)}
+            betId={randomBetId}
+            contractBetId={numericBetId || 0}
           />
         )}
       </div>

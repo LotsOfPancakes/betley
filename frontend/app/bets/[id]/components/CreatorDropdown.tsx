@@ -7,13 +7,15 @@ interface CreatorDropdownProps {
   creator: string
   resolved: boolean
   onResolveEarly: () => void
+  onManageWhitelist: () => void
 }
 
 export function CreatorDropdown({
   address,
   creator,
   resolved,
-  onResolveEarly
+  onResolveEarly,
+  onManageWhitelist
 }: CreatorDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -40,6 +42,11 @@ export function CreatorDropdown({
     onResolveEarly()
   }
 
+  const handleManageWhitelist = () => {
+    setIsOpen(false)
+    onManageWhitelist()
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Dropdown trigger button */}
@@ -63,6 +70,13 @@ export function CreatorDropdown({
             >
               <span>⚡</span>
               Resolve Early
+            </button>
+            <button
+              onClick={handleManageWhitelist}
+              className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 flex items-center gap-2"
+            >
+              <span>👥</span>
+              Manage Whitelist
             </button>
           </div>
         </div>

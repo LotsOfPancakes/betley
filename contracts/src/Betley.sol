@@ -39,6 +39,10 @@ contract Betley is Ownable, ReentrancyGuard {
     mapping(uint256 => Bet) private bets;
     uint256 public betCounter;
 
+    // Whitelist functionality
+    mapping(uint256 => mapping(address => bool)) public whitelist;
+    mapping(uint256 => bool) public hasWhitelist;
+
     // Fee configuration
     bool public feeCreator = false; // Creator fee enabled/disabled
     uint256 public feeCreatorAmount = 200; // 2% in basis points (200/10000)
@@ -63,6 +67,12 @@ contract Betley is Ownable, ReentrancyGuard {
     event WinningsClaimed(uint256 indexed betId, address indexed user, uint256 amount);
     event RefundClaimed(uint256 indexed betId, address indexed user, uint256 amount);
 
+    // Whitelist Events
+    event WhitelistEnabled(uint256 indexed betId);
+    event WhitelistDisabled(uint256 indexed betId);
+    event AddressWhitelisted(uint256 indexed betId, address indexed user);
+    event AddressRemovedFromWhitelist(uint256 indexed betId, address indexed user);
+
     // Fee Events
     event PlatformFeeAccumulated(uint256 indexed betId, uint256 amount);
     event CreatorFeeCollected(uint256 indexed betId, address creator, uint256 amount);
@@ -75,13 +85,14 @@ contract Betley is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Create a new bet with minimal on-chain data
+     * @dev Create a new bet with minimal on-chain data and optional whitelist
      * @param _optionCount Number of betting options (2-4)
      * @param _duration Duration in seconds for betting period
      * @param _token Token address (address(0) for native, contract address for ERC20)
+     * @param _whitelistedAddresses Array of addresses allowed to participate (empty = open to all)
      * @notice Bet name and options are stored off-chain for privacy
      */
-    function createBet(uint8 _optionCount, uint256 _duration, address _token) external returns (uint256) {
+    function createBet(uint8 _optionCount, uint256 _duration, address _token, address[] memory _whitelistedAddresses) external returns (uint256) {
         require(_optionCount >= 2 && _optionCount <= 4, "Must have 2-4 options");
         require(_duration > 0, "Duration must be positive");
 
@@ -95,6 +106,26 @@ contract Betley is Ownable, ReentrancyGuard {
         bet.resolutionDeadline = bet.endTime + 24 hours; // 24 hour resolution window
         bet.token = _token;
         bet.feesLocked = false;
+
+        // Handle whitelist setup
+        if (_whitelistedAddresses.length > 0) {
+            hasWhitelist[betId] = true;
+            
+            // Add whitelisted addresses
+            for (uint256 i = 0; i < _whitelistedAddresses.length; i++) {
+                require(_whitelistedAddresses[i] != address(0), "Invalid whitelist address");
+                whitelist[betId][_whitelistedAddresses[i]] = true;
+                emit AddressWhitelisted(betId, _whitelistedAddresses[i]);
+            }
+            
+            // Creator is automatically whitelisted
+            if (!whitelist[betId][msg.sender]) {
+                whitelist[betId][msg.sender] = true;
+                emit AddressWhitelisted(betId, msg.sender);
+            }
+            
+            emit WhitelistEnabled(betId);
+        }
 
         emit BetCreated(betId, msg.sender, _optionCount, _token);
         return betId;
@@ -113,6 +144,11 @@ contract Betley is Ownable, ReentrancyGuard {
         require(!bet.resolved, "Bet already resolved");
         require(_option < bet.optionCount, "Invalid option");
         require(_amount > 0, "Amount must be positive");
+
+        // Check whitelist if enabled
+        if (hasWhitelist[_betId]) {
+            require(whitelist[_betId][msg.sender], "Address not whitelisted");
+        }
 
         // Handle payment based on token type
         if (bet.token == address(0)) {
@@ -294,6 +330,90 @@ contract Betley is Ownable, ReentrancyGuard {
         }
     }
 
+    // ========== WHITELIST MANAGEMENT FUNCTIONS ==========
+
+    /**
+     * @dev Add address to bet whitelist (only creator)
+     * @param _betId ID of the bet
+     * @param _user Address to add to whitelist
+     */
+    function addToWhitelist(uint256 _betId, address _user) external {
+        require(_betId < betCounter, "Bet does not exist");
+        Bet storage bet = bets[_betId];
+        require(msg.sender == bet.creator, "Only creator can manage whitelist");
+        require(_user != address(0), "Invalid address");
+        require(block.timestamp < bet.endTime, "Betting period ended");
+
+        if (!hasWhitelist[_betId]) {
+            hasWhitelist[_betId] = true;
+            emit WhitelistEnabled(_betId);
+        }
+
+        if (!whitelist[_betId][_user]) {
+            whitelist[_betId][_user] = true;
+            emit AddressWhitelisted(_betId, _user);
+        }
+    }
+
+    /**
+     * @dev Remove address from bet whitelist (only creator)
+     * @param _betId ID of the bet
+     * @param _user Address to remove from whitelist
+     */
+    function removeFromWhitelist(uint256 _betId, address _user) external {
+        require(_betId < betCounter, "Bet does not exist");
+        Bet storage bet = bets[_betId];
+        require(msg.sender == bet.creator, "Only creator can manage whitelist");
+        require(_user != bet.creator, "Cannot remove creator from whitelist");
+
+        if (whitelist[_betId][_user]) {
+            whitelist[_betId][_user] = false;
+            emit AddressRemovedFromWhitelist(_betId, _user);
+        }
+    }
+
+    /**
+     * @dev Disable whitelist for a bet (only creator)
+     * @param _betId ID of the bet
+     */
+    function disableWhitelist(uint256 _betId) external {
+        require(_betId < betCounter, "Bet does not exist");
+        Bet storage bet = bets[_betId];
+        require(msg.sender == bet.creator, "Only creator can manage whitelist");
+        require(block.timestamp < bet.endTime, "Betting period ended");
+
+        if (hasWhitelist[_betId]) {
+            hasWhitelist[_betId] = false;
+            emit WhitelistDisabled(_betId);
+        }
+    }
+
+    /**
+     * @dev Check if address is whitelisted for a bet
+     * @param _betId ID of the bet
+     * @param _user Address to check
+     * @return isWhitelisted True if address can participate (no whitelist or address is whitelisted)
+     */
+    function isWhitelisted(uint256 _betId, address _user) external view returns (bool) {
+        require(_betId < betCounter, "Bet does not exist");
+        
+        if (!hasWhitelist[_betId]) {
+            return true; // No whitelist = open to all
+        }
+        
+        return whitelist[_betId][_user];
+    }
+
+    /**
+     * @dev Get whitelist status for a bet
+     * @param _betId ID of the bet
+     * @return enabled True if whitelist is enabled for this bet
+     */
+    function getWhitelistStatus(uint256 _betId) external view returns (bool) {
+        require(_betId < betCounter, "Bet does not exist");
+        return hasWhitelist[_betId];
+    }
+
     // ========== ADMINISTRATIVE FUNCTIONS ==========
 
     /**
@@ -408,6 +528,29 @@ contract Betley is Ownable, ReentrancyGuard {
         Bet storage bet = bets[_betId];
 
         return block.timestamp < bet.endTime && !bet.resolved;
+    }
+
+    /**
+     * @dev Check if a specific user can place bet (includes whitelist check)
+     * @param _betId ID of the bet
+     * @param _user Address of the user
+     * @return canBet Whether user can place bet
+     */
+    function canUserPlaceBet(uint256 _betId, address _user) external view returns (bool) {
+        require(_betId < betCounter, "Bet does not exist");
+        Bet storage bet = bets[_betId];
+
+        // Check basic betting conditions
+        if (block.timestamp >= bet.endTime || bet.resolved) {
+            return false;
+        }
+
+        // Check whitelist if enabled
+        if (hasWhitelist[_betId]) {
+            return whitelist[_betId][_user];
+        }
+
+        return true;
     }
 
     /**

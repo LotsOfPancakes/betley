@@ -178,7 +178,8 @@ export function useBetCreationNew() {
         args: [
           validOptions.length,  // optionCount (uint8)
           BigInt(durationInSeconds),  // duration (uint256)
-          tokenAddress as `0x${string}`  // token (address)
+          tokenAddress as `0x${string}`,  // token (address)
+          [] as `0x${string}`[]  // whitelistedAddresses (empty for now)
         ],
       })
       

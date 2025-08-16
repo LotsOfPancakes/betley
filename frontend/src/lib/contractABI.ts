@@ -2,13 +2,13 @@
 // New Privacy-Focused Betley Contract ABI and Configuration
 
 // Contract addresses - UPDATE THESE TO NEW DEPLOYED CONTRACT
-export const BETLEY_ADDRESS = '0x02Ef4B4d8b1F121dda9E80F641e0bFcaeBd7dEA6' as `0x${string}`
+export const BETLEY_ADDRESS = '0x3736d242212e259dd2b52Dd9402E6F5FF67b01df' as `0x${string}`
 
 // New minimal ABI with privacy-focused functions
 export const BETLEY_ABI = [
   // ========== CORE BETTING FUNCTIONS ==========
   
-  // Create Bet (minimal data)
+  // Create Bet (minimal data with whitelist)
   {
     "inputs": [
       {
@@ -25,6 +25,11 @@ export const BETLEY_ABI = [
         "internalType": "address",
         "name": "_token",
         "type": "address"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_whitelistedAddresses",
+        "type": "address[]"
       }
     ],
     "name": "createBet",
@@ -219,6 +224,32 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
+  // Check if User Can Place Bet (includes whitelist)
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "canUserPlaceBet",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "canBet",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  
   // Get User Bets
   {
     "inputs": [
@@ -344,6 +375,110 @@ export const BETLEY_ABI = [
     "type": "function"
   },
   
+  // ========== WHITELIST MANAGEMENT FUNCTIONS ==========
+  
+  // Add to Whitelist
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "addToWhitelist",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  
+  // Remove from Whitelist
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "removeFromWhitelist",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  
+  // Disable Whitelist
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      }
+    ],
+    "name": "disableWhitelist",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  
+  // Check if Whitelisted
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "isWhitelisted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "isWhitelisted",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  
+  // Get Whitelist Status
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_betId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getWhitelistStatus",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+
   // ========== ADMINISTRATIVE FUNCTIONS ==========
   
   // Bet Counter
@@ -520,6 +655,75 @@ export const BETLEY_ABI = [
       }
     ],
     "name": "WinningsClaimed",
+    "type": "event"
+  },
+  
+  // Whitelist Events
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "betId",
+        "type": "uint256"
+      }
+    ],
+    "name": "WhitelistEnabled",
+    "type": "event"
+  },
+  
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "betId",
+        "type": "uint256"
+      }
+    ],
+    "name": "WhitelistDisabled",
+    "type": "event"
+  },
+  
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "betId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "AddressWhitelisted",
+    "type": "event"
+  },
+  
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "betId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "AddressRemovedFromWhitelist",
     "type": "event"
   }
 ] as const

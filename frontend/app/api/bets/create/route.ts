@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
       betOptions = [],
       tokenAddress,
       durationInSeconds = 0,
-      isPublic = false
+      isPublic = false,
+      whitelistedAddresses = []
     } = body
 
 
@@ -110,6 +111,17 @@ export async function POST(request: NextRequest) {
     // ✅ VALIDATION: Validate isPublic flag
     if (typeof isPublic !== 'boolean') {
       return Response.json({ error: 'Invalid isPublic flag' }, { status: 400 })
+    }
+
+    // ✅ VALIDATION: Validate whitelist addresses (optional)
+    if (!Array.isArray(whitelistedAddresses)) {
+      return Response.json({ error: 'Invalid whitelist addresses' }, { status: 400 })
+    }
+    
+    for (const addr of whitelistedAddresses) {
+      if (!addr || typeof addr !== 'string' || !addr.match(/^0x[a-fA-F0-9]{40}$/)) {
+        return Response.json({ error: 'Invalid whitelist address format' }, { status: 400 })
+      }
     }
 
     // ✅ RLS FIX: Use server Supabase client with full permissions
@@ -185,6 +197,9 @@ export async function POST(request: NextRequest) {
       // Visibility
       is_public: isPublic,
       
+      // Whitelist (for convenience - contract is source of truth)
+      has_whitelist: whitelistedAddresses.length > 0,
+      
       // Initial state (will be updated by sync process)
       resolved: false,
       winning_option: null,
@@ -194,10 +209,10 @@ export async function POST(request: NextRequest) {
 
 
 
-    const { error: insertError } = await supabase
+    const { data: insertedBet, error: insertError } = await supabase
       .from('bet_mappings')
       .insert(insertData)
-      .select() // Return the inserted data
+      .select('id') // Return the inserted data with ID
 
     if (insertError) {
       console.error('Insert error:', insertError)
@@ -208,6 +223,25 @@ export async function POST(request: NextRequest) {
         hint: insertError.hint
       })
       return Response.json({ error: 'Failed to create mapping' }, { status: 500 })
+    }
+
+    // ✅ OPTIONAL: Store whitelist addresses for convenience
+    if (whitelistedAddresses.length > 0 && insertedBet?.[0]?.id) {
+      const betId = insertedBet[0].id
+      const whitelistData = whitelistedAddresses.map(addr => ({
+        bet_id: betId,
+        participant_address: addr.toLowerCase(),
+        added_by: creatorAddress.toLowerCase()
+      }))
+
+      const { error: whitelistError } = await supabase
+        .from('bet_whitelist')
+        .insert(whitelistData)
+
+      if (whitelistError) {
+        // Don't fail the whole request for whitelist storage errors
+        console.warn('Failed to store whitelist addresses:', whitelistError)
+      }
     }
 
 

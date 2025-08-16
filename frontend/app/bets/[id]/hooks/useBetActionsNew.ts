@@ -70,7 +70,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
   }
 
   const handlePlaceBet = async () => {
-    if (!betAmount || selectedOption === null || isWritePending) return
+    if (!betAmount || selectedOption === null || isWritePending || !userAddress) return
     
     // ✅ VALIDATE CHAIN FIRST - properly await the async validation
     const isValidChain = await validateChain(true)

@@ -21,6 +21,7 @@ interface BetStatusHeaderProps {
   address?: string
   creator: string
   onResolveEarly: () => void
+  onManageWhitelist: () => void
 }
 
 export function BetStatusHeader({
@@ -36,7 +37,8 @@ export function BetStatusHeader({
   isNativeBet,
   address,
   creator,
-  onResolveEarly
+  onResolveEarly,
+  onManageWhitelist
 }: BetStatusHeaderProps) {
   const [linkCopied, setLinkCopied] = useState(false)
 
@@ -87,13 +89,14 @@ export function BetStatusHeader({
              {status.timeInfo&&<span>• {status.timeInfo}</span>}
            </span>
            
-           {/* Creator Dropdown */}
-           <CreatorDropdown
-             address={address}
-             creator={creator}
-             resolved={resolved}
-             onResolveEarly={onResolveEarly}
-           />
+            {/* Creator Dropdown */}
+            <CreatorDropdown
+              address={address}
+              creator={creator}
+              resolved={resolved}
+              onResolveEarly={onResolveEarly}
+              onManageWhitelist={onManageWhitelist}
+            />
          </div>
       </div>
       
