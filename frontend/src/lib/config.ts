@@ -1,6 +1,7 @@
 import { http, fallback } from 'viem'
 
-import { ZERO_ADDRESS } from './tokenUtils'
+// Zero address constant for native ETH betting
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const
 
 // Environment variable helpers
 function getRequiredEnv(key: string, fallback?: string): string {
@@ -54,7 +55,7 @@ export const config = {
   contracts: {
     betley: getRequiredEnv(
       'NEXT_PUBLIC_BETLEY_ADDRESS',
-      '0xE4cBF75D535F62B84B6D6680dd25AE5A18a903F9'
+      '0x02Ef4B4d8b1F121dda9E80F641e0bFcaeBd7dEA6' // 
     ) as `0x${string}`,
     mockERC20: getOptionalEnv(
       'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // Placeholder for native ETH betting

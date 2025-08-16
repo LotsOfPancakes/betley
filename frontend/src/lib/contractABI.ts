@@ -1,8 +1,8 @@
-// frontend/lib/contractABI-new.ts
+// frontend/lib/contractABI.ts
 // New Privacy-Focused Betley Contract ABI and Configuration
 
 // Contract addresses - UPDATE THESE TO NEW DEPLOYED CONTRACT
-export const BETLEY_NEW_ADDRESS = '0xE4cBF75D535F62B84B6D6680dd25AE5A18a903F9' as `0x${string}`
+export const BETLEY_NEW_ADDRESS = '0x02Ef4B4d8b1F121dda9E80F641e0bFcaeBd7dEA6' as `0x${string}`
 
 // New minimal ABI with privacy-focused functions
 export const BETLEY_NEW_ABI = [

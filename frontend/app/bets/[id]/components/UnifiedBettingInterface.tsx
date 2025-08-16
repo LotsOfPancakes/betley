@@ -25,6 +25,7 @@ interface UnifiedBettingInterfaceProps {
   
   // Betting Interface props
   address?: string
+  creator: string
   options?: readonly string[]
   userBets?: readonly bigint[]
   selectedOption: number | null
@@ -43,6 +44,7 @@ interface UnifiedBettingInterfaceProps {
   hasExistingBet?: boolean
   isNativeBet?: boolean
   betId?: string // Added for fee data hook
+  onResolveEarly: () => void
 }
 
 export function UnifiedBettingInterface({
@@ -58,6 +60,7 @@ export function UnifiedBettingInterface({
   
   // Betting interface
   address,
+  creator,
   options,
   userBets,
   selectedOption,
@@ -74,7 +77,8 @@ export function UnifiedBettingInterface({
   ethBalance,
   //justPlacedBet, // Currently unused
   hasExistingBet,
-  isNativeBet = false,
+  isNativeBet,
+  onResolveEarly,
   betId
 }: UnifiedBettingInterfaceProps) {
 
@@ -135,7 +139,10 @@ export function UnifiedBettingInterface({
         resolutionTimeLeft={resolutionTimeLeft}
         totalPool={totalPool}
         decimals={safeDecimals} 
-        isNativeBet={isNativeBet}
+        isNativeBet={isNativeBet || false}
+        address={address}
+        creator={creator}
+        onResolveEarly={onResolveEarly}
       />
 
       {/* 2-Column Layout: Options (60%) + Amount Input (40%) */}
@@ -152,7 +159,7 @@ export function UnifiedBettingInterface({
             resolved={resolved}
             winningOption={winningOption}
             decimals={safeDecimals}
-            isNativeBet={isNativeBet}
+            isNativeBet={isNativeBet || false}
           />
         </div>
 
@@ -163,7 +170,7 @@ export function UnifiedBettingInterface({
             setBetAmount={setBetAmount}
             balance={safeBalance}
             decimals={safeDecimals}
-            isNativeBet={isNativeBet}
+            isNativeBet={isNativeBet || false}
             hasExistingBet={hasExistingBet || false}
             needsApproval={needsApproval}
             isApproving={isApproving}

@@ -26,6 +26,7 @@
 - Explicit visibility modifiers (external/public/internal/private)
 
 ### General
+- Don't just agree with prompter all the time. Prompter is not absolutely right always, please think and provide proper feedback to questions or statements.
 - No comments unless explicitly requested
 - Follow existing patterns and conventions in the codebase
 - Use existing libraries (wagmi, viem, @tanstack/react-query, supabase)

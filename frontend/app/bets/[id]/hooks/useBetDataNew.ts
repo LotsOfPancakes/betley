@@ -5,7 +5,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useReadContract, useBalance } from 'wagmi'
 import { useQuery } from '@tanstack/react-query'
-import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
+import { BETLEY_NEW_ABI } from '@/lib/contractABI'
+import { contractsConfig } from '@/lib/config'
 import { ERC20_ABI } from '@/lib/erc20ABI'
 import { isNativeETH } from '@/lib/tokenUtils'
 
@@ -91,7 +92,7 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
   const { 
     data: betBasics
   } = useReadContract({
-    address: BETLEY_NEW_ADDRESS,
+    address: contractsConfig.betley,
     abi: BETLEY_NEW_ABI,
     functionName: 'getBetBasics',
     args: numericBetId !== undefined ? [BigInt(numericBetId)] : undefined,
@@ -105,7 +106,7 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
   const { 
     data: betAmounts
   } = useReadContract({
-    address: BETLEY_NEW_ADDRESS,
+    address: contractsConfig.betley,
     abi: BETLEY_NEW_ABI,
     functionName: 'getBetAmounts',
     args: numericBetId !== undefined ? [BigInt(numericBetId)] : undefined,
@@ -117,7 +118,7 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
 
   // User bets
   const { data: userBets } = useReadContract({
-    address: BETLEY_NEW_ADDRESS,
+    address: contractsConfig.betley,
     abi: BETLEY_NEW_ABI,
     functionName: 'getUserBets',
     args: address && numericBetId !== undefined ? [BigInt(numericBetId), address] : undefined,
@@ -153,7 +154,7 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
     address: tokenAddress as `0x${string}`,
     abi: ERC20_ABI,
     functionName: 'allowance',
-    args: address ? [address, BETLEY_NEW_ADDRESS] : undefined,
+    args: address ? [address, contractsConfig.betley] : undefined,
     query: {
       enabled: !!address && !!tokenAddress && !isNativeBet,
       refetchInterval: 8000,
@@ -162,7 +163,7 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
 
   // Has user claimed winnings/refund
   const { data: hasClaimed } = useReadContract({
-    address: BETLEY_NEW_ADDRESS,
+    address: contractsConfig.betley,
     abi: BETLEY_NEW_ABI,
     functionName: 'hasUserClaimed',
     args: address && numericBetId !== undefined ? [BigInt(numericBetId), address] : undefined,
@@ -174,7 +175,7 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
 
   // Has creator claimed creator fees
   const { data: hasClaimedCreatorFees } = useReadContract({
-    address: BETLEY_NEW_ADDRESS,
+    address: contractsConfig.betley,
     abi: BETLEY_NEW_ABI,
     functionName: 'hasClaimedCreatorFees',
     args: address && numericBetId !== undefined ? [BigInt(numericBetId), address] : undefined,
@@ -188,7 +189,7 @@ export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = 
 
   // Resolution deadline
   const { data: resolutionDeadline } = useReadContract({
-    address: BETLEY_NEW_ADDRESS,
+    address: contractsConfig.betley,
     abi: BETLEY_NEW_ABI,
     functionName: 'getResolutionDeadline',
     args: numericBetId !== undefined ? [BigInt(numericBetId)] : undefined,

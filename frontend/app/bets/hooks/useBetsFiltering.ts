@@ -18,7 +18,7 @@ export function useBetsFiltering(bets: PrivateBet[]) {
 
       switch (filter) {
         case 'active':
-          return !hasEnded && !bet.resolved
+          return !hasEnded && !bet.resolved // Time-based: betting period active AND not resolved
         case 'pending':
           return hasEnded && !bet.resolved && !resolutionDeadlinePassed // Exclude refunds and expired
         case 'resolved':

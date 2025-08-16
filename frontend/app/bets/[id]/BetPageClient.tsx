@@ -1,4 +1,3 @@
-// frontend/app/bets/[id]/BetPageClient.tsx
 'use client'
 
 import { useRouter } from 'next/navigation'
@@ -6,7 +5,6 @@ import { useAccount } from 'wagmi'
 import { useState } from 'react'
 
 // Import only the components we actually use
-import { CreatorActions } from './components/CreatorActions'
 import { UserActions } from './components/UserActions'
 import { UnifiedBettingInterface } from './components/UnifiedBettingInterface'
 import { ResolveModal } from './components/ResolveModal'
@@ -49,29 +47,25 @@ function InvalidBetError({ randomId }: { randomId: string }) {
       />
       
       {/* Floating gradient orbs */}
-      <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-emerald-400/10 to-green-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-red-400/20 to-red-500/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-red-400/10 to-red-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
       
-      <div className="text-center max-w-md mx-auto px-4 relative z-10">
-        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-red-500/30 rounded-3xl p-8 hover:border-red-400/50 transition-all duration-500">
-          <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-            <span className="text-3xl">🔍</span>
-          </div>
-        
-        {/* Error texts when Bet not found */}
-          <h1 className="text-2xl font-bold text-white mb-4">Bet Not Found</h1>
-          <p className="text-gray-300 mb-6 leading-relaxed">
-            The bet ID &quot;<span className="font-mono text-green-400">{randomId}</span>&quot; was not found.
-          </p>
-          <div className="space-y-3">
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-2xl hover:from-blue-400 hover:to-blue-500 hover:scale-105 transition-all duration-300 shadow-xl shadow-blue-500/30"
-            >
-              🔄 Refresh Page
-            </button>
+      <div className="text-center relative z-10">
+        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-red-500/20 rounded-3xl p-8">
+          <div className="w-16 h-16 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-white mb-4">Bet Not Found</h2>
+          <p className="text-gray-300 mb-6">The bet with ID &ldquo;{randomId}&rdquo; doesn&apos;t exist or has been removed.</p>
+          
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => router.push('/bets')}
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl"
+            >
+              Browse All Bets
+            </button>
+            
+            <button
+              onClick={() => window.history.back()}
               className="w-full bg-gradient-to-r from-gray-700 to-gray-800 text-white px-6 py-3 rounded-2xl hover:from-gray-600 hover:to-gray-700 hover:scale-105 transition-all duration-300"
             >
               ← Back to All Bets
@@ -101,7 +95,6 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     decimals,
     hasClaimed,
     hasClaimedCreatorFees,
-
     isBetLoading,
     isNativeBet,
     timeLeft,
@@ -121,29 +114,25 @@ export default function BetPageClient({ id }: BetPageClientProps) {
   const resolved = typedBetDetails?.[4]
   const winningOption = typedBetDetails?.[5]
   const totalAmounts = typedBetDetails?.[6]
-  const tokenAddress = typedBetDetails?.[7]
 
-  // Get bet actions
+  // Get betting actions and state
   const {
-    betAmount,
-    setBetAmount,
     selectedOption,
     setSelectedOption,
+    betAmount,
+    setBetAmount,
+    isApproving,
+    isPending,
     justPlacedBet,
     handleApprove,
     handlePlaceBet,
     handleClaimWinnings,
     handleClaimRefund,
     handleClaimCreatorFees,
-    handleResolveBet,
-    isPending,
-    isApproving,
-  } = useBetActionsNew(
-    numericBetId ? numericBetId.toString() : '0',
-    tokenAddress || ''
-  )
-  
-  // Loading states with bento styling
+    handleResolveBet
+  } = useBetActionsNew(numericBetId?.toString() || '0', typedBetDetails?.[7]) // betId as numeric string, token address
+
+  // Loading state
   if (isBetLoading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
@@ -174,16 +163,11 @@ export default function BetPageClient({ id }: BetPageClientProps) {
   }
 
   // Invalid bet ID
-
-  
   if (!isValidBetId || !typedBetDetails) {
     return <InvalidBetError randomId={randomBetId as string} />
   }
 
-  // Check if user is creator
-  const isCreator = address && creator && address.toLowerCase() === creator.toLowerCase()
-
-  // Calculate time values
+  // Calculate time values - KEEP ORIGINAL LOGIC
   const endTimeMs = endTime ? Number(endTime) * 1000 : 0
   const isActive = Date.now() < endTimeMs
 
@@ -240,25 +224,12 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   resolutionTimeLeft={resolutionTimeLeft}
                   resolutionDeadlinePassed={resolutionDeadlinePassed}
                   address={address}
+                  creator={creator || ''}
+                  onResolveEarly={() => setShowResolveModal(true)}
                 />
               </ComponentErrorBoundary>
 
-              {/* Creator Actions - Only show if user is creator and bet needs resolution */}
-              {isCreator && !isActive && !resolved && (
-                <ComponentErrorBoundary>
-                  <CreatorActions
-                    address={address}
-                    creator={creator || ''}
-                    timeLeft={timeLeft}
-                    resolved={resolved || false}
-                    resolutionDeadlinePassed={resolutionDeadlinePassed}
-                    resolutionTimeLeft={resolutionTimeLeft}
-                    onShowResolveModal={() => setShowResolveModal(true)}
-                  />
-                </ComponentErrorBoundary>
-              )}
-
-              {/* User Actions */}
+              {/* User Actions - Always show for claiming */}
               <ComponentErrorBoundary>
                 <UserActions
                   address={address}
@@ -277,7 +248,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   handleClaimCreatorFees={handleClaimCreatorFees}
                   betId={numericBetId?.toString() || '0'}
                   isNativeBet={isNativeBet || false}
-                    tokenAddress={tokenAddress}  // ADD THIS LINE
+                    tokenAddress={typedBetDetails?.[7]}  // ADD THIS LINE
 
                   creator={creator || ''}
                 />
@@ -285,18 +256,21 @@ export default function BetPageClient({ id }: BetPageClientProps) {
             </div>
           </div>
         </div>
-
+        
         {/* Resolve Modal */}
-        <ComponentErrorBoundary>
+        {showResolveModal && (
           <ResolveModal
             isOpen={showResolveModal}
             onClose={() => setShowResolveModal(false)}
+            onResolve={async (winningOptionIndex: number) => {
+              await handleResolveBet(winningOptionIndex)
+              setShowResolveModal(false)
+            }}
             betName={name || ''}
             options={options as readonly string[] || []}
-            onResolve={handleResolveBet}
-            totalAmounts={totalAmounts}
+            totalAmounts={totalAmounts as readonly bigint[] || []}
           />
-        </ComponentErrorBoundary>
+        )}
       </div>
     </PageErrorBoundary>
   )

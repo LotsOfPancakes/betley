@@ -6,22 +6,22 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title Betley - Privacy-Focused Pari-Mutuel Betting Platform
- * @dev Secure betting contract with minimal on-chain data for enhanced privacy
+ * @title Betley - Production Pari-Mutuel Betting Platform
+ * @dev Secure, fee-enabled betting contract with comprehensive safety measures
  * @author Betley Team
- * @notice New architecture: sensitive data stored off-chain, only operational data on-chain
+ * @notice V2 with advanced fee system and enhanced security
  */
 contract Betley is Ownable, ReentrancyGuard {
     // ========== STRUCTS ==========
 
     struct Bet {
-        // ❌ REMOVED: name, options[] - stored in database for privacy
+        string name;
+        string[] options;
         address creator;
         uint256 endTime;
         uint256 resolutionDeadline;
         bool resolved;
         uint8 winningOption;
-        uint8 optionCount; // Just the number of options (2-4), not the actual option text
         mapping(uint8 => uint256) totalAmountPerOption;
         mapping(address => mapping(uint8 => uint256)) userBets;
         mapping(address => bool) hasClaimed;
@@ -35,8 +35,7 @@ contract Betley is Ownable, ReentrancyGuard {
 
     // ========== STATE VARIABLES ==========
 
-    // ❌ CHANGED: Make bets mapping private to prevent enumeration
-    mapping(uint256 => Bet) private bets;
+    mapping(uint256 => Bet) public bets;
     uint256 public betCounter;
 
     // Fee configuration
@@ -56,8 +55,7 @@ contract Betley is Ownable, ReentrancyGuard {
 
     // ========== EVENTS ==========
 
-    // ❌ CHANGED: Remove sensitive data from events
-    event BetCreated(uint256 indexed betId, address indexed creator, uint8 optionCount, address token);
+    event BetCreated(uint256 indexed betId, address indexed creator, string name, address token);
     event BetPlaced(uint256 indexed betId, address indexed user, uint8 option, uint256 amount);
     event BetResolved(uint256 indexed betId, uint8 winningOption);
     event WinningsClaimed(uint256 indexed betId, address indexed user, uint256 amount);
@@ -75,28 +73,33 @@ contract Betley is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Create a new bet with minimal on-chain data
-     * @param _optionCount Number of betting options (2-4)
+     * @dev Create a new bet
+     * @param _name Name of the bet
+     * @param _options Array of betting options (2-4 options)
      * @param _duration Duration in seconds for betting period
      * @param _token Token address (address(0) for native, contract address for ERC20)
-     * @notice Bet name and options are stored off-chain for privacy
      */
-    function createBet(uint8 _optionCount, uint256 _duration, address _token) external returns (uint256) {
-        require(_optionCount >= 2 && _optionCount <= 4, "Must have 2-4 options");
+    function createBet(string memory _name, string[] memory _options, uint256 _duration, address _token)
+        external
+        returns (uint256)
+    {
+        require(_options.length >= 2 && _options.length <= 4, "Must have 2-4 options");
         require(_duration > 0, "Duration must be positive");
+        require(bytes(_name).length > 0, "Name cannot be empty");
 
         uint256 betId = betCounter++;
         Bet storage bet = bets[betId];
 
-        // ✅ ONLY store operational data, no sensitive information
+        bet.name = _name;
+        bet.options = _options;
         bet.creator = msg.sender;
-        bet.optionCount = _optionCount;
         bet.endTime = block.timestamp + _duration;
-        bet.resolutionDeadline = bet.endTime + 24 hours; // 24 hour resolution window
+        bet.resolutionDeadline = bet.endTime + 48 hours; // 48 hour resolution window
         bet.token = _token;
+        // Fees start unlocked (will be locked during resolution)
         bet.feesLocked = false;
 
-        emit BetCreated(betId, msg.sender, _optionCount, _token);
+        emit BetCreated(betId, msg.sender, _name, _token);
         return betId;
     }
 
@@ -111,7 +114,7 @@ contract Betley is Ownable, ReentrancyGuard {
         Bet storage bet = bets[_betId];
         require(block.timestamp < bet.endTime, "Betting period ended");
         require(!bet.resolved, "Bet already resolved");
-        require(_option < bet.optionCount, "Invalid option");
+        require(_option < bet.options.length, "Invalid option");
         require(_amount > 0, "Amount must be positive");
 
         // Handle payment based on token type
@@ -139,9 +142,9 @@ contract Betley is Ownable, ReentrancyGuard {
         require(_betId < betCounter, "Bet does not exist");
         Bet storage bet = bets[_betId];
         require(msg.sender == bet.creator, "Only creator can resolve");
+        require(block.timestamp >= bet.endTime, "Betting period not ended");
         require(!bet.resolved, "Already resolved");
-        require(_winningOption < bet.optionCount, "Invalid winning option");
-        require(bet.totalAmountPerOption[_winningOption] > 0, "Cannot resolve to option with no bets");
+        require(_winningOption < bet.options.length, "Invalid winning option");
 
         bet.resolved = true;
         bet.winningOption = _winningOption;
@@ -233,7 +236,7 @@ contract Betley is Ownable, ReentrancyGuard {
 
         // Calculate total user bet across all options
         uint256 totalUserBet = 0;
-        for (uint8 i = 0; i < bet.optionCount; i++) {
+        for (uint8 i = 0; i < bet.options.length; i++) {
             totalUserBet += bet.userBets[msg.sender][i];
         }
         require(totalUserBet > 0, "No bet to refund");
@@ -349,7 +352,7 @@ contract Betley is Ownable, ReentrancyGuard {
         Bet storage bet = bets[_betId];
         uint256 losingPool = 0;
 
-        for (uint8 i = 0; i < bet.optionCount; i++) {
+        for (uint8 i = 0; i < bet.options.length; i++) {
             if (i != bet.winningOption) {
                 losingPool += bet.totalAmountPerOption[i];
             }
@@ -358,56 +361,53 @@ contract Betley is Ownable, ReentrancyGuard {
         return losingPool;
     }
 
-    // ========== NEW MINIMAL VIEW FUNCTIONS ==========
+    // ========== VIEW FUNCTIONS ==========
 
     /**
-     * @dev Get basic bet information (no sensitive data)
+     * @dev Get comprehensive bet details INCLUDING TOKEN ADDRESS (FIXED FOR V2)
      * @param _betId ID of the bet
+     * @return name The name of the bet
+     * @return options Array of betting options
      * @return creator Address of the bet creator
      * @return endTime When betting period ends
      * @return resolved Whether the bet is resolved
      * @return winningOption Index of winning option (if resolved)
-     * @return optionCount Number of betting options
-     * @return token Token address used for this bet
+     * @return totalAmounts Total amounts bet on each option
+     * @return token Token address used for this bet (ADDED - INDEX 7)
      */
-    function getBetBasics(uint256 _betId)
+    function getBetDetails(uint256 _betId)
         external
         view
-        returns (address creator, uint256 endTime, bool resolved, uint8 winningOption, uint8 optionCount, address token)
+        returns (
+            string memory name,
+            string[] memory options,
+            address creator,
+            uint256 endTime,
+            bool resolved,
+            uint8 winningOption,
+            uint256[] memory totalAmounts,
+            address token // ← FIXED: Added token address as 8th return value
+        )
     {
         require(_betId < betCounter, "Bet does not exist");
         Bet storage bet = bets[_betId];
 
-        return (bet.creator, bet.endTime, bet.resolved, bet.winningOption, bet.optionCount, bet.token);
-    }
-
-    /**
-     * @dev Get betting amounts for all options
-     * @param _betId ID of the bet
-     * @return totalAmounts Array of total amounts bet on each option
-     */
-    function getBetAmounts(uint256 _betId) external view returns (uint256[] memory) {
-        require(_betId < betCounter, "Bet does not exist");
-        Bet storage bet = bets[_betId];
-
-        uint256[] memory totalAmounts = new uint256[](bet.optionCount);
-        for (uint8 i = 0; i < bet.optionCount; i++) {
+        // Build total amounts array
+        totalAmounts = new uint256[](bet.options.length);
+        for (uint8 i = 0; i < bet.options.length; i++) {
             totalAmounts[i] = bet.totalAmountPerOption[i];
         }
 
-        return totalAmounts;
-    }
-
-    /**
-     * @dev Check if betting is still active for a bet
-     * @param _betId ID of the bet
-     * @return canBet Whether betting is still active
-     */
-    function canPlaceBet(uint256 _betId) external view returns (bool) {
-        require(_betId < betCounter, "Bet does not exist");
-        Bet storage bet = bets[_betId];
-
-        return block.timestamp < bet.endTime && !bet.resolved;
+        return (
+            bet.name,
+            bet.options,
+            bet.creator,
+            bet.endTime,
+            bet.resolved,
+            bet.winningOption,
+            totalAmounts,
+            bet.token // ← FIXED: Now returning token address
+        );
     }
 
     /**
@@ -420,8 +420,8 @@ contract Betley is Ownable, ReentrancyGuard {
         require(_betId < betCounter, "Bet does not exist");
         Bet storage bet = bets[_betId];
 
-        uint256[] memory userBets = new uint256[](bet.optionCount);
-        for (uint8 i = 0; i < bet.optionCount; i++) {
+        uint256[] memory userBets = new uint256[](bet.options.length);
+        for (uint8 i = 0; i < bet.options.length; i++) {
             userBets[i] = bet.userBets[_user][i];
         }
 

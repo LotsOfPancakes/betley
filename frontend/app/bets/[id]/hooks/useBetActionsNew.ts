@@ -5,7 +5,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { parseUnits } from 'viem'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useChainValidation } from '@/lib/hooks/useChainValidation'
-import { BETLEY_NEW_ABI, BETLEY_NEW_ADDRESS } from '@/lib/contractABI-new'
+import { BETLEY_NEW_ABI } from '@/lib/contractABI'
+import { contractsConfig } from '@/lib/config'
 import { ERC20_ABI } from '@/lib/erc20ABI'
 import { isNativeETH } from '@/lib/tokenUtils'
 
@@ -60,7 +61,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
         address: tokenAddress as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [BETLEY_NEW_ADDRESS, amount],
+        args: [contractsConfig.betley, amount],
       })
     } catch {
       showError('Failed to approve tokens')
@@ -84,7 +85,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       // The new contract always expects 3 parameters: betId, option, amount
       // For native ETH, amount is also passed as a parameter AND as value
       writeContract({
-        address: BETLEY_NEW_ADDRESS,
+        address: contractsConfig.betley,
         abi: BETLEY_NEW_ABI,
         functionName: 'placeBet',
         args: [BigInt(numericBetId), selectedOption, amount],
@@ -108,7 +109,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       setIsSubmitting(true)
       
       writeContract({
-        address: BETLEY_NEW_ADDRESS,
+        address: contractsConfig.betley,
         abi: BETLEY_NEW_ABI,
         functionName: 'claimWinnings',
         args: [BigInt(numericBetId)],
@@ -131,7 +132,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       setIsSubmitting(true)
       
       writeContract({
-        address: BETLEY_NEW_ADDRESS,
+        address: contractsConfig.betley,
         abi: BETLEY_NEW_ABI,
         functionName: 'claimRefund',
         args: [BigInt(numericBetId)],
@@ -154,7 +155,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       setIsSubmitting(true)
       
       writeContract({
-        address: BETLEY_NEW_ADDRESS,
+        address: contractsConfig.betley,
         abi: BETLEY_NEW_ABI,
         functionName: 'claimCreatorFees',
         args: [BigInt(numericBetId)],
@@ -178,7 +179,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
       setResolutionWinningOption(winningOption)
       
       writeContract({
-        address: BETLEY_NEW_ADDRESS,
+        address: contractsConfig.betley,
         abi: BETLEY_NEW_ABI,
         functionName: 'resolveBet',
         args: [BigInt(numericBetId), winningOption],

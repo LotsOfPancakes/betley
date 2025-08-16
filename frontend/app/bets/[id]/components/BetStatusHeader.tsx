@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { formatUnits } from 'viem'
 import { getBetStatusDisplay, formatDynamicDecimals, type BetStatusDisplay } from '@/lib/utils/bettingUtils'
 import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
+import { CreatorDropdown } from './CreatorDropdown'
 
 interface BetStatusHeaderProps {
   name: string
@@ -17,6 +18,9 @@ interface BetStatusHeaderProps {
   totalPool: bigint
   decimals: number
   isNativeBet: boolean
+  address?: string
+  creator: string
+  onResolveEarly: () => void
 }
 
 export function BetStatusHeader({
@@ -29,7 +33,10 @@ export function BetStatusHeader({
   resolutionTimeLeft,
   totalPool,
   decimals,
-  isNativeBet
+  isNativeBet,
+  address,
+  creator,
+  onResolveEarly
 }: BetStatusHeaderProps) {
   const [linkCopied, setLinkCopied] = useState(false)
 
@@ -69,17 +76,25 @@ export function BetStatusHeader({
           </span>
         </h1>
         
-        {/* Right side - Status + Timer */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Combined Status and Time Pill */}
-          <span 
-            className={`inline-flex items-center gap-1 px-4 py-2 rounded-2xl text-sm font-medium ${status.color} ${status.textColor} shadow-lg whitespace-nowrap`}
-          >
-            <span>{status.icon}</span>
-            {status.text}
-            {status.timeInfo&&<span>• {status.timeInfo}</span>}
-          </span>
-        </div>
+         {/* Right side - Status + Timer + Creator Dropdown */}
+         <div className="flex items-center gap-3 flex-shrink-0">
+           {/* Combined Status and Time Pill */}
+           <span 
+             className={`inline-flex items-center gap-1 px-4 py-2 rounded-2xl text-sm font-medium ${status.color} ${status.textColor} shadow-lg whitespace-nowrap`}
+           >
+             <span>{status.icon}</span>
+             {status.text}
+             {status.timeInfo&&<span>• {status.timeInfo}</span>}
+           </span>
+           
+           {/* Creator Dropdown */}
+           <CreatorDropdown
+             address={address}
+             creator={creator}
+             resolved={resolved}
+             onResolveEarly={onResolveEarly}
+           />
+         </div>
       </div>
       
       {/* Pool TVL and Share Button Row */}
