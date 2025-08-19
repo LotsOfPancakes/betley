@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAccount, useWriteContract, useReadContract } from 'wagmi'
+import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi'
 import { BETLEY_ABI, BETLEY_ADDRESS } from '@/src/lib/contractABI'
 import { isAddress } from 'viem'
 
@@ -22,7 +22,14 @@ interface WhitelistedAddress {
 
 export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }: WhitelistModalProps) {
   const { address } = useAccount()
-  const { writeContract, isPending: isTransactionPending } = useWriteContract()
+  const { writeContract, data: txHash, isPending: isTransactionPending } = useWriteContract()
+  
+  // Transaction receipt monitoring
+  const { 
+    isLoading: isConfirming, 
+    isSuccess: isConfirmed, 
+    data: receipt 
+  } = useWaitForTransactionReceipt({ hash: txHash })
   
   const [newAddress, setNewAddress] = useState('')
   const [whitelistAddresses, setWhitelistAddresses] = useState<string[]>([])
@@ -32,6 +39,11 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
   const [existingAddresses, setExistingAddresses] = useState<WhitelistedAddress[]>([])
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false)
   const [removingAddress, setRemovingAddress] = useState<string | null>(null)
+  
+  // Transaction tracking state
+  const [currentOperation, setCurrentOperation] = useState<'add' | 'remove' | null>(null)
+  const [pendingAddresses, setPendingAddresses] = useState<string[]>([])
+  const [pendingRemoveAddress, setPendingRemoveAddress] = useState<string | null>(null)
 
   // Read whitelist status from contract
   const { data: whitelistEnabled, refetch: refetchWhitelistStatus } = useReadContract({
@@ -41,13 +53,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
     args: [BigInt(contractBetId)],
   })
 
-  // Check if current user address is whitelisted
-  const { refetch: refetchCurrentUserStatus } = useReadContract({
-    address: BETLEY_ADDRESS,
-    abi: BETLEY_ABI,
-    functionName: 'isWhitelisted',
-    args: [BigInt(contractBetId), address || '0x0'],
-  })
+
 
   // Fetch existing addresses from database
   const fetchExistingAddresses = useCallback(async () => {
@@ -90,6 +96,71 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
     }
   }, [isOpen, betId, fetchExistingAddresses])
 
+  // Handle transaction confirmation and database updates
+  useEffect(() => {
+    if (isConfirmed && receipt && currentOperation) {
+      const operation = currentOperation
+      
+      // Handle database updates ONLY after blockchain confirmation
+      ;(async () => {
+        try {
+          if (operation === 'add' && pendingAddresses.length > 0) {
+            // Add to database
+            console.log('Transaction confirmed, updating database for add operation...')
+            const response = await fetch(`/api/bets/${betId}/whitelist`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                addresses: pendingAddresses,
+                addedBy: address
+              })
+            })
+            
+            if (response.ok) {
+              console.log(`✅ Successfully added ${pendingAddresses.length} addresses to database`)
+              // Clear successful addresses from pending list
+              setWhitelistAddresses(prev => 
+                prev.filter(addr => !pendingAddresses.includes(addr))
+              )
+            } else {
+              console.error('Database update failed for add operation')
+            }
+          } 
+          else if (operation === 'remove' && pendingRemoveAddress) {
+            // Remove from database
+            console.log('Transaction confirmed, updating database for remove operation...')
+            const response = await fetch(`/api/bets/${betId}/whitelist`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                address: pendingRemoveAddress,
+                removedBy: address
+              })
+            })
+            
+            if (response.ok) {
+              console.log(`✅ Successfully removed ${pendingRemoveAddress} from database`)
+            } else {
+              console.error('Database update failed for remove operation')
+            }
+          }
+          
+          // Refresh UI to show updated state
+          await fetchExistingAddresses()
+          
+        } catch (error) {
+          console.error('Database update failed after transaction confirmation:', error)
+        } finally {
+          // Clean up transaction state
+          setCurrentOperation(null)
+          setPendingAddresses([])
+          setPendingRemoveAddress(null)
+          setRemovingAddress(null)
+        }
+      })()
+    }
+  }, [isConfirmed, receipt, currentOperation, pendingAddresses, pendingRemoveAddress, address, betId, fetchExistingAddresses])
+
   const validateAddress = (addr: string): boolean => {
     if (!addr.trim()) {
       setValidationError('Address cannot be empty')
@@ -120,9 +191,11 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
 
     try {
       setRemovingAddress(addressToRemove)
+      setCurrentOperation('remove')
+      setPendingRemoveAddress(addressToRemove)
       console.log('Starting remove operation for address:', addressToRemove)
       
-      // 1. Contract operation (source of truth) - wait for transaction success
+      // ONLY CONTRACT OPERATION - NO DATABASE CALL
       console.log('Submitting remove transaction...')
       await writeContract({
         address: BETLEY_ADDRESS,
@@ -130,55 +203,13 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         functionName: 'removeFromWhitelist',
         args: [BigInt(contractBetId), addressToRemove as `0x${string}`],
       })
-
-      console.log('Transaction submitted and confirmed successfully')
-
-      // 2. Database operation (convenience storage) - only after contract success
-      console.log('Contract succeeded, now updating database...')
-      console.log('Sending DELETE request with data:', {
-        address: addressToRemove,
-        removedBy: address,
-        betId: betId
-      })
-      
-      const response = await fetch(`/api/bets/${betId}/whitelist`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          address: addressToRemove,
-          removedBy: address 
-        })
-      })
-
-      console.log('DELETE Response Status:', response.status, response.statusText)
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('DELETE Request failed:', response.status, response.statusText)
-        console.error('DELETE Error Response:', errorText)
-        // Contract succeeded but database failed - still refresh UI to match contract state
-        console.warn('Contract succeeded but database update failed, refreshing UI to match contract state')
-      } else {
-        const result = await response.json()
-        console.log('DELETE Response Data:', result)
-
-        if (!result.success) {
-          console.error('DELETE API returned error:', result.error)
-        } else {
-          console.log('DELETE Success:', result.message)
-        }
-      }
-
-      // 3. Refresh UI (always do this after successful contract operation)
-      console.log('Refreshing UI to reflect successful removal...')
-      await fetchExistingAddresses()
-      await refetchWhitelistStatus()
-      await refetchCurrentUserStatus()
+      console.log('Transaction submitted for:', addressToRemove)
+      // Database update will happen in useEffect after confirmation
       
     } catch (error) {
       console.error('Remove operation failed:', error)
-      // Address stays in UI since operation failed
-    } finally {
+      setCurrentOperation(null)
+      setPendingRemoveAddress(null)
       setRemovingAddress(null)
     }
   }
@@ -199,9 +230,10 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
 
     try {
       console.log('Starting add operation for addresses:', whitelistAddresses)
-      const successfulAddresses: string[] = []
+      setCurrentOperation('add')
+      setPendingAddresses([...whitelistAddresses])  // Store what we're adding
       
-      // 1. Contract operations (source of truth) - wait for each transaction success
+      // ONLY CONTRACT OPERATIONS - NO DATABASE CALLS
       for (const addr of whitelistAddresses) {
         try {
           console.log('Submitting add transaction for:', addr)
@@ -211,68 +243,20 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
             functionName: 'addToWhitelist',
             args: [BigInt(contractBetId), addr as `0x${string}`],
           })
-
-          console.log('Transaction submitted and confirmed for:', addr)
-          successfulAddresses.push(addr)
+          console.log('Transaction submitted for:', addr)
+          // Database update will happen in useEffect after confirmation
+          break // Only submit one transaction at a time
         } catch (error) {
           console.error('Failed to add address', addr, ':', error)
-          // Continue with other addresses even if one fails
+          setCurrentOperation(null)
+          setPendingAddresses([])
+          throw error
         }
       }
-
-      if (successfulAddresses.length === 0) {
-        console.error('All transactions failed')
-        return
-      }
-
-      console.log('Successfully added addresses to contract:', successfulAddresses)
-
-      // 2. Database operation (convenience storage) - only for successful addresses
-      console.log('Contracts succeeded, now updating database...')
-      console.log('Sending POST request with data:', {
-        addresses: successfulAddresses,
-        addedBy: address,
-        betId: betId
-      })
-      
-      const response = await fetch(`/api/bets/${betId}/whitelist`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          addresses: successfulAddresses,
-          addedBy: address
-        })
-      })
-
-      console.log('POST Response Status:', response.status, response.statusText)
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('POST Request failed:', response.status, response.statusText)
-        console.error('POST Error Response:', errorText)
-        // Contract succeeded but database failed - still refresh UI to match contract state
-        console.warn('Contract succeeded but database update failed, refreshing UI to match contract state')
-      } else {
-        const result = await response.json()
-        console.log('POST Response Data:', result)
-
-        if (!result.success) {
-          console.error('POST API returned error:', result.error)
-        } else {
-          console.log('POST Success:', result.message)
-        }
-      }
-
-      // 3. Clear pending addresses and refresh UI (only after successful contract operations)
-      console.log('Clearing pending addresses and refreshing UI...')
-      setWhitelistAddresses([])
-      await fetchExistingAddresses()
-      await refetchWhitelistStatus()
-      await refetchCurrentUserStatus()
-      
     } catch (error) {
       console.error('Add operation failed:', error)
-      // Pending addresses stay in UI since operation failed
+      setCurrentOperation(null)
+      setPendingAddresses([])
     }
   }
 
@@ -288,7 +272,6 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       })
       
       await refetchWhitelistStatus()
-      await refetchCurrentUserStatus()
     } catch (error) {
       console.error('Error disabling whitelist:', error)
     }
@@ -332,7 +315,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
             {whitelistEnabled && (
               <button
                 onClick={handleDisableWhitelist}
-                disabled={isTransactionPending}
+                disabled={isTransactionPending || isConfirming}
                 className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded border border-gray-600 transition-colors disabled:opacity-50"
               >
                 Disable
@@ -393,10 +376,11 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
                       </div>
                       <button
                         onClick={() => handleRemoveFromWhitelist(addr.participant_address)}
-                        disabled={removingAddress === addr.participant_address}
+                        disabled={currentOperation === 'remove' && pendingRemoveAddress === addr.participant_address}
                         className="ml-3 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
                       >
-                        {removingAddress === addr.participant_address ? '...' : '✕'}
+                        {currentOperation === 'remove' && pendingRemoveAddress === addr.participant_address ? 
+                          (isConfirming ? '⏳' : '...') : '✕'}
                       </button>
                     </div>
                   ))}
@@ -446,10 +430,12 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
             {whitelistAddresses.length > 0 && (
               <button
                 onClick={handleAddToWhitelist}
-                disabled={isTransactionPending}
+                disabled={isTransactionPending || isConfirming}
                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50"
               >
-                {isTransactionPending ? 'Adding...' : `Add ${whitelistAddresses.length} Address${whitelistAddresses.length > 1 ? 'es' : ''}`}
+                {isTransactionPending ? 'Submitting...' : 
+                 isConfirming ? 'Confirming...' : 
+                 `Add ${whitelistAddresses.length} Address${whitelistAddresses.length > 1 ? 'es' : ''}`}
               </button>
             )}
           </div>

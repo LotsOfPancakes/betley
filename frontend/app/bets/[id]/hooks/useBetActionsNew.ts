@@ -346,6 +346,8 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
         // Don't show error for user cancellation
       } else if (errorMessage.includes('cannot resolve to option with no bets')) {
         showError('Cannot resolve to an option with no bets. Please select an option that has received bets.')
+      } else if (errorMessage.includes('not whitelisted')) {
+        showError('You are not whitelisted!', 'Bet Failed')
       } else {
         showError(`Transaction failed: ${writeError.message}`)
       }

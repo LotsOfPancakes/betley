@@ -200,6 +200,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
               {/* Main betting interface */}
               <ComponentErrorBoundary>
                 <UnifiedBettingInterface
+                  betId={randomBetId}
                   name={name || ''}
                   isPublic={databaseBet?.isPublic ?? false}
                   options={options as readonly string[] || []}

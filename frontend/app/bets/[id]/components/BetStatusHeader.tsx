@@ -41,6 +41,7 @@ export function BetStatusHeader({
   onManageWhitelist
 }: BetStatusHeaderProps) {
   const [linkCopied, setLinkCopied] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   // Get status display configuration
   const status: BetStatusDisplay = getBetStatusDisplay(
@@ -104,15 +105,37 @@ export function BetStatusHeader({
       <div className="flex items-center justify-between gap-4">
         {/* Left side - Visibility + Pool TVL */}
         <div className="flex items-center gap-3">
-          {/* Visibility Indicator Pill */}
-          <span className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-medium ${
-            isPublic 
-              ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border border-blue-500/30' 
-              : 'bg-gradient-to-r from-gray-600/20 to-gray-700/20 text-gray-300 border border-gray-600/30'
-          } shadow-lg whitespace-nowrap`}>
-            <span>{isPublic ? '🌍' : '🔒'}</span>
-            {isPublic ? 'Public' : 'Private'}
-          </span>
+           {/* Visibility Indicator Pill */}
+           <div className="relative">
+             <span className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-medium ${
+               isPublic 
+                 ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border border-blue-500/30' 
+                 : 'bg-gradient-to-r from-gray-600/20 to-gray-700/20 text-gray-300 border border-gray-600/30'
+             } shadow-lg whitespace-nowrap`}>
+               <span>{isPublic ? '🌍' : '🔒'}</span>
+               {isPublic ? 'Public' : 'Private'}
+               {!isPublic && (
+                 <span 
+                   className="ml-1 w-3.5 h-3.5 rounded-full bg-gray-500/30 flex items-center justify-center text-xs cursor-help hover:bg-gray-400/40 transition-colors"
+                   onMouseEnter={() => setShowTooltip(true)}
+                   onMouseLeave={() => setShowTooltip(false)}
+                 >
+                   i
+                 </span>
+               )}
+             </span>
+             
+             {/* Tooltip */}
+             {!isPublic && showTooltip && (
+               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 p-3 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-sm text-gray-200 z-50">
+                 <div className="text-center">
+                   Private bets are not visible on the Public Bets list. If you want someone to participate, send them the link. But note that anyone with the link can participate unless a whitelist is in place.
+                 </div>
+                 {/* Arrow pointing down */}
+                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+               </div>
+             )}
+           </div>
           
           {/* Pool TVL Pill */}
           {hasPool && (

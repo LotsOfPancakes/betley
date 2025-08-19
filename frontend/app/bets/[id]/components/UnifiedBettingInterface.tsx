@@ -23,7 +23,7 @@ interface UnifiedBettingInterfaceProps {
   resolutionTimeLeft: number
   resolutionDeadlinePassed: boolean
   
-  // Betting Interface props
+  // Betting Interface props  
   address?: string
   creator: string
   options?: readonly string[]
@@ -43,7 +43,7 @@ interface UnifiedBettingInterfaceProps {
   justPlacedBet?: boolean
   hasExistingBet?: boolean
   isNativeBet?: boolean
-  betId?: string // Added for fee data hook
+  betId: string // Added for fee data hook
   onResolveEarly: () => void
   onManageWhitelist: () => void
 }
@@ -60,6 +60,7 @@ export function UnifiedBettingInterface({
   resolutionDeadlinePassed,
   
   // Betting interface
+  betId,
   address,
   creator,
   options,
@@ -80,8 +81,7 @@ export function UnifiedBettingInterface({
   hasExistingBet,
   isNativeBet,
   onResolveEarly,
-  onManageWhitelist,
-  betId
+  onManageWhitelist
 }: UnifiedBettingInterfaceProps) {
 
   // ============================================================================
@@ -104,8 +104,10 @@ export function UnifiedBettingInterface({
   // ============================================================================
   
   // Fetch fee parameters for potential winnings preview
+  // Only call if betId is numeric (not randomId string)
+  const isNumericBetId = betId && /^\d+$/.test(betId)
   const { feeParams } = useBetFeeData(
-    betId || '', 
+    isNumericBetId ? betId : '', 
     address, 
     safeTotalAmounts, 
     winningOption, 
@@ -187,6 +189,7 @@ export function UnifiedBettingInterface({
             address={address}
             isActive={isActive}
             resolved={resolved}
+            betId={betId}
           />
         </div>
       </div>

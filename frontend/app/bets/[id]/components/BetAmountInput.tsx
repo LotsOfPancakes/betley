@@ -1,7 +1,7 @@
 // frontend/app/bets/[id]/components/BetAmountInput.tsx
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { formatUnits, parseUnits } from 'viem'
 import { useAppKit } from '@reown/appkit/react'
 import { formatDynamicDecimals, isValidBetAmount, hasWalletBalance } from '@/lib/utils/bettingUtils'
@@ -29,6 +29,7 @@ interface BetAmountInputProps {
   address?: string
   isActive: boolean
   resolved: boolean
+  betId: string
 }
 
 export function BetAmountInput({
@@ -49,7 +50,8 @@ export function BetAmountInput({
   feeParams,
   address,
   isActive,
-  resolved
+  resolved,
+  betId
 }: BetAmountInputProps) {
 
   // AppKit hook for wallet connection
@@ -60,6 +62,28 @@ export function BetAmountInput({
 
   // Connection and betting state
   const isConnected = Boolean(address)
+  
+  // Whitelist state
+  const [canBet, setCanBet] = useState(true) // Start optimistic
+
+  // Check whitelist status when wallet connects
+  useEffect(() => {
+    if (address && betId) {
+      fetch(`/api/bets/${betId}/whitelist`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data.hasWhitelist) {
+            const isWhitelisted = data.data.addresses.some(
+              (addr: { participant_address: string }) => 
+                addr.participant_address.toLowerCase() === address.toLowerCase()
+            )
+            setCanBet(isWhitelisted)
+          }
+          // If no whitelist or API fails, keep canBet = true
+        })
+        .catch(() => {}) // Silently fail, keep canBet = true
+    }
+  }, [address, betId])
 
   // Validation logic - only check balance if connected
   const isValidAmount = isValidBetAmount(betAmount)
@@ -126,7 +150,7 @@ export function BetAmountInput({
     }
 
     // Connected user: check validation states
-    const hasValidationErrors = !isValidAmount || !hasBalance || selectedOption === null
+    const hasValidationErrors = !isValidAmount || !hasBalance || selectedOption === null || !canBet
     const isProcessing = isPending || isApproving
     
     return hasValidationErrors || isProcessing
@@ -197,8 +221,12 @@ export function BetAmountInput({
       return `Insufficient ${tokenSymbol} balance`
     }
 
-    if (selectedOption === null && isValidAmount && hasBalance) {
+    if (selectedOption === null && isValidAmount && hasBalance && canBet) {
       return 'Please select an option above'
+    }
+
+    if (!canBet && isValidAmount && hasBalance && selectedOption !== null) {
+      return 'You are not whitelisted'
     }
 
     if (needsApproval) {
