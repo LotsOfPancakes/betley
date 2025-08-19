@@ -129,6 +129,23 @@ export function BetAmountInput({
     return formatDynamicDecimals(formatUnits(potentialWinnings, decimals))
   }, [potentialWinnings, decimals])
 
+  // Calculate multiplier (how many times the bet amount user gets back)
+  const multiplier = useMemo(() => {
+    if (potentialWinnings === BigInt(0) || !isValidAmount || !betAmount) return null
+    
+    try {
+      const betAmountWei = parseUnits(betAmount, decimals)
+      if (betAmountWei === BigInt(0)) return null
+      
+      // Multiplier = potential winnings / bet amount (profit multiplier)
+      const multiplierValue = Number(formatUnits(potentialWinnings, decimals)) / Number(betAmount)
+
+      return multiplierValue.toFixed(1) + 'x'
+    } catch {
+      return null
+    }
+  }, [potentialWinnings, betAmount, decimals, isValidAmount])
+
   // Check if we should show the potential winnings preview
   const shouldShowPotentialWinnings = Boolean(
     isValidAmount &&
@@ -287,7 +304,7 @@ export function BetAmountInput({
           <div className="flex items-center justify-between text-sm">
             <span className="text-green-400">Potential win:</span>
             <span className="text-green-400 font-medium text-lg">
-              {formattedPotentialWinnings} {tokenSymbol}
+              {formattedPotentialWinnings} {tokenSymbol} {multiplier && `(${multiplier})`}
             </span>
           </div>
         )}
