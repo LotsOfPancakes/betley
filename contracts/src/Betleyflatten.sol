@@ -408,12 +408,6 @@ contract Betley is Ownable, ReentrancyGuard {
                 emit AddressWhitelisted(betId, _whitelistedAddresses[i]);
             }
             
-            // Creator is automatically whitelisted
-            if (!whitelist[betId][msg.sender]) {
-                whitelist[betId][msg.sender] = true;
-                emit AddressWhitelisted(betId, msg.sender);
-            }
-            
             emit WhitelistEnabled(betId);
         }
 
@@ -654,7 +648,6 @@ contract Betley is Ownable, ReentrancyGuard {
         require(_betId < betCounter, "Bet does not exist");
         Bet storage bet = bets[_betId];
         require(msg.sender == bet.creator, "Only creator can manage whitelist");
-        require(_user != bet.creator, "Cannot remove creator from whitelist");
 
         if (whitelist[_betId][_user]) {
             whitelist[_betId][_user] = false;

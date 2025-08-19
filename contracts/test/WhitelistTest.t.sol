@@ -34,7 +34,7 @@ contract WhitelistTest is Test {
         uint256 betId = betley.createBet(2, 3600, address(0), whitelist);
         
         assertTrue(betley.getWhitelistStatus(betId));
-        assertTrue(betley.isWhitelisted(betId, creator)); // Creator auto-whitelisted
+        assertFalse(betley.isWhitelisted(betId, creator)); // Creator NOT auto-whitelisted
         assertTrue(betley.isWhitelisted(betId, user1));
         assertTrue(betley.isWhitelisted(betId, user2));
         assertFalse(betley.isWhitelisted(betId, user3));
@@ -96,20 +96,23 @@ contract WhitelistTest is Test {
         betley.removeFromWhitelist(betId, user1);
         
         assertFalse(betley.isWhitelisted(betId, user1));
-        assertTrue(betley.isWhitelisted(betId, creator)); // Creator still whitelisted
+        assertFalse(betley.isWhitelisted(betId, creator)); // Creator also not whitelisted
     }
 
-    function testCannotRemoveCreatorFromWhitelist() public {
+    function testCanRemoveCreatorFromWhitelist() public {
         vm.prank(creator);
-        address[] memory whitelist = new address[](1);
+        address[] memory whitelist = new address[](2);
         whitelist[0] = user1;
+        whitelist[1] = creator; // Explicitly add creator to whitelist
         
         uint256 betId = betley.createBet(2, 3600, address(0), whitelist);
         
-        // Cannot remove creator from whitelist
+        // Creator can be removed from whitelist now
         vm.prank(creator);
-        vm.expectRevert("Cannot remove creator from whitelist");
         betley.removeFromWhitelist(betId, creator);
+        
+        assertFalse(betley.isWhitelisted(betId, creator));
+        assertTrue(betley.isWhitelisted(betId, user1));
     }
 
     function testDisableWhitelist() public {
@@ -150,10 +153,11 @@ contract WhitelistTest is Test {
     }
 
     function testWhitelistDoesNotAffectClaiming() public {
-        // Create bet with whitelist
+        // Create bet with whitelist including both user1 and creator
         vm.prank(creator);
-        address[] memory whitelist = new address[](1);
+        address[] memory whitelist = new address[](2);
         whitelist[0] = user1;
+        whitelist[1] = creator; // Explicitly add creator to whitelist
         
         uint256 betId = betley.createBet(2, 3600, address(0), whitelist);
         

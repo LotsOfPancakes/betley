@@ -32,7 +32,6 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
   } = useWaitForTransactionReceipt({ hash: txHash })
   
   const [newAddress, setNewAddress] = useState('')
-  const [whitelistAddresses, setWhitelistAddresses] = useState<string[]>([])
   const [validationError, setValidationError] = useState('')
   
   // Database-driven state for existing addresses
@@ -117,11 +116,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
             })
             
             if (response.ok) {
-              console.log(`✅ Successfully added ${pendingAddresses.length} addresses to database`)
-              // Clear successful addresses from pending list
-              setWhitelistAddresses(prev => 
-                prev.filter(addr => !pendingAddresses.includes(addr))
-              )
+              console.log(`✅ Successfully added ${pendingAddresses[0]} to database`)
             } else {
               console.error('Database update failed for add operation')
             }
@@ -172,10 +167,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       return false
     }
     
-    if (whitelistAddresses.includes(addr)) {
-      setValidationError('Address already in pending list')
-      return false
-    }
+
 
     if (existingAddresses.some(existing => existing.participant_address.toLowerCase() === addr.toLowerCase())) {
       setValidationError('Address already whitelisted')
@@ -214,51 +206,34 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
     }
   }
 
-  const handleAddAddress = () => {
-    if (validateAddress(newAddress)) {
-      setWhitelistAddresses(prev => [...prev, newAddress])
-      setNewAddress('')
-    }
-  }
-
-  const handleRemoveAddress = (addressToRemove: string) => {
-    setWhitelistAddresses(prev => prev.filter(addr => addr !== addressToRemove))
-  }
-
-  const handleAddToWhitelist = async () => {
-    if (!address || whitelistAddresses.length === 0) return
+  const handleAddAddress = async () => {
+    if (!validateAddress(newAddress) || !address) return
 
     try {
-      console.log('Starting add operation for addresses:', whitelistAddresses)
       setCurrentOperation('add')
-      setPendingAddresses([...whitelistAddresses])  // Store what we're adding
+      setPendingAddresses([newAddress]) // Store single address
+      console.log('Starting add operation for address:', newAddress)
       
-      // ONLY CONTRACT OPERATIONS - NO DATABASE CALLS
-      for (const addr of whitelistAddresses) {
-        try {
-          console.log('Submitting add transaction for:', addr)
-          await writeContract({
-            address: BETLEY_ADDRESS,
-            abi: BETLEY_ABI,
-            functionName: 'addToWhitelist',
-            args: [BigInt(contractBetId), addr as `0x${string}`],
-          })
-          console.log('Transaction submitted for:', addr)
-          // Database update will happen in useEffect after confirmation
-          break // Only submit one transaction at a time
-        } catch (error) {
-          console.error('Failed to add address', addr, ':', error)
-          setCurrentOperation(null)
-          setPendingAddresses([])
-          throw error
-        }
-      }
+      // Submit transaction immediately
+      await writeContract({
+        address: BETLEY_ADDRESS,
+        abi: BETLEY_ABI,
+        functionName: 'addToWhitelist',
+        args: [BigInt(contractBetId), newAddress as `0x${string}`],
+      })
+      
+      console.log('Transaction submitted for:', newAddress)
+      setNewAddress('') // Clear input after submission
+      // Database update will happen in useEffect after confirmation
+      
     } catch (error) {
       console.error('Add operation failed:', error)
       setCurrentOperation(null)
       setPendingAddresses([])
     }
   }
+
+
 
   const handleDisableWhitelist = async () => {
     if (!address) return
@@ -307,9 +282,9 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
               <span className="text-lg">
                 {whitelistEnabled ? '🔒' : '🔓'}
               </span>
-              <span className="text-sm font-medium text-white">
-                Whitelist is {whitelistEnabled ? 'enabled' : 'disabled'}
-              </span>
+               <span className="text-sm font-medium text-white">
+                 Whitelist is {whitelistEnabled ? 'enabled' : 'disabled'}
+               </span>
             </div>
             
             {whitelistEnabled && (
@@ -339,10 +314,10 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
               />
               <button
                 onClick={handleAddAddress}
-                disabled={!newAddress.trim()}
+                disabled={!newAddress.trim() || currentOperation === 'add'}
                 className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                ➕
+                {currentOperation === 'add' ? (isConfirming ? '⏳' : '...') : '➕'}
               </button>
             </div>
             {validationError && (
@@ -393,30 +368,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
             </div>
           )}
 
-          {/* Pending Addresses List */}
-          {whitelistAddresses.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Pending Addresses ({whitelistAddresses.length})</label>
-              <div className="space-y-1 max-h-32 overflow-y-auto">
-                {whitelistAddresses.map((addr, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 bg-blue-900/30 rounded border border-blue-700"
-                  >
-                    <span className="text-sm font-mono text-blue-300 truncate">
-                      {addr}
-                    </span>
-                    <button
-                      onClick={() => handleRemoveAddress(addr)}
-                      className="ml-2 text-red-400 hover:text-red-300 transition-colors"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-4 border-t border-gray-700">
@@ -424,28 +376,14 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
               onClick={onClose}
               className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             >
-              Cancel
+              Close
             </button>
-            
-            {whitelistAddresses.length > 0 && (
-              <button
-                onClick={handleAddToWhitelist}
-                disabled={isTransactionPending || isConfirming}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50"
-              >
-                {isTransactionPending ? 'Submitting...' : 
-                 isConfirming ? 'Confirming...' : 
-                 `Add ${whitelistAddresses.length} Address${whitelistAddresses.length > 1 ? 'es' : ''}`}
-              </button>
-            )}
           </div>
 
           {/* Help Text */}
           <div className="text-xs text-gray-400 space-y-1">
-            <p>• Whitelisted addresses can participate in betting</p>
-            <p>• Creator is automatically whitelisted</p>
-            <p>• Whitelist doesn&apos;t affect claiming winnings</p>
-            <p>• Leave whitelist empty for public betting</p>
+            <p>• If enabled, only Whitelisted addresses can participate in betting</p>
+            <p>• Leave whitelist empty & disabled for public betting</p>
           </div>
         </div>
       </div>
