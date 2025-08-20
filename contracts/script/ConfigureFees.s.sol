@@ -13,7 +13,7 @@ import "../src/Betley.sol";
  * 1. View current fee status:
  *    forge script script/ConfigureFees.s.sol:ViewFees --rpc-url <RPC>
  *
- * 2. Enable production fees (1% creator + 0.5% platform):
+ * 2. Enable production fees (1% creator + 0.2% platform):
  *    forge script script/ConfigureFees.s.sol:EnableFees --rpc-url <RPC> --broadcast
  *
  * 3. Disable all fees:
@@ -22,7 +22,7 @@ import "../src/Betley.sol";
  * 4. Claim platform fees:
  *    forge script script/ConfigureFees.s.sol:ClaimFees --rpc-url <RPC> --broadcast
  *
- * 5. Enable test fees (minimal):
+ * 5. Enable test fees (only for dev time):
  *    forge script script/ConfigureFees.s.sol:TestFees --rpc-url <RPC> --broadcast
  */
 contract ViewFees is Script {
@@ -91,13 +91,13 @@ contract EnableFees is Script {
         betley.updateFeeCreator(true, 100);
         console.log("Creator fees enabled: 1% of losing bets");
 
-        // Enable platform fees: 0.5% (50 basis points)
-        betley.updateFeePlatform(true, 50);
-        console.log("Platform fees enabled: 0.5% of losing bets");
+        // Enable platform fees: 0.2% (20 basis points)
+        betley.updateFeePlatform(true, 20);
+        console.log("Platform fees enabled: 0.2% of losing bets");
 
         console.log("");
         console.log("=== Production Fees Active ===");
-        console.log("Total fee rate: 1.5% of losing bets");
+        console.log("Total fee rate: 1.2% of losing bets");
         console.log("Fees only apply when bets are resolved properly");
         console.log("Unresolved bets = 100% refunds (no fees)");
 

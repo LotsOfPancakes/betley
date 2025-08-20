@@ -60,29 +60,19 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
     
     setIsLoadingAddresses(true)
     try {
-      console.log('Fetching whitelist addresses for bet:', betId)
-      
       const response = await fetch(`/api/bets/${betId}/whitelist`)
-      console.log('GET Response Status:', response.status, response.statusText)
       
       if (!response.ok) {
-        console.error('GET Request failed:', response.status, response.statusText)
-        const errorText = await response.text()
-        console.error('GET Error Response:', errorText)
         return
       }
       
       const data = await response.json()
-      console.log('GET Response Data:', data)
       
       if (data.success) {
-        console.log('Successfully fetched addresses:', data.data.addresses)
         setExistingAddresses(data.data.addresses || [])
-      } else {
-        console.error('GET API returned error:', data.error)
       }
     } catch (error) {
-      console.error('GET Request exception:', error)
+      // Silent error handling for production
     } finally {
       setIsLoadingAddresses(false)
     }
@@ -105,8 +95,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         try {
           if (operation === 'add' && pendingAddresses.length > 0) {
             // Add to database
-            console.log('Transaction confirmed, updating database for add operation...')
-            const response = await fetch(`/api/bets/${betId}/whitelist`, {
+            await fetch(`/api/bets/${betId}/whitelist`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -114,17 +103,10 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
                 addedBy: address
               })
             })
-            
-            if (response.ok) {
-              console.log(`✅ Successfully added ${pendingAddresses[0]} to database`)
-            } else {
-              console.error('Database update failed for add operation')
-            }
           } 
           else if (operation === 'remove' && pendingRemoveAddress) {
             // Remove from database
-            console.log('Transaction confirmed, updating database for remove operation...')
-            const response = await fetch(`/api/bets/${betId}/whitelist`, {
+            await fetch(`/api/bets/${betId}/whitelist`, {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -132,19 +114,13 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
                 removedBy: address
               })
             })
-            
-            if (response.ok) {
-              console.log(`✅ Successfully removed ${pendingRemoveAddress} from database`)
-            } else {
-              console.error('Database update failed for remove operation')
-            }
           }
           
           // Refresh UI to show updated state
           await fetchExistingAddresses()
           
         } catch (error) {
-          console.error('Database update failed after transaction confirmation:', error)
+          // Silent error handling for production
         } finally {
           // Clean up transaction state
           setCurrentOperation(null)
@@ -185,21 +161,15 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       setRemovingAddress(addressToRemove)
       setCurrentOperation('remove')
       setPendingRemoveAddress(addressToRemove)
-      console.log('Starting remove operation for address:', addressToRemove)
       
-      // ONLY CONTRACT OPERATION - NO DATABASE CALL
-      console.log('Submitting remove transaction...')
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
         functionName: 'removeFromWhitelist',
         args: [BigInt(contractBetId), addressToRemove as `0x${string}`],
       })
-      console.log('Transaction submitted for:', addressToRemove)
-      // Database update will happen in useEffect after confirmation
       
     } catch (error) {
-      console.error('Remove operation failed:', error)
       setCurrentOperation(null)
       setPendingRemoveAddress(null)
       setRemovingAddress(null)
@@ -211,10 +181,8 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
 
     try {
       setCurrentOperation('add')
-      setPendingAddresses([newAddress]) // Store single address
-      console.log('Starting add operation for address:', newAddress)
+      setPendingAddresses([newAddress])
       
-      // Submit transaction immediately
       await writeContract({
         address: BETLEY_ADDRESS,
         abi: BETLEY_ABI,
@@ -222,12 +190,9 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         args: [BigInt(contractBetId), newAddress as `0x${string}`],
       })
       
-      console.log('Transaction submitted for:', newAddress)
-      setNewAddress('') // Clear input after submission
-      // Database update will happen in useEffect after confirmation
+      setNewAddress('')
       
     } catch (error) {
-      console.error('Add operation failed:', error)
       setCurrentOperation(null)
       setPendingAddresses([])
     }
@@ -248,7 +213,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       
       await refetchWhitelistStatus()
     } catch (error) {
-      console.error('Error disabling whitelist:', error)
+      // Silent error handling for production
     }
   }
 
