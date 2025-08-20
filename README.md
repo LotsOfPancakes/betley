@@ -2,7 +2,7 @@
 
 **🎯 Live at: [https://www.betley.xyz](https://www.betley.xyz)**
 
-A production-ready pari-mutuel style betting platform built on Base Sepolia testnet using native ETH.
+A betting platform built on Base Sepolia testnet using native ETH.
 
 ## 🌟 Features
 - **Custom Bets**: Create bets with 2 custom options and flexible duration
@@ -12,7 +12,7 @@ A production-ready pari-mutuel style betting platform built on Base Sepolia test
 - **Auto-Resolution**: 24-hour resolution deadline with automatic refund system
 - **Stranded Fund Protection**: Frontend and contract validation prevents fund locks
 - **Mobile Optimized**: Responsive design with PWA capabilities
-- **Fee System**: 1% creator and 0.5% platform fees
+- **Fee System**: 1% creator and 0.2% platform fees
 
 ## 🚀 Live Platform
 - **Production**: [https://www.betley.xyz](https://www.betley.xyz)
@@ -35,92 +35,6 @@ A production-ready pari-mutuel style betting platform built on Base Sepolia test
 - pnpm (recommended) or npm
 - Foundry (for smart contract development)
 
-### Local Development
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd betley
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Environment Setup**
-   ```bash
-   cp .env.example .env.local
-   # Add your environment variables
-   ```
-
-4. **Start development server**
-   ```bash
-   cd frontend
-   pnpm dev
-   ```
-
-5. **Open in browser**
-   ```
-   http://localhost:3000
-   ```
-
-## 🔧 Smart Contract Development
-
-### Setup
-```bash
-cd contracts
-forge install
-forge build
-```
-
-### Testing
-```bash
-forge test -vvv
-```
-
-### Deployment
-```bash
-# Deploy to Base Sepolia testnet
-forge script script/DeployBetleyBaseSepolia.s.sol \
-  --rpc-url base_sepolia \
-  --broadcast \
-  --verify
-```
-
-### Fee Configuration
-```bash
-# View current fee status
-forge script script/ConfigureFees.s.sol:ViewFees \
-  --rpc-url base_sepolia
-
-# Enable fees (when ready); change RPC accordingly
-forge script script/ConfigureFees.s.sol:EnableFees \
-  --rpc-url base_sepolia \
-  --broadcast
-```
-
-## 📝 Environment Variables
-
-### Required Variables
-```env
-# Core Configuration
-NEXT_PUBLIC_BETLEY_ADDRESS=0xE4cBF75D535F62B84B6D6680dd25AE5A18a903F9
-NEXT_PUBLIC_CHAIN_ID=84532
-NEXT_PUBLIC_RPC_URL=https://base-sepolia.api.onfinality.io/public
-
-# Database (Supabase)
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-
-# Domain Configuration
-NEXT_PUBLIC_APP_URL=https://www.betley.xyz
-NEXT_PUBLIC_BASE_URL=https://www.betley.xyz
-
-# Contract Deployment
-PRIVATE_KEY=your-private-key-for-deployment
-```
-
 ## 🏗️ Architecture Overview
 
 ### Frontend Architecture
@@ -132,7 +46,7 @@ PRIVATE_KEY=your-private-key-for-deployment
 
 ### Smart Contract Architecture
 - **Pari-Mutuel Logic**: Fair payout calculation based on pool sizes
-- **Fee System**: Optional creator (1%) and platform (0.5%) fees
+- **Fee System**: Optional creator (1%) and platform (0.2%) fees
 - **Security**: ReentrancyGuard, access controls, comprehensive validation
 - **Token Support**: Native ETH on Base Sepolia
 
