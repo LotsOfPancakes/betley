@@ -9,15 +9,14 @@ A betting platform built on Base Sepolia testnet using native ETH.
 - **Native ETH Betting**: Bet with native ETH on Base Sepolia
 - **Pari-Mutuel Payouts**: Automatic fair distribution based on betting pools
 - **Privacy-First**: Random bet IDs prevent enumeration and protect user privacy
-- **Auto-Resolution**: 24-hour resolution deadline with automatic refund system
+- **Resolve or Refund**: 24-hour resolution deadline with automatic refund system
 - **Stranded Fund Protection**: Frontend and contract validation prevents fund locks
 - **Mobile Optimized**: Responsive design with PWA capabilities
 - **Fee System**: 1% creator and 0.2% platform fees
 
 ## 🚀 Live Platform
 - **Production**: [https://www.betley.xyz](https://www.betley.xyz)
-- **Staging**: [https://betley.vercel.app](https://betley.vercel.app)
-- **Blockchain**: Base Sepolia Testnet
+- **Chain**: Base Sepolia Testnet
 - **Contract**: `0xE4cBF75D535F62B84B6D6680dd25AE5A18a903F9`
 
 ## 🛠️ Tech Stack
@@ -27,13 +26,6 @@ A betting platform built on Base Sepolia testnet using native ETH.
 - **Database**: PostgreSQL (Supabase)
 - **Blockchain**: Base Sepolia Testnet
 - **Deployment**: Vercel with custom domain
-
-## ⚡ Quick Start
-
-### Prerequisites
-- Node.js 18+
-- pnpm (recommended) or npm
-- Foundry (for smart contract development)
 
 ## 🏗️ Architecture Overview
 
@@ -55,38 +47,6 @@ A betting platform built on Base Sepolia testnet using native ETH.
 - **Caching Strategy**: React Query with optimized cache times
 - **Privacy**: No sensitive bet data stored, only ID mappings
 
-## 🧪 Testing
-
-### Frontend Testing
-```bash
-cd frontend
-pnpm test        # Unit tests
-pnpm test:e2e    # End-to-end tests
-pnpm lint        # ESLint
-pnpm type-check  # TypeScript validation
-```
-
-### Smart Contract Testing
-```bash
-cd contracts
-forge test -vvv                    # All tests with verbose output
-forge test --match-test testBet    # Specific test pattern
-forge coverage                     # Coverage report
-```
-
-## 📊 Performance Metrics
-
-### Current Performance
-- **Page Load Time**: ~1.5 seconds
-- **API Response Time**: ~80ms average
-- **Error Rate**: <0.05%
-- **Mobile Performance Score**: 92/100
-
-### Caching Strategy
-- **Bet Data**: 30-second cache with background refresh
-- **User Balances**: 10-second cache with optimistic updates
-- **Bet Mappings**: 5-minute cache (rarely changes)
-
 ## 🔐 Security Features
 
 ### Smart Contract Security
@@ -106,7 +66,7 @@ forge coverage                     # Coverage report
 
 ### Fee Structure (When Enabled)
 - **Creator Fee**: 1% of losing pool
-- **Platform Fee**: 0.5% of losing pool
+- **Platform Fee**: 0.2% of losing pool
 - **User Experience**: Fees only charged to losing side
 
 ### Recent Improvements (Latest Update)
@@ -122,19 +82,11 @@ forge coverage                     # Coverage report
 - [ ] SEO optimization with rich social previews
 - [ ] Mobile UX improvements
 - [ ] Performance monitoring setup
-- [ ] Component refactoring completion
 
 ### Medium Term (3 Months)
-- [ ] Multi-token support (other ERC20 tokens)
+- [ ] TG Support
 - [ ] Advanced analytics dashboard
-- [ ] PWA features for mobile app experience
 - [ ] Comprehensive testing suite
-
-### Long Term (6+ Months)
-- [ ] Oracle integration for automatic resolution
-- [ ] Governance system for platform decisions
-- [ ] Mobile native app (React Native)
-- [ ] Mainnet deployment
 
 ### Code Quality Standards
 - **TypeScript**: Strict mode, no `any` types
