@@ -71,7 +71,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       if (data.success) {
         setExistingAddresses(data.data.addresses || [])
       }
-    } catch (error) {
+    } catch {
       // Silent error handling for production
     } finally {
       setIsLoadingAddresses(false)
@@ -119,7 +119,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
           // Refresh UI to show updated state
           await fetchExistingAddresses()
           
-        } catch (error) {
+        } catch {
           // Silent error handling for production
         } finally {
           // Clean up transaction state
@@ -169,7 +169,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
         args: [BigInt(contractBetId), addressToRemove as `0x${string}`],
       })
       
-    } catch (error) {
+    } catch {
       setCurrentOperation(null)
       setPendingRemoveAddress(null)
       setRemovingAddress(null)
@@ -192,7 +192,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       
       setNewAddress('')
       
-    } catch (error) {
+    } catch {
       setCurrentOperation(null)
       setPendingAddresses([])
     }
@@ -212,7 +212,7 @@ export default function WhitelistModal({ isOpen, onClose, betId, contractBetId }
       })
       
       await refetchWhitelistStatus()
-    } catch (error) {
+    } catch {
       // Silent error handling for production
     }
   }
