@@ -9,6 +9,7 @@ import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 import { useWalletAuth } from '@/lib/auth/WalletAuthContext'
 import BetsSearchLoading from '../bets/components/BetsSearchLoading'
 import BackgroundElements from '@/app/components/BackgroundElements'
+import { COLORS, DIMENSIONS, ANIMATIONS } from '@/lib/constants/ui'
 
 // Custom hook for fetching user stats with authentication
 function useUserStats(address: string | undefined) {
@@ -100,21 +101,21 @@ interface StatCardProps {
 
 function StatCard({ title, value, subtitle, icon, gradient }: StatCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-xl bg-gray-800/60 backdrop-blur-sm border border-gray-700/50 shadow-sm hover:shadow-lg hover:border-gray-600/50 transition-all duration-200">
+    <div className={`relative overflow-hidden ${DIMENSIONS.borderRadius.button} bg-gray-800/60 backdrop-blur-sm border border-gray-700/50 shadow-sm hover:shadow-lg hover:border-gray-600/50 ${ANIMATIONS.transition}`}>
       <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-10`}></div>
       <div className="relative p-6">
         <div className="flex items-center justify-between mb-3">
-          <div className={`w-14 h-14 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-2xl font-bold shadow-sm`}>
+          <div className={`w-14 h-14 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center ${COLORS.text.primary} text-2xl font-bold shadow-sm`}>
             {icon}
           </div>
           <div className="text-right">
-            <div className="text-xl font-bold text-white">{title}</div>
+            <div className={`text-xl font-bold ${COLORS.text.primary}`}>{title}</div>
             {subtitle && (
-              <div className="text-sm text-gray-400 mt-1">{subtitle}</div>
+              <div className={`text-sm ${COLORS.text.muted} mt-1`}>{subtitle}</div>
             )}
           </div>
         </div>
-        <h3 className="text-2xl font-bold text-right text-gray-300">{value}</h3>
+        <h3 className={`text-2xl font-bold text-right ${COLORS.text.secondary}`}>{value}</h3>
       </div>
     </div>
   )
@@ -125,16 +126,16 @@ function LoadingStats() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-gray-700/50 shadow-sm">
+        <div key={i} className={`${DIMENSIONS.borderRadius.card} ${COLORS.gradients.card} backdrop-blur-sm border border-gray-700/50 shadow-sm`}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-12 h-12 rounded-lg bg-gray-700 animate-pulse"></div>
+              <div className={`w-12 h-12 rounded-lg bg-gray-700 ${ANIMATIONS.pulse}`}></div>
               <div className="text-right">
-                <div className="h-8 w-16 bg-gray-700 animate-pulse rounded mb-2"></div>
-                <div className="h-4 w-12 bg-gray-700 animate-pulse rounded"></div>
+                <div className={`h-8 w-16 bg-gray-700 ${ANIMATIONS.pulse} rounded mb-2`}></div>
+                <div className={`h-4 w-12 bg-gray-700 ${ANIMATIONS.pulse} rounded`}></div>
               </div>
             </div>
-            <div className="h-4 w-24 bg-gray-700 animate-pulse rounded"></div>
+            <div className={`h-4 w-24 bg-gray-700 ${ANIMATIONS.pulse} rounded`}></div>
           </div>
         </div>
       ))}
@@ -146,16 +147,16 @@ function LoadingStats() {
 function SignatureDeniedUI({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="text-center py-12">
-      <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-orange-500/30 rounded-3xl p-8 max-w-md mx-auto">
+      <div className={`${COLORS.gradients.card} backdrop-blur-sm border border-orange-500/30 ${DIMENSIONS.borderRadius.card} p-8 max-w-md mx-auto`}>
         <div className="text-orange-400 text-4xl mb-4">🚫</div>
-        <h3 className="text-xl font-semibold text-white mb-2">Signature Request Denied</h3>
-        <p className="text-gray-400 text-sm mb-6">
+        <h3 className={`text-xl font-semibold ${COLORS.text.primary} mb-2`}>Signature Request Denied</h3>
+        <p className={`${COLORS.text.muted} text-sm mb-6`}>
           You need to sign a message to verify wallet ownership and access your betting statistics.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={onRetry}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-2xl font-semibold hover:from-green-400 hover:to-emerald-500 transition-all duration-300"
+            className={`${COLORS.gradients.brandButton} ${COLORS.gradients.brandButtonHover} ${COLORS.text.primary} px-6 py-3 ${DIMENSIONS.borderRadius.input} font-semibold ${ANIMATIONS.transition}`}
           >
             Try Again
           </button>
@@ -194,7 +195,7 @@ export default function UserStatsPage() {
   // Simple wallet check - exactly like your existing pages
   if (!address) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden flex items-center justify-center">
+      <div className={`min-h-screen ${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-hidden flex items-center justify-center`}>
         <BackgroundElements />
         
         <div className="relative z-10 text-center max-w-md mx-auto px-4">
@@ -216,25 +217,24 @@ export default function UserStatsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
+    <div className={`min-h-screen ${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-hidden`}>
       <BackgroundElements />
       
       <div className="relative z-10">
         {/* Header */}
         <div className="bg-gray-900/40 backdrop-blur-sm border-b border-gray-800/50">
-          <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className={`${DIMENSIONS.maxWidth.content} mx-auto px-4 py-8`}>
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-lime-400 bg-clip-text text-transparent">Betting Stats</h1>
-                <p className="text-gray-300 mt-2">Your betting stats on Betley</p>
+                <h1 className={`text-3xl font-bold ${COLORS.gradients.brandText}`}>Betting Stats</h1>
+                <p className={`${COLORS.text.secondary} mt-2`}>Your betting stats on Betley</p>
               </div>
               <div className="text-right">
-                {/* <div className="text-sm text-gray-400">Wallet</div> */}
-                <div className="font-mono text-sm text-gray-200 mt-1">
+                <div className={`font-mono text-sm ${COLORS.text.secondary} mt-1`}>
                   {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ''}
                 </div>
                 {stats?.last_updated && (
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className={`text-xs ${COLORS.text.muted} mt-1`}>
                     Updated {formatDate(stats.last_updated)}
                   </div>
                 )}
@@ -246,7 +246,7 @@ export default function UserStatsPage() {
                 
 
         {/* Stats Grid */}
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className={`${DIMENSIONS.maxWidth.content} mx-auto px-4 py-8`}>
           {/* Show signature denial UI */}
           {address && hasUserDeniedSignature && (
             <SignatureDeniedUI onRetry={handleRetryAuthentication} />
@@ -266,10 +266,10 @@ export default function UserStatsPage() {
           
           {!hasUserDeniedSignature && error && (
             <div className="text-center py-12">
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-red-500/30 rounded-3xl p-8 max-w-md mx-auto">
+              <div className={`${COLORS.gradients.card} backdrop-blur-sm border border-red-500/30 ${DIMENSIONS.borderRadius.card} p-8 max-w-md mx-auto`}>
                 <div className="text-red-400 text-4xl mb-4">⚠️</div>
-                <h3 className="text-xl font-semibold text-white mb-2">Failed to load stats</h3>
-                <p className="text-gray-400 text-sm mb-4">
+                <h3 className={`text-xl font-semibold ${COLORS.text.primary} mb-2`}>Failed to load stats</h3>
+                <p className={`${COLORS.text.muted} text-sm mb-4`}>
                   {error.message.includes('Authentication') ? 
                     'Please try signing the message again.' : 
                     'Please try refreshing the page.'
@@ -278,7 +278,7 @@ export default function UserStatsPage() {
                 {error.message.includes('Authentication') && (
                   <button
                     onClick={handleRetryAuthentication}
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-2xl font-semibold hover:from-green-400 hover:to-emerald-500 transition-all duration-300"
+                    className={`${COLORS.gradients.brandButton} ${COLORS.gradients.brandButtonHover} ${COLORS.text.primary} px-6 py-3 ${DIMENSIONS.borderRadius.input} font-semibold ${ANIMATIONS.transition}`}
                   >
                     Sign Message to Access Stats
                   </button>

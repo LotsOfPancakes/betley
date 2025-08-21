@@ -11,6 +11,7 @@ import { ResolveModal } from './components/ResolveModal'
 import WhitelistModal from './components/WhitelistModal'
 import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBoundary'
 import BackgroundElements from '@/app/components/BackgroundElements'
+import { COLORS, DIMENSIONS, ANIMATIONS } from '@/lib/constants/ui'
 
 
 // Import hooks
@@ -34,32 +35,31 @@ function InvalidBetError({ randomId }: { randomId: string }) {
   const router = useRouter()
   
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
+    <div className={`min-h-screen ${COLORS.backgrounds.primary} flex items-center justify-center relative overflow-hidden`}>
       <BackgroundElements />
       
       {/* Error-specific red gradient orbs */}
-      <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-red-400/20 to-red-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-red-400/10 to-red-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      <div className={`absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-red-400/20 to-red-500/20 rounded-full blur-3xl ${ANIMATIONS.pulse}`} />
+      <div className={`absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-red-400/10 to-red-500/10 rounded-full blur-3xl ${ANIMATIONS.pulseDelay}`} />
       
       <div className="text-center relative z-10">
-        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-red-500/20 rounded-3xl p-8">
-          <div className="w-16 h-16 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white mb-4">Bet Not Found</h2>
-          <p className="text-gray-300 mb-6">The bet with ID &ldquo;{randomId}&rdquo; doesn&apos;t exist or has been removed.</p>
+        <div className={`${COLORS.gradients.card} backdrop-blur-sm border border-red-500/20 ${DIMENSIONS.borderRadius.card} p-8`}>
+          <div className={`w-16 h-16 border-4 border-red-500/30 border-t-red-500 rounded-full ${ANIMATIONS.spin} mx-auto mb-6`}></div>
+          <h2 className={`text-2xl font-bold ${COLORS.text.primary} mb-4`}>Bet Not Found</h2>
+          <p className={`${COLORS.text.secondary} mb-6`}>The bet with ID &ldquo;{randomId}&rdquo; doesn&apos;t exist or has been removed.</p>
           
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => router.push('/bets')}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl"
+              className={`bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 ${COLORS.text.primary} px-6 py-3 ${DIMENSIONS.borderRadius.input} font-semibold ${ANIMATIONS.transition} hover:scale-105 shadow-xl`}
             >
               Browse All Bets
             </button>
-            
             <button
-              onClick={() => window.history.back()}
-              className="w-full bg-gradient-to-r from-gray-700 to-gray-800 text-white px-6 py-3 rounded-2xl hover:from-gray-600 hover:to-gray-700 hover:scale-105 transition-all duration-300"
+              onClick={() => router.push('/')}
+              className={`bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 ${COLORS.text.primary} px-6 py-3 ${DIMENSIONS.borderRadius.input} font-semibold ${ANIMATIONS.transition} hover:scale-105 shadow-xl`}
             >
-              ← Back to All Bets
+              Go Home
             </button>
           </div>
         </div>
@@ -127,13 +127,13 @@ export default function BetPageClient({ id }: BetPageClientProps) {
   // Loading state
   if (isBetLoading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
+      <div className={`min-h-screen ${COLORS.backgrounds.primary} flex items-center justify-center relative overflow-hidden`}>
         <BackgroundElements />
         
         <div className="text-center relative z-10">
-          <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8">
-            <div className="w-16 h-16 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-6"></div>
-            <p className="text-gray-300 text-lg">Loading bet...</p>
+          <div className={`${COLORS.gradients.card} backdrop-blur-sm ${COLORS.borders.card} ${DIMENSIONS.borderRadius.card} p-8`}>
+            <div className={`w-16 h-16 border-4 border-green-500/30 border-t-green-500 rounded-full ${ANIMATIONS.spin} mx-auto mb-6`}></div>
+            <p className={`${COLORS.text.secondary} text-lg`}>Loading bet...</p>
           </div>
         </div>
       </div>
@@ -155,11 +155,11 @@ export default function BetPageClient({ id }: BetPageClientProps) {
 
   return (
     <PageErrorBoundary>
-      <div className="min-h-screen bg-gray-950 relative overflow-hidden">
+      <div className={`min-h-screen ${COLORS.backgrounds.primary} relative overflow-hidden`}>
         <BackgroundElements />
         
-        <div className="relative z-10 py-6">
-          <div className="max-w-4xl mx-auto px-4">
+        <div className="relative z-10 py-8">
+          <div className={`${DIMENSIONS.maxWidth.cta} mx-auto px-4`}>
             {/* Back button */}
             <button
               onClick={() => window.history.back()}

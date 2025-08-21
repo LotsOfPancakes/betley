@@ -8,6 +8,7 @@ import { useNotification } from '@/lib/hooks/useNotification'
 import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBoundary'
 import { ZERO_ADDRESS } from '@/lib/tokenUtils'
 import BackgroundElements from '@/app/components/BackgroundElements'
+import { COLORS, DIMENSIONS, ANIMATIONS } from '@/lib/constants/ui'
 
 // Import our extracted components and hooks
 import BetNameInput from './components/BetNameInput'
@@ -85,22 +86,22 @@ function SetupPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
+    <div className={`min-h-screen ${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-hidden`}>
       <BackgroundElements />
       
       <div className="relative z-10 py-12">
-        <div className="max-w-2xl mx-auto px-4">
+        <div className={`${DIMENSIONS.maxWidth.form} mx-auto px-4`}>
           
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold text-white">Set up New Bet</h1>
+            <h1 className={`text-3xl md:text-4xl font-bold ${COLORS.text.primary}`}>Set up New Bet</h1>
           </div>  
 
           {/* Always show the form - no wallet check */}
           <div className="space-y-5">
             {/* Bet Name Input */}
             <ComponentErrorBoundary>
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+              <div className={`${COLORS.gradients.card} backdrop-blur-sm ${DIMENSIONS.borderRadius.card} p-6 ${COLORS.borders.cardHover} ${ANIMATIONS.transitionSlow}`}>
                 <BetNameInput
                   value={formData.name}
                   onChange={updateName}
@@ -112,7 +113,7 @@ function SetupPageContent() {
 
             {/* Options Manager */}
             <ComponentErrorBoundary>
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+              <div className={`${COLORS.gradients.card} backdrop-blur-sm ${DIMENSIONS.borderRadius.card} p-6 ${COLORS.borders.cardHover} ${ANIMATIONS.transitionSlow}`}>
                 <OptionsManager
                   options={formData.options}
                   onChange={updateOptions}
@@ -122,7 +123,7 @@ function SetupPageContent() {
 
             {/* Duration Selector */}
             <ComponentErrorBoundary>
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+              <div className={`${COLORS.gradients.card} backdrop-blur-sm ${DIMENSIONS.borderRadius.card} p-6 ${COLORS.borders.cardHover} ${ANIMATIONS.transitionSlow}`}>
                 <DurationSelector
                   duration={formData.duration}
                   onChange={updateDuration}                  
@@ -130,9 +131,9 @@ function SetupPageContent() {
               </div>
             </ComponentErrorBoundary>
 
-            {/* ✅ NEW: Public/Private Toggle */}
+            {/* Public/Private Toggle */}
             <ComponentErrorBoundary>
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+              <div className={`${COLORS.gradients.card} backdrop-blur-sm ${DIMENSIONS.borderRadius.card} p-6 ${COLORS.borders.cardHover} ${ANIMATIONS.transitionSlow}`}>
                 <BetVisibilitySelector
                   isPublic={formData.isPublic}
                   onChange={updateIsPublic}
@@ -142,14 +143,14 @@ function SetupPageContent() {
 
             {/* Submit Section */}
             <ComponentErrorBoundary>
-              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-3xl p-6 hover:border-green-400/40 transition-all duration-500">
+              <div className={`${COLORS.gradients.card} backdrop-blur-sm ${DIMENSIONS.borderRadius.card} p-6 ${COLORS.borders.cardHover} ${ANIMATIONS.transitionSlow}`}>
                 <SubmitSection
                   isValid={isValid}
                   isConnected={!!address}
                   state={creationState}
                   onSubmit={handleSubmit}
                   onClearError={clearError}
-                  isPublic={formData.isPublic}  // ✅ NEW PROP
+                  isPublic={formData.isPublic}
                 />
               </div>
             </ComponentErrorBoundary>
@@ -164,8 +165,8 @@ export default function SetupPage() {
   return (
     <PageErrorBoundary>
       <Suspense fallback={
-        <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-          <div className="text-white">Betley is loading...</div>
+        <div className={`min-h-screen ${COLORS.backgrounds.primary} flex items-center justify-center`}>
+          <div className={COLORS.text.primary}>Betley is loading...</div>
         </div>
       }>
         <SetupPageContent />
