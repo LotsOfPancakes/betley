@@ -8,6 +8,7 @@ import { formatEther } from 'viem'
 import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 import { useWalletAuth } from '@/lib/auth/WalletAuthContext'
 import BetsSearchLoading from '../bets/components/BetsSearchLoading'
+import BackgroundElements from '@/app/components/BackgroundElements'
 
 // Custom hook for fetching user stats with authentication
 function useUserStats(address: string | undefined) {
@@ -194,23 +195,7 @@ export default function UserStatsPage() {
   if (!address) {
     return (
       <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden flex items-center justify-center">
-        {/* Animated background grid */}
-        <div className="absolute inset-0 opacity-[0.2]">
-          <div 
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: '40px 40px'
-            }}
-          />
-        </div>
-
-        {/* Floating gradient orbs */}
-        <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/15 to-lime-400/15 rounded-full blur-3xl animate-pulse delay-1000" />
+        <BackgroundElements />
         
         <div className="relative z-10 text-center max-w-md mx-auto px-4">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-400/30 to-emerald-500/30 backdrop-blur-sm border border-green-400/20 flex items-center justify-center">
@@ -232,23 +217,7 @@ export default function UserStatsPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
-      {/* Animated background grid */}
-      <div className="absolute inset-0 opacity-[0.2]">
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }}
-        />
-      </div>
-
-      {/* Floating gradient orbs */}
-      <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/15 to-lime-400/15 rounded-full blur-3xl animate-pulse delay-1000" />
+      <BackgroundElements />
       
       <div className="relative z-10">
         {/* Header */}

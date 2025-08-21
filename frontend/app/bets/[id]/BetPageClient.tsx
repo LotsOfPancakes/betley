@@ -35,19 +35,9 @@ function InvalidBetError({ randomId }: { randomId: string }) {
   
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
-      {/* Animated background grid */}
-      <div 
-        className="absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '40px 40px'
-        }}
-      />
+      <BackgroundElements />
       
-      {/* Floating gradient orbs */}
+      {/* Error-specific red gradient orbs */}
       <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-red-400/20 to-red-500/20 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-red-400/10 to-red-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
       
@@ -138,21 +128,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
   if (isBetLoading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center relative overflow-hidden">
-        {/* Animated background grid */}
-        <div 
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }}
-        />
-        
-        {/* Floating gradient orbs */}
-        <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-emerald-400/10 to-green-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <BackgroundElements />
         
         <div className="text-center relative z-10">
           <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-green-500/20 rounded-3xl p-8">

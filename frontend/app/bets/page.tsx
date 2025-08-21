@@ -131,7 +131,7 @@ export default function BetsPage() {
             </button>
           </div>
 
-          {/* ✅ NEW: Tab Navigation */}
+          {/* Tab Navigation */}
           <div className="flex gap-1 mb-6 bg-gray-800 p-1 rounded-lg w-fit">
             <button
               onClick={() => setActiveTab('my')}
