@@ -36,7 +36,7 @@ const nextMidnightTime = getTimeUntilNextUTCMidnight()
 const midnightLabel = `${nextMidnightTime.hours}h${nextMidnightTime.minutes > 0 ? ` ${nextMidnightTime.minutes}m` : ''}`
 
 const quickPresets = [
-  { label: '1h', hours: 1, minutes: 0, description: 'Default - Quick Bet' },
+  { label: '1h', hours: 1, minutes: 0, description: 'Quick Bet', isDefault: true },
   { label: midnightLabel, hours: nextMidnightTime.hours, minutes: nextMidnightTime.minutes, description: 'Until Next Day 0000 UTC', isUTCMidnight: true },
 ]
 
@@ -51,7 +51,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
     onChange({ ...duration, minutes: Math.max(0, Math.min(59, minutes)) })
   }
 
-  const setPreset = (preset: { hours: number; minutes: number; isUTCMidnight?: boolean }) => {
+  const setPreset = (preset: { hours: number; minutes: number; isUTCMidnight?: boolean; isDefault?: boolean }) => {
     if (preset.isUTCMidnight) {
       // Recalculate time until next UTC midnight
       const timeUntilMidnight = getTimeUntilNextUTCMidnight()
@@ -86,7 +86,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
   const isTooLong = totalMinutes > 7 * 24 * 60 // More than 1 week
 
   // Check if current duration matches any preset
-  const isPresetSelected = (preset: { hours: number; minutes: number; isUTCMidnight?: boolean }) => {
+  const isPresetSelected = (preset: { hours: number; minutes: number; isUTCMidnight?: boolean; isDefault?: boolean }) => {
     if (preset.isUTCMidnight) {
       // For UTC midnight preset, check if it matches the current calculated value
       const currentMidnightTime = getTimeUntilNextUTCMidnight()
@@ -203,8 +203,13 @@ export default function DurationSelector({ duration, onChange, error }: Duration
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-sm leading-tight">{preset.label}</div>
-                  <div className="text-xs opacity-75 mt-1">{preset.description}</div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-bold text-sm leading-tight">{preset.label}</span>
+                    {preset.isDefault && (
+                      <span className="text-xs text-green-400 font-medium">Default</span>
+                    )}
+                  </div>
+                  <div className="text-xs opacity-75">{preset.description}</div>
                 </div>
                 {isSelected && (
                   // <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
