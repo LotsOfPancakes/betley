@@ -36,8 +36,8 @@ export const DIMENSIONS = {
     cta: 'max-w-4xl',
   },
   spacing: {
-    section: 'py-20',
-    hero: 'py-24',
+    section: 'py-14',
+    hero: 'py-20',
   },
   borderRadius: {
     card: 'rounded-3xl',

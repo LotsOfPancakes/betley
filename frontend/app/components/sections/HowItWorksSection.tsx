@@ -5,7 +5,7 @@ const steps = [
   {
     number: '1',
     title: 'Create a Bet',
-    description: 'Define your bet terms & betting duration.\n\nAnyone can create a bet on any topic.'
+    description: 'Define your terms & duration.\n\n Anyone can create a bet on any topic.' 
   },
   {
     number: '2', 
@@ -14,8 +14,8 @@ const steps = [
   },
   {
     number: '3',
-    title: 'Win & Claim', 
-    description: 'Winners share the losing pool proportionally to their stake.'
+    title: 'Resolve, Win & Claim', 
+    description: 'Creators resolve a Bet and Winners share the losing pool proportionally to their stake.'
   }
 ]
 

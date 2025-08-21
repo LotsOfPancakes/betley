@@ -34,7 +34,7 @@ function SetupPageContent() {
     updateName,
     updateOptions,
     updateDuration,
-    updateIsPublic,  // ✅ NEW FUNCTION
+    updateIsPublic, 
     getFilledOptions,
     getDurationInSeconds
   } = useBetForm()
@@ -66,7 +66,7 @@ function SetupPageContent() {
     const filledOptions = getFilledOptions()
     const durationInSeconds = getDurationInSeconds()
     
-    // ✅ NEW ARCHITECTURE: Pass all details for database storage
+    // Pass all details for database storage
     createBet(
       formData.name,           // betName
       filledOptions,           // options array

@@ -22,7 +22,7 @@ export default function CTASection({
         <div className="text-center">
           <h2 className="text-4xl font-bold mb-6">
             <span className={COLORS.gradients.brandText}>
-              Got a Bet in mind?
+              Bet on something?
             </span>
           </h2>
           
