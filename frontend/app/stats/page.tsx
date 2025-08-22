@@ -151,7 +151,7 @@ function SignatureDeniedUI({ onRetry }: { onRetry: () => void }) {
         <div className="text-orange-400 text-4xl mb-4">🚫</div>
         <h3 className={`text-xl font-semibold ${COLORS.text.primary} mb-2`}>Signature Request Denied</h3>
         <p className={`${COLORS.text.muted} text-sm mb-6`}>
-          You need to sign a message to verify wallet ownership and access your betting statistics.
+        Please sign a message to verify wallet ownership so Betley can show you your stats.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
@@ -205,9 +205,6 @@ export default function UserStatsPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-white mb-4">Looking for Your Stats?</h2>
-          {/* <p className="text-gray-300 mb-8">
-            Connect your wallet to view your betting statistics and track your performance on Betley.
-          </p> */}
             <div className="flex justify-center"> 
               <appkit-button />
             </div>
@@ -259,7 +256,7 @@ export default function UserStatsPage() {
           {!hasUserDeniedSignature && address && !isAuthenticated && isAuthenticating && (
             <BetsSearchLoading 
               variant="auth" 
-              customMessage="Verify Ownership"
+              customMessage="Signature Required"
               customSubtitle="Please sign this message to give Betley permissions to look for your stats."
             />
           )}
