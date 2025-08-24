@@ -2,12 +2,12 @@
 
 **🎯 Live at: [https://www.betley.xyz](https://www.betley.xyz)**
 
-A betting platform built on Base Sepolia testnet using native ETH.
+Bet on Anything - Built on Base using native ETH.
 
 ## 🌟 Features
 - **Custom Bets**: Create bets with 2 custom options and flexible duration
-- **Native ETH Betting**: Bet with native ETH on Base Sepolia
-- **Pari-Mutuel Payouts**: Automatic fair distribution based on betting pools
+- **Creator-owned**: Bets are fully dictated by creators - anything can be bet on!
+- **Pari-Mutuel Payouts**: Winnings distribution based on share bet
 - **Privacy-First**: Random bet IDs prevent enumeration and protect user privacy
 - **Resolve or Refund**: 24-hour resolution deadline with automatic refund system
 - **Stranded Fund Protection**: Frontend and contract validation prevents fund locks
@@ -16,15 +16,15 @@ A betting platform built on Base Sepolia testnet using native ETH.
 
 ## 🚀 Live Platform
 - **Production**: [https://www.betley.xyz](https://www.betley.xyz)
-- **Chain**: Base Sepolia Testnet
-- **Contract**: `0xE4cBF75D535F62B84B6D6680dd25AE5A18a903F9`
+- **Chain**: Base Mainnet
+- **Contract**: `0xc43d8ff912abcb7bab8abc61cacd11b0c630dd9d`
 
 ## 🛠️ Tech Stack
 - **Smart Contracts**: Solidity + Foundry
 - **Frontend**: Next.js 15, TypeScript, Tailwind CSS
 - **Web3**: Wagmi v2, Viem, ConnectKit
 - **Database**: PostgreSQL (Supabase)
-- **Blockchain**: Base Sepolia Testnet
+- **Blockchain**: Base Mainnet
 - **Deployment**: Vercel with custom domain
 
 ## 🏗️ Architecture Overview
@@ -68,13 +68,6 @@ A betting platform built on Base Sepolia testnet using native ETH.
 - **Creator Fee**: 1% of losing pool
 - **Platform Fee**: 0.2% of losing pool
 - **User Experience**: Fees only charged to losing side
-
-### Recent Improvements (Latest Update)
-- **Frontend Lock**: Resolution UI prevents selecting options with 0 bets
-- **Contract Validation**: Smart contract rejects invalid resolutions
-- **24-Hour Resolution**: Reduced from 48 hours for faster bet lifecycle
-- **Enhanced Error Handling**: Clear feedback for invalid resolution attempts
-- **Defense in Depth**: Multiple layers of protection prevent fund locks
 
 ## 🛣️ Roadmap
 

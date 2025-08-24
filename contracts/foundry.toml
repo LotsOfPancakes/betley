@@ -6,6 +6,13 @@ solc = "0.8.20"
 
 [rpc_endpoints]
 base_sepolia = "https://base-sepolia.api.onfinality.io/public"
+base_mainnet = "https://mainnet.base.org"
+
+# Etherscan v2 API Configuration - Single API key for all chains
+etherscan_api_key = "${ETHERSCAN_API_KEY}"
 
 [etherscan]
-base_sepolia = { key = "dummy", url = "https://api-sepolia.basescan.org/api" }
+mainnet = { key = "${ETHERSCAN_API_KEY}" }
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+base_sepolia = { key = "${ETHERSCAN_API_KEY}" }
+base = { key = "${ETHERSCAN_API_KEY}" }

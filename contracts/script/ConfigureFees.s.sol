@@ -6,24 +6,44 @@ import "../src/Betley.sol";
 
 /**
  * @title ConfigureFees
- * @dev Scripts for managing fee parameters after Betley deployment
+ * @dev Scripts for managing fee parameters and ownership after Betley deployment
+ * @notice All scripts support both keystore and private key authentication
  *
- * Usage examples:
+ * Environment Variables:
+ * - BETLEY_ADDRESS: Contract address (required)
+ * - NEW_PLATFORM_RECIPIENT: New fee recipient address (for UpdateRecipient)
+ * - NEW_OWNER: New owner address (for TransferOwnership)
+ * - USE_KEYSTORE: true (default) for keystore, false for private key
+ * - PRIVATE_KEY: Private key (only when USE_KEYSTORE=false)
+ * - PLATFORM_RECIPIENT_PRIVATE_KEY: Platform recipient key (ClaimFees only, when USE_KEYSTORE=false)
+ *
+ * KEYSTORE USAGE (Recommended - More Secure):
  *
  * 1. View current fee status:
  *    forge script script/ConfigureFees.s.sol:ViewFees --rpc-url <RPC>
  *
  * 2. Enable production fees (1% creator + 0.2% platform):
+ *    forge script script/ConfigureFees.s.sol:EnableFees --rpc-url <RPC> --account <OWNER_ACCOUNT> --broadcast
+ *
+ * 3. Update platform fee recipient:
+ *    forge script script/ConfigureFees.s.sol:UpdateRecipient --rpc-url <RPC> --account <OWNER_ACCOUNT> --broadcast
+ *
+ * 4. Transfer ownership to multisig:
+ *    forge script script/ConfigureFees.s.sol:TransferOwnership --rpc-url <RPC> --account <OWNER_ACCOUNT> --broadcast
+ *
+ * 5. Disable all fees:
+ *    forge script script/ConfigureFees.s.sol:DisableFees --rpc-url <RPC> --account <OWNER_ACCOUNT> --broadcast
+ *
+ * 6. Claim platform fees:
+ *    forge script script/ConfigureFees.s.sol:ClaimFees --rpc-url <RPC> --account <OWNER_ACCOUNT> --broadcast
+ *
+ * 7. Enable test fees (only for development):
+ *    forge script script/ConfigureFees.s.sol:TestFees --rpc-url <RPC> --account <OWNER_ACCOUNT> --broadcast
+ *
+ * PRIVATE KEY USAGE (Less Secure - Only for Testing):
+ *
+ * Set USE_KEYSTORE=false and PRIVATE_KEY environment variable, then:
  *    forge script script/ConfigureFees.s.sol:EnableFees --rpc-url <RPC> --broadcast
- *
- * 3. Disable all fees:
- *    forge script script/ConfigureFees.s.sol:DisableFees --rpc-url <RPC> --broadcast
- *
- * 4. Claim platform fees:
- *    forge script script/ConfigureFees.s.sol:ClaimFees --rpc-url <RPC> --broadcast
- *
- * 5. Enable test fees (only for dev time):
- *    forge script script/ConfigureFees.s.sol:TestFees --rpc-url <RPC> --broadcast
  */
 contract ViewFees is Script {
     function run() external view {
@@ -80,10 +100,17 @@ contract ViewFees is Script {
 
 contract EnableFees is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address contractAddress = vm.envAddress("BETLEY_ADDRESS");
 
-        vm.startBroadcast(deployerPrivateKey);
+        // Check if using keystore mode (default: true for security)
+        bool useKeystore = vm.envOr("USE_KEYSTORE", true);
+        
+        if (useKeystore) {
+            vm.startBroadcast(); // Uses --account flag with keystore
+        } else {
+            uint256 privateKey = vm.envUint("PRIVATE_KEY");
+            vm.startBroadcast(privateKey);
+        }
 
         Betley betley = Betley(payable(contractAddress));
 
@@ -107,10 +134,17 @@ contract EnableFees is Script {
 
 contract DisableFees is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address contractAddress = vm.envAddress("BETLEY_ADDRESS");
 
-        vm.startBroadcast(deployerPrivateKey);
+        // Check if using keystore mode (default: true for security)
+        bool useKeystore = vm.envOr("USE_KEYSTORE", true);
+        
+        if (useKeystore) {
+            vm.startBroadcast(); // Uses --account flag with keystore
+        } else {
+            uint256 privateKey = vm.envUint("PRIVATE_KEY");
+            vm.startBroadcast(privateKey);
+        }
 
         Betley betley = Betley(payable(contractAddress));
 
@@ -129,10 +163,17 @@ contract DisableFees is Script {
 
 contract ClaimFees is Script {
     function run() external {
-        uint256 recipientPrivateKey = vm.envUint("PLATFORM_RECIPIENT_PRIVATE_KEY");
         address contractAddress = vm.envAddress("BETLEY_ADDRESS");
 
-        vm.startBroadcast(recipientPrivateKey);
+        // Check if using keystore mode (default: true for security)
+        bool useKeystore = vm.envOr("USE_KEYSTORE", true);
+        
+        if (useKeystore) {
+            vm.startBroadcast(); // Uses --account flag with keystore
+        } else {
+            uint256 privateKey = vm.envUint("PLATFORM_RECIPIENT_PRIVATE_KEY");
+            vm.startBroadcast(privateKey);
+        }
 
         Betley betley = Betley(payable(contractAddress));
 
@@ -153,11 +194,18 @@ contract ClaimFees is Script {
 
 contract UpdateRecipient is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address contractAddress = vm.envAddress("BETLEY_ADDRESS");
         address newRecipient = vm.envAddress("NEW_PLATFORM_RECIPIENT");
 
-        vm.startBroadcast(deployerPrivateKey);
+        // Check if using keystore mode (default: true for security)
+        bool useKeystore = vm.envOr("USE_KEYSTORE", true);
+        
+        if (useKeystore) {
+            vm.startBroadcast(); // Uses --account flag with keystore
+        } else {
+            uint256 privateKey = vm.envUint("PRIVATE_KEY");
+            vm.startBroadcast(privateKey);
+        }
 
         Betley betley = Betley(payable(contractAddress));
 
@@ -174,10 +222,17 @@ contract UpdateRecipient is Script {
 
 contract TestFees is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address contractAddress = vm.envAddress("BETLEY_ADDRESS");
 
-        vm.startBroadcast(deployerPrivateKey);
+        // Check if using keystore mode (default: true for security)
+        bool useKeystore = vm.envOr("USE_KEYSTORE", true);
+        
+        if (useKeystore) {
+            vm.startBroadcast(); // Uses --account flag with keystore
+        } else {
+            uint256 privateKey = vm.envUint("PRIVATE_KEY");
+            vm.startBroadcast(privateKey);
+        }
 
         Betley betley = Betley(payable(contractAddress));
 
@@ -192,6 +247,42 @@ contract TestFees is Script {
         console.log("");
         console.log("This is a conservative setup for initial testing.");
         console.log("Use EnableFees script for production rates.");
+
+        vm.stopBroadcast();
+    }
+}
+
+contract TransferOwnership is Script {
+    function run() external {
+        address contractAddress = vm.envAddress("BETLEY_ADDRESS");
+        address newOwner = vm.envAddress("NEW_OWNER");
+
+        // Check if using keystore mode (default: true for security)
+        bool useKeystore = vm.envOr("USE_KEYSTORE", true);
+        
+        if (useKeystore) {
+            vm.startBroadcast(); // Uses --account flag with keystore
+        } else {
+            uint256 privateKey = vm.envUint("PRIVATE_KEY");
+            vm.startBroadcast(privateKey);
+        }
+
+        Betley betley = Betley(payable(contractAddress));
+
+        address currentOwner = betley.owner();
+        console.log("=== Transferring Ownership ===");
+        console.log("Contract:", contractAddress);
+        console.log("Current owner:", currentOwner);
+        console.log("New owner:", newOwner);
+        
+        require(newOwner != address(0), "New owner cannot be zero address");
+        require(newOwner != currentOwner, "New owner is same as current owner");
+
+        betley.transferOwnership(newOwner);
+        
+        console.log("Ownership transfer initiated successfully");
+        console.log("IMPORTANT: New owner must call acceptOwnership() to complete transfer");
+        console.log("(This is standard OpenZeppelin 2-step ownership transfer)");
 
         vm.stopBroadcast();
     }
