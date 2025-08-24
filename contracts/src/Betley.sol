@@ -15,7 +15,6 @@ contract Betley is Ownable, ReentrancyGuard {
     // ========== STRUCTS ==========
 
     struct Bet {
-        // ❌ REMOVED: name, options[] - stored in database for privacy
         address creator;
         uint256 endTime;
         uint256 resolutionDeadline;
@@ -35,7 +34,6 @@ contract Betley is Ownable, ReentrancyGuard {
 
     // ========== STATE VARIABLES ==========
 
-    // ❌ CHANGED: Make bets mapping private to prevent enumeration
     mapping(uint256 => Bet) private bets;
     uint256 public betCounter;
 
@@ -60,7 +58,6 @@ contract Betley is Ownable, ReentrancyGuard {
 
     // ========== EVENTS ==========
 
-    // ❌ CHANGED: Remove sensitive data from events
     event BetCreated(uint256 indexed betId, address indexed creator, uint8 optionCount, address token);
     event BetPlaced(uint256 indexed betId, address indexed user, uint8 option, uint256 amount);
     event BetResolved(uint256 indexed betId, uint8 winningOption);
