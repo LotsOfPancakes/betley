@@ -7,16 +7,8 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'
 import { parseAuthHeader, verifyWalletSignature } from '@/lib/auth/verifySignature'
-import { createPublicClient, http } from 'viem'
-import { baseSepolia } from '@reown/appkit/networks'
+import { publicClient, BETLEY_ADDRESS } from '@/lib/chain'
 import { BETLEY_ABI } from '@/lib/contractABI'
-import { contractsConfig } from "@/lib/config"
-
-// Create RPC client for live data fallback
-const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(process.env.NEXT_PUBLIC_RPC_URL)
-})
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -33,7 +25,7 @@ function getClientIP(request: NextRequest): string {
 async function getLiveBetAmounts(betId: number): Promise<number[]> {
   try {
     const betAmounts = await publicClient.readContract({
-      address: contractsConfig.betley,
+      address: BETLEY_ADDRESS,
       abi: BETLEY_ABI,
       functionName: 'getBetAmounts',
       args: [BigInt(betId)]

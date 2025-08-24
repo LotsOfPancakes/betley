@@ -3,16 +3,8 @@
 // ============================================================================
 
 import { createServerSupabaseClient } from '@/lib/supabase'  
-import { createPublicClient, parseAbi } from 'viem'
-import { baseSepolia } from '@reown/appkit/networks'
-import { createFallbackTransport } from '@/lib/config'
-
-const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: createFallbackTransport()
-})
-
-const BETLEY_ADDRESS = process.env.NEXT_PUBLIC_BETLEY_ADDRESS as `0x${string}`
+import { parseAbi } from 'viem'
+import { publicClient, BETLEY_ADDRESS } from '@/lib/chain'
 
 const BETLEY_ABI = parseAbi([
   'function getBetDetails(uint256 betId) external view returns (string memory, string[] memory, address, uint256, bool, uint8, uint256[], address)'

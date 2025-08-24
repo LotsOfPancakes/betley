@@ -1,8 +1,8 @@
 // frontend/lib/contractABI.ts
 // New Privacy-Focused Betley Contract ABI and Configuration
 
-// Contract addresses - Updated to new deployed contract (no creator auto-whitelisting)
-export const BETLEY_ADDRESS = '0xEb8a61BE50da162A01cCce1e5633bB3c21A13aBC' as `0x${string}`
+// Contract address - Use environment variable for network flexibility
+export const BETLEY_ADDRESS = process.env.NEXT_PUBLIC_BETLEY_ADDRESS as `0x${string}`
 
 // New minimal ABI with privacy-focused functions
 export const BETLEY_ABI = [

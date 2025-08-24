@@ -1,17 +1,12 @@
 import { http, fallback } from 'viem'
+import { baseSepolia, base } from 'viem/chains'
+import { baseSepolia as appKitBaseSepolia, base as appKitBase } from '@reown/appkit/networks'
+import type { AppKitNetwork } from '@reown/appkit/networks'
 
 // Zero address constant for native ETH betting
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const
 
-// Environment variable helpers
-function getRequiredEnv(key: string, fallback?: string): string {
-  const value = process.env[key] || fallback
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`)
-  }
-  return value
-}
-
+// Environment variable helpers (kept for dev settings)
 function getOptionalEnv(key: string, fallback: string): string {
   return process.env[key] || fallback
 }
@@ -29,39 +24,93 @@ function getBooleanEnv(key: string, fallback: boolean): boolean {
   return value.toLowerCase() === 'true'
 }
 
+// Environment-based network configuration
+// Production = Base Mainnet, Development = Base Sepolia
+const isProduction = process.env.NODE_ENV === 'production'
+
+// Helper function to create AppKit network with custom RPC URLs
+const createAppKitNetworkConfig = (baseNetwork: AppKitNetwork, customRpcUrls: string[]): AppKitNetwork => {
+  return {
+    ...baseNetwork,
+    rpcUrls: {
+      ...baseNetwork.rpcUrls,
+      default: {
+        http: customRpcUrls
+      }
+    }
+  } as AppKitNetwork
+}
+
+// Define network configurations with all layer-specific objects
+const MAINNET_CONFIG = {
+  // Wagmi/General configuration
+  chainId: 8453,
+  name: 'Base Mainnet',
+  isTestnet: false,
+  explorerUrl: 'https://basescan.org',
+  
+  // RPC URLs (shared by all layers)
+  rpcUrls: [
+    'https://base.drpc.org',
+    'https://base.blockpi.network/v1/rpc/public',
+    'https://base-rpc.publicnode.com',
+    'https://mainnet.base.org'
+  ],
+  
+  // Viem-specific chain object
+  viemChain: base,
+  
+  // AppKit-specific network object
+  appKitNetwork: createAppKitNetworkConfig(appKitBase, [
+    'https://base.drpc.org',
+    'https://base.blockpi.network/v1/rpc/public',
+    'https://base-rpc.publicnode.com',
+    'https://mainnet.base.org'
+  ]),
+}
+
+const TESTNET_CONFIG = {
+  // Wagmi/General configuration
+  chainId: 84532,
+  name: 'Base Sepolia',
+  isTestnet: true,
+  explorerUrl: 'https://sepolia.basescan.org',
+  
+  // RPC URLs (shared by all layers)
+  rpcUrls: [
+    'https://base-sepolia.api.onfinality.io/public',
+    'https://sepolia.base.org',
+    'https://base-sepolia-rpc.publicnode.com',
+    'https://base-sepolia.blockpi.network/v1/rpc/public'
+  ],
+  
+  // Viem-specific chain object
+  viemChain: baseSepolia,
+  
+  // AppKit-specific network object
+  appKitNetwork: createAppKitNetworkConfig(appKitBaseSepolia, [
+    'https://base-sepolia.api.onfinality.io/public',
+    'https://sepolia.base.org',
+    'https://base-sepolia-rpc.publicnode.com',
+    'https://base-sepolia.blockpi.network/v1/rpc/public'
+  ]),
+}
+
+// Contract addresses for each network
+const MAINNET_CONTRACTS = {
+  betley: '0xc43d8ff912abcb7bab8abc61cacd11b0c630dd9d' as `0x${string}`,
+  mockERC20: ZERO_ADDRESS as `0x${string}`,
+}
+
+const TESTNET_CONTRACTS = {
+  betley: '0xEb8a61BE50da162A01cCce1e5633bB3c21A13aBC' as `0x${string}`,
+  mockERC20: ZERO_ADDRESS as `0x${string}`,
+}
+
 // Centralized configuration object
 export const config = {
-  network: {
-    chainId: getNumericEnv('NEXT_PUBLIC_CHAIN_ID', 84532),
-    rpcUrls: [
-      getRequiredEnv(
-        'NEXT_PUBLIC_RPC_URL', 
-        'https://base-sepolia.api.onfinality.io/public'
-      ),
-      'https://sepolia.base.org',
-      'https://base-sepolia-rpc.publicnode.com',
-      'https://base-sepolia.blockpi.network/v1/rpc/public'
-    ],
-    explorerUrl: getOptionalEnv(
-      'NEXT_PUBLIC_EXPLORER_URL',
-      getBooleanEnv('NEXT_PUBLIC_IS_TESTNET', true) 
-        ? 'https://sepolia.basescan.org'
-        : 'https://basescan.org'
-    ),
-    name: getOptionalEnv('NEXT_PUBLIC_NETWORK_NAME', 'Base Sepolia'),
-    isTestnet: getBooleanEnv('NEXT_PUBLIC_IS_TESTNET', true),
-  },
-  
-  contracts: {
-    betley: getRequiredEnv(
-      'NEXT_PUBLIC_BETLEY_ADDRESS',
-      '0xEb8a61BE50da162A01cCce1e5633bB3c21A13aBC'
-    ) as `0x${string}`,
-    mockERC20: getOptionalEnv(
-      'NEXT_PUBLIC_MOCKERC20_TOKEN_ADDRESS', // Placeholder for native ETH betting
-      ZERO_ADDRESS
-    ) as `0x${string}`,
-  },
+  network: isProduction ? MAINNET_CONFIG : TESTNET_CONFIG,
+  contracts: isProduction ? MAINNET_CONTRACTS : TESTNET_CONTRACTS,
   
   app: {
     name: getOptionalEnv('NEXT_PUBLIC_APP_NAME', 'Betley'),
@@ -83,7 +132,7 @@ export const config = {
     // Approval timeout: 8s for testnet, 5s for mainnet
     approval: getNumericEnv(
       'NEXT_PUBLIC_APPROVAL_TIMEOUT',
-      getBooleanEnv('NEXT_PUBLIC_IS_TESTNET', true) ? 8000 : 5000
+      isProduction ? 5000 : 8000
     ),
     // React Query stale time
     queryStale: getNumericEnv('NEXT_PUBLIC_QUERY_STALE_TIME', 30000),
@@ -140,9 +189,9 @@ export function validateConfig(): void {
 }
 
 // Environment detection helpers
-export const isProduction = process.env.NODE_ENV === 'production'
 export const isDevelopment = process.env.NODE_ENV === 'development'
 export const isTestnet = config.network.isTestnet
+// Note: isProduction is already defined above
 
 // Configuration debug logging (development only)
 // Only log if explicitly enabled and in development

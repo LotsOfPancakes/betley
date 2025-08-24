@@ -6,14 +6,8 @@ import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'  
 import { getBlockchainEvents, getLastProcessedBlock, updateLastProcessedBlock, ProcessedEvent } from '@/lib/analytics/eventProcessor'
 import { recalculateAllUserStats } from '@/lib/analytics/statsCalculator'
-import { createPublicClient, http } from 'viem'
-import { baseSepolia } from '@reown/appkit/networks'
+import { publicClient } from '@/lib/chain'
 import type { SupabaseClient } from '@supabase/supabase-js'
-
-const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(process.env.NEXT_PUBLIC_RPC_URL)
-})
 
 // force dynamic rendering
 export const dynamic = 'force-dynamic'

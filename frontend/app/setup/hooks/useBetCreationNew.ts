@@ -39,7 +39,7 @@ export function useBetCreationNew() {
   const { address } = useAccount()
   const queryClient = useQueryClient()
   const { showError, showSuccess } = useNotification()
-  const { validateChain } = useChainValidation()
+  const { validateForTransaction } = useChainValidation()
   
   // Get current bet counter for ID prediction
   const { data: betCounter } = useReadContract({
@@ -135,7 +135,7 @@ export function useBetCreationNew() {
     isPublic: boolean = false
   ) => {
     // Validate chain first - properly await the async validation
-    const isValidChain = await validateChain(true)
+    const isValidChain = validateForTransaction()
     if (!isValidChain) return
 
     if (!address || betCounter == null) {

@@ -6,16 +6,8 @@
 
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
-import { createPublicClient, http } from 'viem'
-import { baseSepolia } from '@reown/appkit/networks'
+import { publicClient, BETLEY_ADDRESS } from '@/lib/chain'
 import { BETLEY_ABI } from '@/lib/contractABI'
-import { contractsConfig } from "@/lib/config"
-
-// Create RPC client for contract calls
-const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(process.env.NEXT_PUBLIC_RPC_URL)
-})
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,14 +55,14 @@ export async function POST(request: NextRequest) {
         // Get fresh data from blockchain using new contract functions
         const [betBasics, betAmounts] = await Promise.all([
           publicClient.readContract({
-            address: contractsConfig.betley,
+            address: BETLEY_ADDRESS,
             abi: BETLEY_ABI,
             functionName: 'getBetBasics',
             args: [BigInt(bet.numeric_id)]
           }) as Promise<readonly [`0x${string}`, bigint, boolean, number, number, `0x${string}`]>,
           
           publicClient.readContract({
-            address: contractsConfig.betley,
+            address: BETLEY_ADDRESS,
             abi: BETLEY_ABI,
             functionName: 'getBetAmounts',
             args: [BigInt(bet.numeric_id)]

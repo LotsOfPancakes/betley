@@ -7,7 +7,7 @@ import { NotificationToast } from './components/ui/NotificationToast'
 import { Navigation } from '@/components/Navigation'
 import { CriticalErrorBoundary } from '@/components/ErrorBoundary'
 import { Footer } from '@/components/Footer'
-import { appConfig } from '@/lib/config'
+import { config, appConfig } from '@/lib/config'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -133,9 +133,9 @@ export default async function RootLayout({
         {/* ✅ ENHANCED: Discord-specific meta tags */}
         <meta property="discord:color" content="#22c55e" />
         
-        {/* ✅ ENHANCED: Preconnect for performance */}
-        <link rel="preconnect" href="https://base-sepolia.api.onfinality.io" />
-        <link rel="dns-prefetch" href="https://base-sepolia.api.onfinality.io" />
+        {/* ✅ ENHANCED: Dynamic preconnect based on network configuration */}
+        <link rel="preconnect" href={new URL(config.network.rpcUrls[0]).origin} />
+        <link rel="dns-prefetch" href={new URL(config.network.rpcUrls[0]).origin} />
         
         {/* ✅ ENHANCED: Structured data for search engines */}
         <script

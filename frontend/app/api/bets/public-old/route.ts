@@ -1,10 +1,8 @@
 // frontend/app/api/bets/public/route.ts
 import { NextRequest } from 'next/server'
 import { supabase, checkRateLimit } from '@/lib/supabase'
-import { createPublicClient, http } from 'viem'
-import { baseSepolia } from 'viem/chains'
+import { publicClient, BETLEY_ADDRESS } from '@/lib/chain'
 import { BETLEY_ABI } from '@/lib/contractABI'
-import { contractsConfig } from "@/lib/config"
 
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
@@ -68,10 +66,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ✅ Transform data and fetch real end times from blockchain
-    const publicClient = createPublicClient({
-      chain: baseSepolia,
-      transport: http()
-    })
+    // Using centralized publicClient from chain config
     
     const publicBets = await Promise.all((data || []).map(async (bet) => {
       let endTime = '0'
@@ -80,7 +75,7 @@ export async function GET(request: NextRequest) {
       try {
         // Fetch real end time from blockchain
         const betBasics = await publicClient.readContract({
-          address: contractsConfig.betley,
+          address: BETLEY_ADDRESS,
           abi: BETLEY_ABI,
           functionName: 'getBetBasics',
           args: [BigInt(bet.numeric_id)],

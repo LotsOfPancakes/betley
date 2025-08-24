@@ -23,7 +23,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
   const numericBetId = parseInt(betId)
   const queryClient = useQueryClient()
   const { showError, showSuccess } = useNotification()
-  const { validateChain } = useChainValidation()
+  const { validateForTransaction } = useChainValidation()
   const { address: userAddress } = useAccount()
 
   // Determine if this bet uses native ETH
@@ -48,7 +48,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     if (!betAmount || isWritePending) return
     
     // ✅ VALIDATE CHAIN FIRST - properly await the async validation
-    const isValidChain = await validateChain(true)
+    const isValidChain = validateForTransaction()
     if (!isValidChain) return
     
     try {
@@ -73,7 +73,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     if (!betAmount || selectedOption === null || isWritePending || !userAddress) return
     
     // ✅ VALIDATE CHAIN FIRST - properly await the async validation
-    const isValidChain = await validateChain(true)
+    const isValidChain = validateForTransaction()
     if (!isValidChain) return
     
     try {
@@ -101,7 +101,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     if (isWritePending) return
     
     // ✅ VALIDATE CHAIN FIRST - properly await the async validation
-    const isValidChain = await validateChain(true)
+    const isValidChain = validateForTransaction()
     if (!isValidChain) return
     
     try {
@@ -124,7 +124,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     if (isWritePending) return
     
     // ✅ VALIDATE CHAIN FIRST - properly await the async validation
-    const isValidChain = await validateChain(true)
+    const isValidChain = validateForTransaction()
     if (!isValidChain) return
     
     try {
@@ -147,7 +147,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     if (isWritePending) return
     
     // ✅ VALIDATE CHAIN FIRST - properly await the async validation
-    const isValidChain = await validateChain(true)
+    const isValidChain = validateForTransaction()
     if (!isValidChain) return
     
     try {
@@ -170,7 +170,7 @@ export function useBetActionsNew(betId: string, tokenAddress?: string) {
     if (isWritePending) return
     
     // ✅ VALIDATE CHAIN FIRST - properly await the async validation
-    const isValidChain = await validateChain(true)
+    const isValidChain = validateForTransaction()
     if (!isValidChain) return
     
     try {
