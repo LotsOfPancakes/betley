@@ -299,11 +299,11 @@ export function BetAmountInput({
           </div>
         )}
 
-        {/* Potential Winnings Preview - only show if connected */}
-        {isConnected && shouldShowPotentialWinnings && (
-          <div className="flex items-center justify-between text-sm">
+        {/* Potential Winnings Preview - only show if connected + bet is active */}
+        {isConnected && shouldShowPotentialWinnings && !isActive && (
+          <div className="flex items-center justify-between text-xs">
             <span className="text-green-400">Potential win:</span>
-            <span className="text-green-400 font-medium text-lg">
+            <span className="text-green-400 font-medium text-sm">
               {formattedPotentialWinnings} {tokenSymbol} {multiplier && `(${multiplier})`}
             </span>
           </div>
