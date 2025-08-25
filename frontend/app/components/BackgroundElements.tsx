@@ -18,8 +18,8 @@ export default function BackgroundElements() {
       </div>
 
       {/* Floating gradient orbs */}
-      <div className={`absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-3xl ${ANIMATIONS.pulse}`} />
-      <div className={`absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/15 to-lime-400/15 rounded-full blur-3xl ${ANIMATIONS.pulse} ${ANIMATIONS.pulseDelay}`} />
+      <div className={`absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-green-400/12 to-emerald-500/12 rounded-full blur-2xl ${ANIMATIONS.pulse}`} />
+      <div className={`absolute bottom-40 left-32 w-96 h-96 bg-gradient-to-tr from-green-500/10 to-lime-400/10 rounded-full blur-2xl ${ANIMATIONS.pulse} ${ANIMATIONS.pulseDelay}`} />
     </>
   )
 }
