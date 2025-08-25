@@ -11,6 +11,7 @@ import { useBetFeeData } from '../hooks/useBetFeeData'
 import { BetStatusHeader } from './BetStatusHeader'
 import { BetOptionsGrid } from './BetOptionsGrid'
 import { BetAmountInput } from './BetAmountInput'
+import { Timeline } from './Timeline'
 
 interface UnifiedBettingInterfaceProps {
   // Bet Info props
@@ -22,6 +23,10 @@ interface UnifiedBettingInterfaceProps {
   timeLeft: number
   resolutionTimeLeft: number
   resolutionDeadlinePassed: boolean
+  
+  // Timeline props
+  endTime?: bigint
+  createdAt?: string
   
   // Betting Interface props  
   address?: string
@@ -58,6 +63,10 @@ export function UnifiedBettingInterface({
   timeLeft,
   resolutionTimeLeft,
   resolutionDeadlinePassed,
+  
+  // Timeline
+  endTime,
+  createdAt,
   
   // Betting interface
   betId,
@@ -193,6 +202,13 @@ export function UnifiedBettingInterface({
           />
         </div>
       </div>
+
+      {/* Timeline Component - Below the betting interface */}
+      <Timeline
+        endTime={endTime}
+        createdAt={createdAt}
+        resolved={resolved}
+      />
     </div>
   )
 }

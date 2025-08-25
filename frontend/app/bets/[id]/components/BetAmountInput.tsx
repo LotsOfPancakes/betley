@@ -286,7 +286,7 @@ export function BetAmountInput({
         </div>
         
         {/* Balance Display - only show if connected */}
-        {isConnected && balance && (
+        {isConnected && balance !== undefined && (
           <div className="mt-2 text-xs text-gray-400 text-right">
             Balance: {formatDynamicDecimals(formatUnits(balance, decimals))} {tokenSymbol}
           </div>

@@ -70,7 +70,7 @@ export function BetStatusHeader({
 
   return (
     <div className="space-y-3 mb-6">
-       {/* Title Row with Status + Timer */}
+       {/* Title Row with Creator Dropdown */}
        <div className="flex items-center gap-4">
         {/* Title - truncated if too long */}
         <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight flex-1 min-w-0">
@@ -79,17 +79,8 @@ export function BetStatusHeader({
           </span>
         </h1>
         
-         {/* Right side - Status + Timer + Creator Dropdown */}
+         {/* Right side - Creator Dropdown only */}
          <div className="flex items-center gap-3 flex-shrink-0">
-           {/* Combined Status and Time Pill */}
-           <span 
-             className={`inline-flex items-center gap-1 px-4 py-2 rounded-2xl text-sm font-medium ${status.color} ${status.textColor} shadow-lg whitespace-nowrap`}
-           >
-             <span>{status.icon}</span>
-             {status.text}
-             {status.timeInfo&&<span>• {status.timeInfo}</span>}
-           </span>
-           
             {/* Creator Dropdown */}
             <CreatorDropdown
               address={address}
@@ -103,20 +94,18 @@ export function BetStatusHeader({
       
       {/* Pool TVL and Share Button Row */}
       <div className="flex items-center justify-between gap-4">
-        {/* Left side - Visibility + Pool TVL */}
+        {/* Left side - Status + Visibility + Pool TVL */}
         <div className="flex items-center gap-3">
-           {/* Visibility Indicator Pill */}
+           {/* Combined status and visibility as light grey subtitle text */}
            <div className="relative">
-             <span className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-medium ${
-               isPublic 
-                 ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border border-blue-500/30' 
-                 : 'bg-gradient-to-r from-gray-600/20 to-gray-700/20 text-gray-300 border border-gray-600/30'
-             } shadow-lg whitespace-nowrap`}>
-               <span>{isPublic ? '🌍' : '🔒'}</span>
-               {isPublic ? 'Public' : 'Private'}
+             <span className="text-gray-300 text-sm">
+               {status.text}
+               {status.timeInfo && <span> • {status.timeInfo}</span>}
+               <span className="mx-3">|</span>
+               <span>{isPublic ? 'Public' : 'Private'}</span>
                {!isPublic && (
                  <span 
-                   className="ml-1 w-3.5 h-3.5 rounded-full bg-gray-500/30 flex items-center justify-center text-xs cursor-help hover:bg-gray-400/40 transition-colors"
+                   className="ml-2 inline-block w-3 h-3 rounded-full bg-gray-500/30 text-xs cursor-help hover:bg-gray-400/40 transition-colors text-center leading-3"
                    onMouseEnter={() => setShowTooltip(true)}
                    onMouseLeave={() => setShowTooltip(false)}
                  >

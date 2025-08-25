@@ -203,6 +203,8 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   timeLeft={timeLeft}
                   resolutionTimeLeft={resolutionTimeLeft}
                   resolutionDeadlinePassed={resolutionDeadlinePassed}
+                  endTime={endTime}
+                  createdAt={databaseBet?.createdAt}
                   address={address}
                   creator={creator || ''}
                   onResolveEarly={() => setShowResolveModal(true)}
