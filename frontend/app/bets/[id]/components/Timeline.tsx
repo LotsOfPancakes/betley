@@ -90,24 +90,17 @@ export function Timeline({ endTime, createdAt, resolved, isOpen: controlledIsOpe
       
       if (isNaN(date.getTime())) return 'Invalid date'
       
-      // Get the timezone offset in minutes and convert to hours
-      const timezoneOffset = date.getTimezoneOffset()
-      const offsetHours = Math.abs(timezoneOffset / 60)
-      const offsetSign = timezoneOffset <= 0 ? '+' : '-'
-      
-      // Format the timezone as GMT±X
-      const timezone = `GMT${offsetSign}${offsetHours}`
-      
-      // Format the date and time
-      const dateTimeString = date.toLocaleString('en-US', {
+      // Use Intl.DateTimeFormat to get proper local time and timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true
+        hour12: true,
+        timeZoneName: 'shortOffset'
       })
       
-      return `${dateTimeString} (${timezone})`
+      return formatter.format(date)
     } catch {
       return 'Invalid date'
     }
