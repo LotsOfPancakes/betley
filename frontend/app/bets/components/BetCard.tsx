@@ -67,9 +67,9 @@ export default function BetCard({ bet, decimals, variant = 'auto' }: BetCardProp
     if (isPublicBet) return '🌍 Public' // Show public indicator for public bets
     
     switch (bet.userRole) {
-      case 'creator': return '👑 Creator'
-      case 'bettor': return '🎯 Bettor'  
-      case 'both': return '👑 🎯 Creator & Bettor'
+      case 'creator': return 'Creator'
+      case 'bettor': return 'Bettor'  
+      case 'both': return 'Creator & Bettor'
       default: return ''
     }
   }
