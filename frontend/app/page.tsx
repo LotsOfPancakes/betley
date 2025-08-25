@@ -34,7 +34,7 @@ export default function HomePage() {
     <div className={`min-h-screen ${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-hidden`}>
       <BackgroundElements />
       
-      <div className="relative z-10">
+      <div className="relative z-20">
         <HeroSection
           betTitle={betTitle}
           setBetTitle={setBetTitle}

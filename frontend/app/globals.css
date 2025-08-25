@@ -23,6 +23,6 @@
 }
 
 body {
-  @apply bg-gray-900 text-white antialiased;
+  @apply text-white antialiased bg-gray-950;
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }

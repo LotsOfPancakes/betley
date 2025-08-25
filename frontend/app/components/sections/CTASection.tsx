@@ -17,7 +17,7 @@ export default function CTASection({
   isNavigating
 }: CTASectionProps) {
   return (
-    <div className={DIMENSIONS.spacing.section}>
+    <div className={DIMENSIONS.spacing.cta}>
       <div className={`${DIMENSIONS.maxWidth.cta} mx-auto px-4`}>
         <div className="text-center">
           <h2 className="text-4xl font-bold mb-6">

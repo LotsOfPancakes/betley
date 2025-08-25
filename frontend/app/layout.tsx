@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import "./globals.css";
 import ContextProvider from '@/context'
 import { NotificationToast } from './components/ui/NotificationToast'
-import { Navigation } from '@/components/Navigation'
+import { Sidebar, MobileSidebar } from '@/components/Sidebar'
 import { CriticalErrorBoundary } from '@/components/ErrorBoundary'
 import { Footer } from '@/components/Footer'
 import { config, appConfig } from '@/lib/config'
@@ -162,9 +162,31 @@ export default async function RootLayout({
       <body className="antialiased">
         <CriticalErrorBoundary>
           <ContextProvider cookies={cookies}>
-            <Navigation />
-            {children}
-            <Footer />
+            <div className="flex h-screen">
+              {/* Desktop Sidebar */}
+              <Sidebar />
+              
+              {/* Mobile Sidebar */}
+              <MobileSidebar />
+              
+              {/* Main Content Area */}
+              <main className="flex-1 ml-0 md:ml-54 overflow-auto">
+                {/* Top Bar with Connect Wallet */}
+                <div className="flex justify-end p-4 bg-transparent backdrop-blur-sm">
+                  <div className="transform hover:scale-105 transition-transform">
+                    <appkit-button />
+                  </div>
+                </div>
+                
+                {/* Page Content */}
+                <div className="min-h-screen">
+                  {children}
+                </div>
+                
+                {/* Footer */}
+                <Footer />
+              </main>
+            </div>
             <NotificationToast />
           </ContextProvider>
         </CriticalErrorBoundary>
