@@ -24,15 +24,16 @@ export default function BetNameInput({
   // Determine border color based on state
   const getBorderColor = () => {
     if (error) return 'border-1 border-red-500 focus:border-red-500'
+    if (value.length === 0) return 'border-1 border-yellow-500 focus:border-yellow-500'
     if (isTooShort) return 'border-1 border-yellow-500 focus:border-yellow-500'
-    if (isPreFilled && isGoodLength) return 'border-1 border-green-500 focus:border-green-500'
+    if (isGoodLength) return 'border-1 border-green-500 focus:border-green-500'
     return 'border-1 border-green-500/30 focus:border-green-400'
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <label className="block text-lg font-semibold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+        <label className="block text-lg font-semibold text-gray-200">
           Bet Title
         </label>
       </div>

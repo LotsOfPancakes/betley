@@ -66,7 +66,7 @@ export default function SubmitSection({
         </div>
       )}
 
-      {/* Submit Button - AppKit Integration */}
+      {/* Submit Button */}
       <button
         onClick={isConnected ? onSubmit : () => open()}
         disabled={getButtonDisabled()}
@@ -75,9 +75,9 @@ export default function SubmitSection({
         {getButtonText()}
       </button>
 
-      {/*  removed info text, since private/public info already mentioned in publicprivatetoggle component */}
+      {/* footnotes */}
       <div className="text-sm text-gray-400">
-        <p>• 🧙🏼 As creator, you earn <span className="text-green-300">1%</span> of the losing option upon resolution</p>
+        <p>• As Bet Creator, you earn <span className="text-green-300">1%</span> of the losing option upon Resolving a Bet.</p>
       </div>
     </div>
   )

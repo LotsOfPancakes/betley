@@ -116,7 +116,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <label className="block text-lg font-semibold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+        <label className="block text-lg font-semibold text-gray-200">
           Bet Duration 
           {/* <span className="text-sm text-gray-400">
           ({formatDuration()}) </span> */}
@@ -132,10 +132,10 @@ export default function DurationSelector({ duration, onChange, error }: Duration
         </span>
       </div>
 
-      {/* Custom Duration Input Fields */}
-      <div className="mt-4 mb-2">
+      {/* Custom Duration Input */}
+      <div className="mb-8">
         <div className="flex gap-4">
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <input
               ref={hoursInputRef}
               type="number"
@@ -143,20 +143,24 @@ export default function DurationSelector({ duration, onChange, error }: Duration
               max="168"
               value={duration.hours}
               onChange={(e) => handleHoursChange(parseInt(e.target.value) || 0)}
-              className={`w-full px-4 py-3 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
+              className={`w-full px-4 py-3 pr-16 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
             />
-            <label className="block text-xs text-gray-400 p-1">Hours</label>
+            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+              Hours
+            </span>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <input
               type="number"
               min="0"
               max="59"
               value={duration.minutes}
               onChange={(e) => handleMinutesChange(parseInt(e.target.value) || 0)}
-              className={`w-full px-4 py-3 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
+              className={`w-full px-4 py-3 pr-20 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
             />
-            <label className="block text-xs text-gray-400 p-1">Minutes</label>
+            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+              Minutes
+            </span>
           </div>
         </div>
       </div>
@@ -166,10 +170,10 @@ export default function DurationSelector({ duration, onChange, error }: Duration
         {/* Custom Option */}
         <button
           onClick={handleCustomClick}
-          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left group hover:scale-105 ${
+          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left group hover:scale-102 ${
             isCustomSelected 
-              ? 'border-green-500 bg-green-500/10 text-green-400' 
-              : 'border-green-500/30 hover:border-green-400/50 text-gray-300 hover:text-white'
+              ? 'border-gray-500 bg-gray-500/8 text-gray-300' 
+              : 'border-gray-600/45 hover:border-gray-500/65 text-gray-400 hover:text-gray-200'
           }`}
         >
           <div className="flex items-center justify-between">
@@ -195,10 +199,10 @@ export default function DurationSelector({ duration, onChange, error }: Duration
             <button
               key={preset.label}
               onClick={() => setPreset(preset)}
-              className={`p-4 rounded-xl border-2 transition-all duration-300 text-left group hover:scale-105 ${
+              className={`p-4 rounded-xl border-2 transition-all duration-300 text-left group hover:scale-102 ${
                 isSelected 
-                  ? 'border-green-500 bg-green-500/10 text-green-400' 
-                  : 'border-green-500/30 hover:border-green-400/50 text-gray-300 hover:text-white'
+                  ? 'border-gray-500 bg-gray-500/8 text-gray-300' 
+                  : 'border-gray-600/45 hover:border-gray-500/65 text-gray-400 hover:text-gray-200'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -206,7 +210,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-bold text-sm leading-tight">{preset.label}</span>
                     {preset.isDefault && (
-                      <span className="text-xs text-green-400 font-medium">Default</span>
+                      <span className="text-xs text-green-400/80 font-medium bg-gray-700/30 px-2 py-0.5 rounded-md">Default</span>
                     )}
                   </div>
                   <div className="text-xs opacity-75">{preset.description}</div>

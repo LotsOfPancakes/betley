@@ -13,7 +13,7 @@ interface OptionsManagerProps {
 export default function OptionsManager({ 
   options, 
   onChange, 
-  // maxOptions = 4,
+  maxOptions = 4,
   minOptions = 2,
   maxLength = 50,
   error
@@ -26,11 +26,11 @@ export default function OptionsManager({
   }
 
   // temporarily hidden for now, along with maxOptions 
-  // const addOption = () => {
-  //   if (options.length < maxOptions) {
-  //     onChange([...options, ''])
-  //   }
-  // }
+  const addOption = () => {
+    if (options.length < maxOptions) {
+      onChange([...options, ''])
+    }
+  }
 
   const removeOption = (index: number) => {
     if (options.length > minOptions) {
@@ -62,7 +62,7 @@ export default function OptionsManager({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <label className="block text-lg font-semibold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+        <label className="block text-lg font-semibold text-gray-200">
           Betting Options
         </label>
         {/* <span className="text-sm text-gray-400">
@@ -74,9 +74,9 @@ export default function OptionsManager({
         {options.map((option, index) => (
           <div key={index} className="relative group">
             <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-gray-700/80 rounded-full flex items-center justify-center mt-2">
+              {/* <div className="flex-shrink-0 w-8 h-8 bg-gray-700/80 rounded-full flex items-center justify-center mt-2">
                 <span className="text-white font-bold text-sm">{index + 1}</span>
-              </div>
+              </div> */}
               
               <div className="flex-1 relative">
                 <input
@@ -113,7 +113,7 @@ export default function OptionsManager({
                 {options.length > minOptions && (
                   <button
                     onClick={() => removeOption(index)}
-                    className="absolute right-2 top-2 w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"
+                    className="absolute right-2 top-2 w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-full flex items-center justify-center transition-all duration-200"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -147,18 +147,18 @@ export default function OptionsManager({
       </div>
 
 
-      {/* Add Option Button - temporarily removed along with vars maxOptions and addOption*/} 
-      {/* {options.length < maxOptions && (
+      {/* Add Option Button */} 
+      {options.length < maxOptions && (
         <button
           onClick={addOption}
-          className="w-full mt-4 py-3 border-1 border-green-500/30 hover:border-green-400/50 rounded-xl text-green-400 hover:text-green-300 transition-all duration-300 flex items-center justify-center gap-2 hover:bg-green-500/5"
+          className="w-full mt-4 py-3 border-2 border-gray-600/45 hover:border-gray-500/65 rounded-xl text-gray-400 hover:text-gray-200 transition-all duration-300 flex items-center justify-center gap-2 hover:bg-gray-500/8"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add Option ({options.length}/{maxOptions})
         </button>
-      )} */}
+      )}
 
       {/* Error message */}
       {error && (
