@@ -7,6 +7,7 @@ import { useState } from 'react'
 // Import only the components we actually use
 import { UserActions } from './components/UserActions'
 import { UnifiedBettingInterface } from './components/UnifiedBettingInterface'
+import { CreatorActions } from './components/CreatorActions'
 import { ResolveModal } from './components/ResolveModal'
 import WhitelistModal from './components/WhitelistModal'
 import { PageErrorBoundary, ComponentErrorBoundary } from '@/components/ErrorBoundary'
@@ -206,6 +207,19 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                   creator={creator || ''}
                   onResolveEarly={() => setShowResolveModal(true)}
                   onManageWhitelist={() => setShowWhitelistModal(true)}
+                />
+              </ComponentErrorBoundary>
+
+              {/* Creator Actions - Show resolve button when bet time expires */}
+              <ComponentErrorBoundary>
+                <CreatorActions
+                  address={address}
+                  creator={creator || ''}
+                  timeLeft={timeLeft}
+                  resolved={resolved || false}
+                  resolutionDeadlinePassed={resolutionDeadlinePassed}
+                  resolutionTimeLeft={resolutionTimeLeft}
+                  onShowResolveModal={() => setShowResolveModal(true)}
                 />
               </ComponentErrorBoundary>
 
