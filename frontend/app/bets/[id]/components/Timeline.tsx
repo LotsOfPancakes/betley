@@ -78,9 +78,14 @@ export function Timeline({ endTime, createdAt, resolved, isOpen: controlledIsOpe
     try {
       let date: Date
       if (typeof timestamp === 'bigint') {
+        // Unix timestamp from blockchain - multiply by 1000 for milliseconds
         date = new Date(Number(timestamp) * 1000)
       } else {
-        date = new Date(timestamp)
+        // Database timestamp string - ensure it's treated as UTC
+        const utcTimestamp = timestamp.includes('Z') || timestamp.includes('+') || timestamp.includes('T') 
+          ? timestamp 
+          : timestamp.replace(' ', 'T') + 'Z'
+        date = new Date(utcTimestamp)
       }
       
       if (isNaN(date.getTime())) return 'Invalid date'
@@ -88,7 +93,7 @@ export function Timeline({ endTime, createdAt, resolved, isOpen: controlledIsOpe
       // Get the timezone offset in minutes and convert to hours
       const timezoneOffset = date.getTimezoneOffset()
       const offsetHours = Math.abs(timezoneOffset / 60)
-      const offsetSign = timezoneOffset > 0 ? '-' : '+'
+      const offsetSign = timezoneOffset <= 0 ? '+' : '-'
       
       // Format the timezone as GMT±X
       const timezone = `GMT${offsetSign}${offsetHours}`
@@ -116,19 +121,19 @@ export function Timeline({ endTime, createdAt, resolved, isOpen: controlledIsOpe
 
     return [
       {
-        title: 'Market Published',
+        title: 'Bet Published',
         time: formatTime(createdAt),
         status: 'completed'
       },
       {
-        title: 'Market Closes',
+        title: 'Bet Closes',
         time: formatTime(endTime),
         status: isMarketActive ? 'active' : isMarketClosed ? 'completed' : 'pending'
       },
       {
         title: 'Resolution',
-        time: resolved ? 'Completed' : 'Within 24 hours',
-        status: resolved ? 'completed' : 'pending',
+        time: resolved ? 'Completed' : 'Within 24 hours - or Refunds will be triggered',
+        status: resolved ? 'completed' : isMarketClosed ? 'active' : 'pending',
         isLast: true
       }
     ]
