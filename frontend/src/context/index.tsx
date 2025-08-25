@@ -1,7 +1,7 @@
 'use client'
 
 import { wagmiAdapter, projectId, networks } from '@/config'
-import { appConfig } from '@/lib/config'
+import { config } from '@/lib/config'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { createAppKit } from '@reown/appkit/react'
@@ -31,8 +31,8 @@ const queryClient = new QueryClient({
 const metadata = {
   name: 'Betley',
   description: 'Easiest way to set up an on-chain bet on anything',
-  url: appConfig.url,
-  icons: [`${appConfig.url}/images/betley-logo-128.png`]
+  url: config.app.url,
+  icons: [`${config.app.url}/images/betley-logo-128.png`]
 }
 
 // Create the modal - this is where createAppKit should be called
@@ -41,6 +41,12 @@ export const modal = createAppKit({
   projectId: projectId!,
   networks,
   metadata,
+  
+  // Smart network handling - prevents blocking users before wallet connection
+  defaultNetwork: config.network.appKitNetwork,    // Default to Base/Base Sepolia
+  allowUnsupportedChain: true,                      // Don't block unknown networks
+  enableNetworkSwitch: true,                        // Allow switching (default: true)
+  
   features: {
     email: true,                    // Enable email signup
     socials: ['google', 'apple', 'x', 'discord'], // Enable social login
