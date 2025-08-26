@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 
 interface Duration {
   hours: number
@@ -32,6 +32,26 @@ const getTimeUntilNextUTCMidnight = () => {
   return { hours, minutes }
 }
 
+// Calculate duration until UTC midnight of selected date
+const calculateDurationToUTCMidnight = (selectedDate: Date) => {
+  const now = new Date()
+  const targetMidnight = new Date(selectedDate)
+  targetMidnight.setUTCHours(0, 0, 0, 0)
+  
+  // If selected date is today or in the past, use the next occurrence of that date
+  if (targetMidnight.getTime() <= now.getTime()) {
+    targetMidnight.setUTCDate(targetMidnight.getUTCDate() + 1)
+  }
+  
+  const msUntilMidnight = targetMidnight.getTime() - now.getTime()
+  const totalMinutes = Math.ceil(msUntilMidnight / (1000 * 60))
+  
+  const hours = Math.floor(Math.max(0, totalMinutes) / 60)
+  const minutes = Math.max(0, totalMinutes) % 60
+  
+  return { hours, minutes }
+}
+
 const nextMidnightTime = getTimeUntilNextUTCMidnight()
 const midnightLabel = `${nextMidnightTime.hours}h${nextMidnightTime.minutes > 0 ? ` ${nextMidnightTime.minutes}m` : ''}`
 
@@ -42,6 +62,24 @@ const quickPresets = [
 
 export default function DurationSelector({ duration, onChange, error }: DurationSelectorProps) {
   const hoursInputRef = useRef<HTMLInputElement>(null)
+  const datePickerRef = useRef<HTMLDivElement>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+
+  // Close date picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setShowDatePicker(false)
+      }
+    }
+
+    if (showDatePicker) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showDatePicker])
 
   const handleHoursChange = (hours: number) => {
     onChange({ ...duration, hours: Math.max(0, Math.min(168, hours)) })
@@ -61,23 +99,38 @@ export default function DurationSelector({ duration, onChange, error }: Duration
     }
   }
 
-  const handleCustomClick = () => {
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date)
+    const calculatedDuration = calculateDurationToUTCMidnight(date)
+    onChange(calculatedDuration)
+    setShowDatePicker(false)
+  }
+
+  const handleClearDate = () => {
+    setSelectedDate(null)
+    setShowDatePicker(false)
+    // Reset to default if no duration set
     const totalMinutes = duration.hours * 60 + duration.minutes
-    
-    // If custom is already selected, do nothing (repeat clicks do nothing)
-    if (isCustomSelected) {
-      // Focus hours input for visual feedback
-      hoursInputRef.current?.select()
-      return
-    }
-    
-    // If not selected and current value is 0, set default and focus
     if (totalMinutes === 0) {
       onChange({ hours: 1, minutes: 0 })
     }
-    
-    // Focus the hours input
     hoursInputRef.current?.select()
+  }
+
+  const handleCustomClick = () => {
+    if (selectedDate) {
+      // If date is selected, show date picker
+      setShowDatePicker(!showDatePicker)
+    } else {
+      // If no date selected, toggle between date picker and manual input
+      setShowDatePicker(!showDatePicker)
+      if (!showDatePicker) {
+        const totalMinutes = duration.hours * 60 + duration.minutes
+        if (totalMinutes === 0) {
+          onChange({ hours: 1, minutes: 0 })
+        }
+      }
+    }
   }
 
   const totalMinutes = duration.hours * 60 + duration.minutes
@@ -95,8 +148,52 @@ export default function DurationSelector({ duration, onChange, error }: Duration
     return duration.hours === preset.hours && duration.minutes === preset.minutes
   }
 
-  // Determine if custom should be selected (value is not 0, 1h, or 1d)
-  const isCustomSelected = totalMinutes > 0 && !quickPresets.some(preset => isPresetSelected(preset))
+  // Determine if custom should be selected (value is not 0, 1h, or 1d, or if date is selected)
+  const isCustomSelected = selectedDate || (totalMinutes > 0 && !quickPresets.some(preset => isPresetSelected(preset)))
+
+  // Generate calendar days for current month
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const daysInMonth = lastDay.getDate()
+    const startingDayOfWeek = firstDay.getDay()
+    
+    const days = []
+    
+    // Add empty cells for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null)
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day))
+    }
+    
+    return days
+  }
+
+  const formatSelectedDate = () => {
+    if (!selectedDate) return 'Custom'
+    return selectedDate.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: selectedDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+    })
+  }
+
+  const isDateDisabled = (date: Date) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return date < today
+  }
+
+  const isDateSelected = (date: Date) => {
+    if (!selectedDate) return false
+    return date.toDateString() === selectedDate.toDateString()
+  }
 
   const getBorderColor = () => {
     if (error) return 'border-red-500 focus:border-red-500'
@@ -167,30 +264,119 @@ export default function DurationSelector({ duration, onChange, error }: Duration
       
       {/* Quick Presets + Custom */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {/* Custom Option */}
-        <button
-          onClick={handleCustomClick}
-          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left group hover:scale-102 ${
-            isCustomSelected 
-              ? 'border-gray-500 bg-gray-500/8 text-gray-300' 
-              : 'border-gray-600/45 hover:border-gray-500/65 text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-bold">Custom</div>
-              {/* <div className="text-xs opacity-75">Set custom time</div> */}
+        {/* Custom Option with Date Picker */}
+        <div className="relative" ref={datePickerRef}>
+          <button
+            onClick={handleCustomClick}
+            className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left group hover:scale-102 ${
+              isCustomSelected 
+                ? 'border-gray-500 bg-gray-500/8 text-gray-300' 
+                : 'border-gray-600/45 hover:border-gray-500/65 text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-bold">{formatSelectedDate()}</div>
+                {selectedDate && (
+                  <div className="text-xs opacity-75">
+                    {calculateDurationToUTCMidnight(selectedDate).hours}h {calculateDurationToUTCMidnight(selectedDate).minutes}m to midnight UTC
+                  </div>
+                )}
+              </div>
+              <div className="text-gray-400">
+                {showDatePicker ? '▲' : '▼'}
+              </div>
             </div>
-            {isCustomSelected && (
-              // <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-              //   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              //     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              //   </svg>
-              // </div>
-              <div></div>
-            )}
-          </div>
-        </button>
+          </button>
+
+          {/* Date Picker Dropdown */}
+          {showDatePicker && (
+            <div className="absolute top-full left-0 mt-2 z-50 w-80 bg-gray-800/90 backdrop-blur-sm border border-green-500/30 rounded-xl p-4 shadow-xl">
+              {/* Calendar Header */}
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+                  className="p-1 text-gray-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                
+                <h3 className="text-white font-semibold">
+                  {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </h3>
+                
+                <button
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+                  className="p-1 text-gray-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1 mb-4">
+                {/* Day Headers */}
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+                  <div key={day} className="text-center text-xs text-gray-400 p-2 font-medium">
+                    {day}
+                  </div>
+                ))}
+                
+                {/* Calendar Days */}
+                {getDaysInMonth(currentMonth).map((date, index) => (
+                  <div key={index} className="aspect-square">
+                    {date && (
+                      <button
+                        onClick={() => !isDateDisabled(date) && handleDateSelect(date)}
+                        disabled={isDateDisabled(date)}
+                        className={`w-full h-full text-sm rounded-md transition-all duration-200 ${
+                          isDateSelected(date)
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                            : isDateDisabled(date)
+                            ? 'text-gray-600 cursor-not-allowed'
+                            : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                        }`}
+                      >
+                        {date.getDate()}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Preview and Actions */}
+              <div className="border-t border-gray-700/50 pt-3">
+                {selectedDate && (
+                  <div className="text-xs text-gray-400 mb-3">
+                    <div>Selected: {selectedDate.toLocaleDateString('en-US', { 
+                      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
+                    })}</div>
+                    <div>Duration: {calculateDurationToUTCMidnight(selectedDate).hours}h {calculateDurationToUTCMidnight(selectedDate).minutes}m to midnight UTC</div>
+                  </div>
+                )}
+                
+                <div className="flex justify-between">
+                  <button
+                    onClick={handleClearDate}
+                    className="px-3 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={() => setShowDatePicker(false)}
+                    className="px-4 py-2 text-sm bg-green-500/20 text-green-400 rounded-md hover:bg-green-500/30 transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Preset Options */}
         {quickPresets.map((preset) => {
