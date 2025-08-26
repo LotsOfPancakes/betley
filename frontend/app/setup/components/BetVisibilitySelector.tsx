@@ -47,13 +47,7 @@ export default function BetVisibilitySelector({ isPublic, onChange }: BetVisibil
                 Only people with link can participate
               </p>
             </div>
-            {!isPublic && (
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 ml-2">
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            )}
+
           </div>
         </button>
 
@@ -78,13 +72,7 @@ export default function BetVisibilitySelector({ isPublic, onChange }: BetVisibil
                 Bet will be discoverable
               </p>
             </div>
-            {isPublic && (
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 ml-2">
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            )}
+
           </div>
         </button>
       </div>
