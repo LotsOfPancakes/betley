@@ -163,21 +163,20 @@ export default async function RootLayout({
       <body className="antialiased">
         <CriticalErrorBoundary>
           <ContextProvider cookies={cookies}>
-            <div className="flex flex-col h-screen">
-              {/* Top Navigation - Wallet Only */}
-              <Navigation />
+            <div className="flex h-screen">
+              {/* Desktop Sidebar - Top Left Corner */}
+              <Sidebar />
               
-              {/* Main Content Area with Sidebar */}
-              <div className="flex flex-1">
-                {/* Desktop Sidebar */}
-                <Sidebar />
+              {/* Mobile Sidebar */}
+              <MobileSidebar />
+              
+              {/* Main Content Area with Top Navigation */}
+              <div className="flex flex-col flex-1 ml-0 md:ml-54">
+                {/* Top Navigation - Wallet Only */}
+                <Navigation />
                 
-                {/* Mobile Sidebar */}
-                <MobileSidebar />
-                
-                {/* Main Content Area */}
-                <main className="flex-1 ml-0 md:ml-54 overflow-auto">
-                  {/* Page Content */}
+                {/* Page Content */}
+                <main className="flex-1 overflow-auto">
                   <div className="min-h-screen">
                     {children}
                   </div>

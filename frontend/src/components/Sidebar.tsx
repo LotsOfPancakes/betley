@@ -9,7 +9,7 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="fixed left-0 top-12 h-[calc(100vh-3rem)] w-54 bg-transparent backdrop-blur-sm border-r border-green-500/20 z-40 hidden md:flex flex-col">
+    <div className="fixed left-0 top-0 h-full w-54 bg-transparent backdrop-blur-sm border-r border-green-500/20 z-40 hidden md:flex flex-col">
       {/* Logo Section */}
       <div className="p-6">
         <Link 
@@ -107,7 +107,7 @@ export function MobileSidebar() {
       {/* Mobile Hamburger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-3 left-4 z-50 p-2 text-gray-300 hover:text-white bg-gray-950/80 backdrop-blur-sm rounded-lg border border-green-500/20"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 text-gray-300 hover:text-white bg-gray-950/80 backdrop-blur-sm rounded-lg border border-green-500/20"
         aria-label="Toggle mobile menu"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +128,7 @@ export function MobileSidebar() {
       )}
 
       {/* Mobile Sidebar */}
-      <div className={`md:hidden fixed left-0 top-12 h-[calc(100vh-3rem)] w-54 bg-black/20 backdrop-blur-sm border-r border-green-500/20 z-50 transform transition-transform duration-300 ease-in-out ${
+      <div className={`md:hidden fixed left-0 top-0 h-full w-54 bg-black/20 backdrop-blur-sm border-r border-green-500/20 z-50 transform transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         {/* Logo Section */}
