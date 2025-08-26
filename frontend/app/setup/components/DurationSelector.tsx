@@ -82,7 +82,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
   }, [showDatePicker])
 
   const handleHoursChange = (hours: number) => {
-    onChange({ ...duration, hours: Math.max(0, Math.min(168, hours)) })
+    onChange({ ...duration, hours: Math.max(0, Math.min(99999, hours)) })
   }
 
   const handleMinutesChange = (minutes: number) => {
@@ -136,7 +136,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
   const totalMinutes = duration.hours * 60 + duration.minutes
   const isValid = totalMinutes > 0
   const isReasonable = totalMinutes >= 1 // At least 1 min
-  const isTooLong = totalMinutes > 52 * 24 * 60 // More than 52 weeks
+  const isTooLong = totalMinutes > 99999 * 60 // More than 99999 hours
 
   // Check if current duration matches any preset
   const isPresetSelected = (preset: { hours: number; minutes: number; isUTCMidnight?: boolean; isDefault?: boolean }) => {
@@ -237,7 +237,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
               ref={hoursInputRef}
               type="number"
               min="0"
-              max="9999"
+              max="99999"
               value={duration.hours}
               onChange={(e) => handleHoursChange(parseInt(e.target.value) || 0)}
               className={`w-full px-4 py-3 pr-16 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
