@@ -4,7 +4,7 @@ import { BetFormData } from '../types/setup.types'
 
 const initialFormData: BetFormData = {
   name: '',
-  options: ['✅ - Yes', '❌ - No'],
+  options: ['Yes', 'No'],
   duration: { hours: 1, minutes: 0 },
   isPublic: false  // defaults to private
 }
