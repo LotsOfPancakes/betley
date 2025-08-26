@@ -86,7 +86,9 @@ export default function BetCard({ bet, decimals, variant = 'auto' }: BetCardProp
 
     const optionStats = bet.options.map((option, index) => {
       const amount = bet.totalAmounts[index] || 0
-      const percentage = totalPool > 0 ? Math.round((amount * 100) / totalPool) : 0
+      const amountInEth = parseFloat(formatUnits(BigInt(amount), decimals))
+      const totalPoolInEth = parseFloat(formatUnits(BigInt(totalPool), decimals))
+      const percentage = totalPoolInEth > 0 ? Math.round((amountInEth * 100) / totalPoolInEth) : 0
       return {
         name: option,
         amount,
