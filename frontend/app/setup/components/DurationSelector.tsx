@@ -321,8 +321,8 @@ export default function DurationSelector({ duration, onChange, error }: Duration
               {/* Calendar Grid */}
               <div className="grid grid-cols-7 gap-1 mb-4">
                 {/* Day Headers */}
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
-                  <div key={day} className="text-center text-xs text-gray-400 p-2 font-medium">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                  <div key={index} className="text-center text-xs text-gray-400 p-2 font-medium">
                     {day}
                   </div>
                 ))}
