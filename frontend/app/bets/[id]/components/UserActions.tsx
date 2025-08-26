@@ -476,12 +476,12 @@ function UserLostStatus({
   claimStatus, 
   decimals, 
   isNativeBet,
-// isCreator 
+//  isCreator 
 }: {
   claimStatus: Extract<ClaimStatus, { type: 'user-lost' }>
   decimals: number
   isNativeBet: boolean
-  isCreator: boolean
+//  isCreator: boolean
 }) {
   return (
     <StatusCard variant="error">
@@ -675,7 +675,7 @@ export function UserActions({
                 claimStatus={claimStatus}
                 decimals={decimals}
                 isNativeBet={isNativeBet}
-                isCreator={isCreator}
+              // isCreator={isCreator}
               />
             )
 
