@@ -476,7 +476,7 @@ function UserLostStatus({
   claimStatus, 
   decimals, 
   isNativeBet,
-  isCreator 
+// isCreator 
 }: {
   claimStatus: Extract<ClaimStatus, { type: 'user-lost' }>
   decimals: number
