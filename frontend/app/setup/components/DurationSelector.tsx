@@ -237,7 +237,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
               ref={hoursInputRef}
               type="number"
               min="0"
-              max="168"
+              max="9999"
               value={duration.hours}
               onChange={(e) => handleHoursChange(parseInt(e.target.value) || 0)}
               className={`w-full px-4 py-3 pr-16 rounded-xl bg-gray-800/60 text-white focus:outline-none focus:ring-0 transition-all duration-300 backdrop-blur-sm border ${getBorderColor()}`}
