@@ -123,7 +123,7 @@ function SetupPageContent() {
 
             {/* Duration Selector */}
             <ComponentErrorBoundary>
-              <div className={`${COLORS.gradients.card} backdrop-blur-sm ${DIMENSIONS.borderRadius.card} p-6 ${COLORS.borders.cardHover} ${ANIMATIONS.transitionSlow}`}>
+              <div className={`${COLORS.gradients.card} ${DIMENSIONS.borderRadius.card} p-6 ${COLORS.borders.cardHover} ${ANIMATIONS.transitionSlow}`}>
                 <DurationSelector
                   duration={formData.duration}
                   onChange={updateDuration}                  
