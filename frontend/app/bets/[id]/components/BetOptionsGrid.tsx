@@ -101,10 +101,10 @@ export function BetOptionsGrid({
                     {isUserWinningBet && (
                       <div className="flex items-center gap-2">
                         <span className="text-sm bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-1.5 rounded-full font-bold shadow-lg">
-                          🎉 You Won!
+                          🏆 Winner
                         </span>
-                        <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full font-medium border border-green-500/30">
-                          Bet: {formatDynamicDecimals(formatUnits(userBets[index] || BigInt(0), decimals))} {tokenSymbol}
+                        <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1.5 rounded-full font-medium border border-green-500/30">
+                          You Bet: {formatDynamicDecimals(formatUnits(userBets[index] || BigInt(0), decimals))} {tokenSymbol}
                         </span>
                       </div>
                     )}
@@ -117,17 +117,17 @@ export function BetOptionsGrid({
                     
                     {isUserLosingBet && (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs bg-blue-500/80 text-white px-3 py-1 rounded-full font-medium">
+                        <span className="text-xs bg-blue-500/80 text-white px-3 py-1.5 rounded-full font-medium">
                           Your Bet
                         </span>
-                        <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full font-medium border border-blue-500/30">
+                        <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1.5 rounded-full font-medium border border-blue-500/30">
                           {formatDynamicDecimals(formatUnits(userBets[index] || BigInt(0), decimals))} {tokenSymbol}
                         </span>
                       </div>
                     )}
                     
                     {isUserCurrentOption && !resolved && (
-                      <span className="text-xs bg-green-500/80 text-white px-3 py-1 rounded-full font-medium">
+                      <span className="text-xs bg-green-500/80 text-white px-3 py-1.5 rounded-full font-medium">
                         You Bet: {formatDynamicDecimals(formatUnits(userBets[index] || BigInt(0), decimals))} {tokenSymbol}
                       </span>
                     )}
