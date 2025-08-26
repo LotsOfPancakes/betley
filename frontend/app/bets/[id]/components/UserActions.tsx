@@ -358,7 +358,7 @@ function WinningsClaimable({
   return (
     <StatusCard variant="success">
       <p className="text-green-300 mb-4">
-        🎉 Congratulations! You won {formatTokenAmount(claimStatus.breakdown.totalWinnings, decimals, isNativeBet)}
+      Congratulations on winning!
       </p>
       
       <ClaimButton
@@ -434,7 +434,7 @@ function CreatorFeesClaimable({
   return (
     <StatusCard variant="warning">
       <p className="text-orange-300 mb-4">
-        🎉 Creator fees available! You earned {claimStatus.amount ? formatTokenAmount(claimStatus.amount, decimals, isNativeBet) : '...'} from this bet.
+      Creator fees available! You earned {claimStatus.amount ? formatTokenAmount(claimStatus.amount, decimals, isNativeBet) : '...'} from this bet.
       </p>
       
       <ClaimButton
