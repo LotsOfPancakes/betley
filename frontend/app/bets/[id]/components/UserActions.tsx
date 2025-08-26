@@ -483,8 +483,6 @@ function UserLostStatus({
   isNativeBet: boolean
   isCreator: boolean
 }) {
-  if (isCreator) return null
-  
   return (
     <StatusCard variant="error">
       <p className="text-red-300">
