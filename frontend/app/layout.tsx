@@ -171,13 +171,6 @@ export default async function RootLayout({
               
               {/* Main Content Area */}
               <main className="flex-1 ml-0 md:ml-54 overflow-auto">
-                {/* Top Bar with Connect Wallet */}
-                <div className="flex justify-end p-4 bg-transparent backdrop-blur-sm">
-                  <div className="transform hover:scale-105 transition-transform">
-                    <appkit-button />
-                  </div>
-                </div>
-                
                 {/* Page Content */}
                 <div className="min-h-screen">
                   {children}

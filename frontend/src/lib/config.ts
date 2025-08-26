@@ -122,10 +122,7 @@ export const config = {
   },
   
   walletConnect: {
-    projectId: getOptionalEnv(
-      'NEXT_PUBLIC_PROJECT_ID', 
-      '3631ce78fe91dacd79be36cf1db10400'
-    ),
+    projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
   },
   
   timeouts: {
@@ -158,6 +155,11 @@ export const devConfig = config.dev
 
 // Validation function to ensure config is valid
 export function validateConfig(): void {
+  // Validate WalletConnect Project ID
+  if (!config.walletConnect.projectId) {
+    throw new Error('NEXT_PUBLIC_PROJECT_ID environment variable is required')
+  }
+  
   // Validate contract addresses
   if (!config.contracts.betley.startsWith('0x') || config.contracts.betley.length !== 42) {
     throw new Error('Invalid Betley contract address')
