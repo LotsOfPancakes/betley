@@ -39,8 +39,8 @@ export function useBetValidation(formData: BetFormData) {
     const totalMinutes = formData.duration.hours * 60 + formData.duration.minutes
     if (totalMinutes <= 0) {
       errors.push({ field: 'duration', message: 'Duration must be at least 1 minute' })
-    } else if (totalMinutes > 168 * 60) {
-      errors.push({ field: 'duration', message: 'Duration cannot exceed 1 week (168 hours)' })
+    } else if (totalMinutes > 99999 * 60) {
+      errors.push({ field: 'duration', message: 'Duration cannot exceed 99999 hours' })
     }
 
     return errors
