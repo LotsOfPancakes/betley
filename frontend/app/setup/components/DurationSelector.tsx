@@ -274,16 +274,17 @@ export default function DurationSelector({ duration, onChange, error }: Duration
                 : 'border-gray-600/45 hover:border-gray-500/65 text-gray-400 hover:text-gray-200'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-bold">{formatSelectedDate()}</div>
-                {selectedDate && (
-                  <div className="text-xs opacity-75">
-                    {calculateDurationToUTCMidnight(selectedDate).hours}h {calculateDurationToUTCMidnight(selectedDate).minutes}m to midnight UTC
-                  </div>
-                )}
+            <div className="flex items-start justify-between h-full">
+              <div className="flex-1 min-w-0 pr-2">
+                <div className="font-bold text-sm leading-tight mb-1">{formatSelectedDate()}</div>
+                <div className="text-xs opacity-75 leading-relaxed">
+                  {selectedDate 
+                    ? `${calculateDurationToUTCMidnight(selectedDate).hours}h ${calculateDurationToUTCMidnight(selectedDate).minutes}m to midnight UTC`
+                    : 'Select end date'
+                  }
+                </div>
               </div>
-              <div className="text-gray-400">
+              <div className="text-gray-400 mt-1">
                 {showDatePicker ? '▲' : '▼'}
               </div>
             </div>
@@ -291,7 +292,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
 
           {/* Date Picker Dropdown */}
           {showDatePicker && (
-            <div className="absolute top-full left-0 mt-2 z-50 w-80 bg-gray-800/90 backdrop-blur-sm border border-green-500/30 rounded-xl p-4 shadow-xl">
+            <div className="absolute top-full left-0 mt-2 z-[9999] w-80 bg-gray-800/90 backdrop-blur-sm border border-green-500/30 rounded-xl p-4 shadow-xl">
               {/* Calendar Header */}
               <div className="flex items-center justify-between mb-4">
                 <button
