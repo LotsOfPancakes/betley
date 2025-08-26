@@ -83,7 +83,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
   const totalMinutes = duration.hours * 60 + duration.minutes
   const isValid = totalMinutes > 0
   const isReasonable = totalMinutes >= 1 // At least 1 min
-  const isTooLong = totalMinutes > 7 * 24 * 60 // More than 1 week
+  const isTooLong = totalMinutes > 52 * 24 * 60 // More than 52 weeks
 
   // Check if current duration matches any preset
   const isPresetSelected = (preset: { hours: number; minutes: number; isUTCMidnight?: boolean; isDefault?: boolean }) => {
@@ -217,13 +217,7 @@ export default function DurationSelector({ duration, onChange, error }: Duration
                   </div>
                   <div className="text-xs opacity-75 leading-relaxed">{preset.description}</div>
                 </div>
-                {isSelected && (
-                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 ml-2">
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                )}
+
               </div>
             </button>
           )

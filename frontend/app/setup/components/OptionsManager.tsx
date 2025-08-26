@@ -56,7 +56,7 @@ export default function OptionsManager({
     if (value.length > maxLength) return 'border-red-500 focus:border-red-500'
     if (getDuplicateStatus(index, value) === 'duplicate') return 'border-yellow-500 focus:border-yellow-500'
     if (value.trim().length > 0) return 'border-green-500/50 focus:border-green-400'
-    return 'border-green-500/30 focus:border-green-400'
+    return 'border-yellow-500 focus:border-yellow-500'
   }
 
   return (
@@ -65,9 +65,22 @@ export default function OptionsManager({
         <label className="block text-lg font-semibold text-gray-200">
           Betting Options
         </label>
-        {/* <span className="text-sm text-gray-400">
-          {filledOptions.length}/{maxOptions} options
-        </span> */}
+        <span className="text-sm text-gray-400">
+          {(() => {
+            const filledOptions = options.filter(opt => opt.trim().length > 0)
+            const hasValidOptions = filledOptions.length >= minOptions && 
+              filledOptions.every(opt => opt.length <= maxLength) &&
+              filledOptions.every((opt, index) => getDuplicateStatus(index, opt) !== 'duplicate')
+            
+            return hasValidOptions && (
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )
+          })()}
+        </span>
       </div>
 
       <div className="space-y-4">
@@ -88,15 +101,8 @@ export default function OptionsManager({
                   maxLength={maxLength}
                 />
                 
-                {/* Status indicators */}
+                {/* Status indicators - only show warnings */}
                 <div className={`absolute ${options.length > minOptions ? 'right-12' : 'right-4'} top-3`}>
-                  {option.trim().length > 0 && getDuplicateStatus(index, option) !== 'duplicate' && option.length <= maxLength && (
-                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
                   {getDuplicateStatus(index, option) === 'duplicate' && (
                     <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
                       <span className="text-black font-bold text-xs">!</span>
