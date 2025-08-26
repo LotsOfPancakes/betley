@@ -5,6 +5,7 @@ import "./globals.css";
 import ContextProvider from '@/context'
 import { NotificationToast } from './components/ui/NotificationToast'
 import { Sidebar, MobileSidebar } from '@/components/Sidebar'
+import { Navigation } from '@/components/Navigation'
 import { CriticalErrorBoundary } from '@/components/ErrorBoundary'
 import { Footer } from '@/components/Footer'
 import { config, appConfig } from '@/lib/config'
@@ -162,23 +163,29 @@ export default async function RootLayout({
       <body className="antialiased">
         <CriticalErrorBoundary>
           <ContextProvider cookies={cookies}>
-            <div className="flex h-screen">
-              {/* Desktop Sidebar */}
-              <Sidebar />
+            <div className="flex flex-col h-screen">
+              {/* Top Navigation - Wallet Only */}
+              <Navigation />
               
-              {/* Mobile Sidebar */}
-              <MobileSidebar />
-              
-              {/* Main Content Area */}
-              <main className="flex-1 ml-0 md:ml-54 overflow-auto">
-                {/* Page Content */}
-                <div className="min-h-screen">
-                  {children}
-                </div>
+              {/* Main Content Area with Sidebar */}
+              <div className="flex flex-1">
+                {/* Desktop Sidebar */}
+                <Sidebar />
                 
-                {/* Footer */}
-                <Footer />
-              </main>
+                {/* Mobile Sidebar */}
+                <MobileSidebar />
+                
+                {/* Main Content Area */}
+                <main className="flex-1 ml-0 md:ml-54 overflow-auto">
+                  {/* Page Content */}
+                  <div className="min-h-screen">
+                    {children}
+                  </div>
+                  
+                  {/* Footer */}
+                  <Footer />
+                </main>
+              </div>
             </div>
             <NotificationToast />
           </ContextProvider>
