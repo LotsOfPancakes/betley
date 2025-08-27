@@ -618,8 +618,11 @@ export function UserActions({
     hasClaimedCreatorFees,
     winningsBreakdown: winningsBreakdown ? {
       creatorFee: winningsBreakdown.creatorFee.toString(),
+      platformFee: winningsBreakdown.platformFee.toString(),
       totalWinnings: winningsBreakdown.totalWinnings.toString(),
-      netWinnings: winningsBreakdown.netWinnings.toString()
+      originalBet: winningsBreakdown.originalBet.toString(),
+      rawWinningsFromLosers: winningsBreakdown.rawWinningsFromLosers.toString(),
+      showFees: winningsBreakdown.showFees
     } : null,
     showCreatorFees,
     showCreatorFeesClaimed
