@@ -32,6 +32,7 @@ interface DatabaseBetDetails {
   canAccess: boolean
   isActive: boolean
   hasEnded: boolean
+  featureFlags?: Record<string, boolean>
 }
 
 // Type for blockchain basic data

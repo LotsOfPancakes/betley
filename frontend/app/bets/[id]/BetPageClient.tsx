@@ -6,6 +6,7 @@ import { useState } from 'react'
 
 // Import only the components we actually use
 import { UserActions } from './components/UserActions'
+import { BetOutcomes } from './components/BetOutcomes'
 import { UnifiedBettingInterface } from './components/UnifiedBettingInterface'
 import { CreatorActions } from './components/CreatorActions'
 import { ResolveModal } from './components/ResolveModal'
@@ -18,6 +19,7 @@ import { COLORS, DIMENSIONS, ANIMATIONS } from '@/lib/constants/ui'
 // Import hooks
 import { useBetDataNew } from './hooks/useBetDataNew'
 import { useBetActionsNew } from './hooks/useBetActionsNew'
+import { useFeatureFlag } from '@/lib/hooks/useFeatureFlag'
 
 // Type definition for bet details array 
 type BetDetailsArray = readonly [
@@ -125,6 +127,9 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     handleResolveBet
   } = useBetActionsNew(numericBetId?.toString() || '0', typedBetDetails?.[7]) // betId as numeric string, token address
 
+  // Feature flag checks
+  const shouldUseBetOutcomes = useFeatureFlag('betOutcomes', databaseBet)
+
   // Loading state
   if (isBetLoading) {
     return (
@@ -225,29 +230,50 @@ export default function BetPageClient({ id }: BetPageClientProps) {
                 />
               </ComponentErrorBoundary>
 
-              {/* User Actions - Always show for claiming */}
+              {/* User Actions - Conditional rendering based on feature flags */}
               <ComponentErrorBoundary>
-                <UserActions
-                  address={address}
-                  resolved={resolved || false}
-                  winningOption={winningOption}
-                  userBets={userBets as readonly bigint[] || []}
-                  totalAmounts={totalAmounts as readonly bigint[] || []}
-                  resolutionDeadlinePassed={resolutionDeadlinePassed}
-                  hasClaimed={Boolean(hasClaimed)}
-                  hasClaimedCreatorFees={Boolean(hasClaimedCreatorFees)}
+                {shouldUseBetOutcomes ? (
+                  <BetOutcomes
+                    address={address}
+                    resolved={resolved || false}
+                    winningOption={winningOption}
+                    userBets={userBets as readonly bigint[] || []}
+                    totalAmounts={totalAmounts as readonly bigint[] || []}
+                    resolutionDeadlinePassed={resolutionDeadlinePassed}
+                    hasClaimed={Boolean(hasClaimed)}
+                    hasClaimedCreatorFees={Boolean(hasClaimedCreatorFees)}
+                    creator={creator || ''}
+                    handleClaimWinnings={handleClaimWinnings}
+                    handleClaimRefund={handleClaimRefund}
+                    handleClaimCreatorFees={handleClaimCreatorFees}
+                    decimals={Number(decimals) || 18}
+                    isPending={isPending}
+                    betId={numericBetId?.toString() || '0'}
+                    isNativeBet={isNativeBet || false}
+                  />
+                ) : (
+                  <UserActions
+                    address={address}
+                    resolved={resolved || false}
+                    winningOption={winningOption}
+                    userBets={userBets as readonly bigint[] || []}
+                    totalAmounts={totalAmounts as readonly bigint[] || []}
+                    resolutionDeadlinePassed={resolutionDeadlinePassed}
+                    hasClaimed={Boolean(hasClaimed)}
+                    hasClaimedCreatorFees={Boolean(hasClaimedCreatorFees)}
 
-                  decimals={Number(decimals) || 18}
-                  isPending={isPending}
-                  handleClaimWinnings={handleClaimWinnings}
-                  handleClaimRefund={handleClaimRefund}
-                  handleClaimCreatorFees={handleClaimCreatorFees}
-                  betId={numericBetId?.toString() || '0'}
-                  isNativeBet={isNativeBet || false}
-                    tokenAddress={typedBetDetails?.[7]}  // ADD THIS LINE
+                    decimals={Number(decimals) || 18}
+                    isPending={isPending}
+                    handleClaimWinnings={handleClaimWinnings}
+                    handleClaimRefund={handleClaimRefund}
+                    handleClaimCreatorFees={handleClaimCreatorFees}
+                    betId={numericBetId?.toString() || '0'}
+                    isNativeBet={isNativeBet || false}
+                    tokenAddress={typedBetDetails?.[7]}
 
-                  creator={creator || ''}
-                />
+                    creator={creator || ''}
+                  />
+                )}
               </ComponentErrorBoundary>
             </div>
           </div>

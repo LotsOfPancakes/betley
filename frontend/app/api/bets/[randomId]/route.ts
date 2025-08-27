@@ -68,7 +68,8 @@ export async function GET(
         resolution_deadline,
         created_at,
         updated_at,
-        is_public
+        is_public,
+        feature_flags
       `)
       .eq('random_id', randomId)
       .single()
@@ -119,6 +120,9 @@ export async function GET(
         // Metadata
         lastUpdated: bet.updated_at,
         isPublic: bet.is_public,
+        
+        // Feature flags for bet-specific testing
+        featureFlags: bet.feature_flags || {},
         
         // Status flags for frontend
         canAccess: true, // Anyone with the link can access
