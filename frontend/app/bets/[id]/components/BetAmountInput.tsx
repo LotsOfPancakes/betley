@@ -54,7 +54,14 @@ export function BetAmountInput({
   betId
 }: BetAmountInputProps) {
 
-  // AppKit hook for wallet connection
+  // Client-side check to avoid SSR issues with AppKit
+  const [isClient, setIsClient] = useState(false)
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // AppKit hook for wallet connection - always call the hook
   const { open } = useAppKit()
 
   // Get token symbol
@@ -92,7 +99,16 @@ export function BetAmountInput({
   // Button click handler
   const handleButtonClick = () => {
     if (!isConnected) {
-      open() // Use AppKit's open method - same as setup page
+      // Only attempt to open wallet connection if we're on the client side
+      if (isClient && open) {
+        try {
+          open()
+        } catch (error) {
+          console.warn('Failed to open wallet connection:', error)
+        }
+      } else {
+        console.warn('AppKit not available - wallet connection unavailable')
+      }
       return
     }
     

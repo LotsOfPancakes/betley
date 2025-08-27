@@ -1,6 +1,7 @@
 // frontend/app/setup/components/SubmitSection.tsx
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useAppKit } from '@reown/appkit/react'
 import { BetCreationState } from '../types/setup.types'
 
@@ -21,6 +22,14 @@ export default function SubmitSection({
   onClearError,
   isPublic = false  
 }: SubmitSectionProps) {
+  // Client-side check to avoid SSR issues with AppKit
+  const [isClient, setIsClient] = useState(false)
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // AppKit hook for wallet connection - always call the hook
   const { open } = useAppKit()
   
   // Dynamic button text based on public/private
@@ -68,7 +77,17 @@ export default function SubmitSection({
 
       {/* Submit Button */}
       <button
-        onClick={isConnected ? onSubmit : () => open()}
+        onClick={isConnected ? onSubmit : () => {
+          if (isClient && open) {
+            try {
+              open()
+            } catch (error) {
+              console.warn('Failed to open wallet connection:', error)
+            }
+          } else {
+            console.warn('AppKit not available - wallet connection unavailable')
+          }
+        }}
         disabled={getButtonDisabled()}
         className={`w-full py-3 rounded-2xl font-semibold transition-all duration-300 ${getButtonStyle()}`}
       >
