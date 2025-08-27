@@ -35,10 +35,20 @@ const metadata = {
   icons: [`${config.app.url}/images/betley-logo-128.png`]
 }
 
+// Validate project ID before creating AppKit
+if (!projectId) {
+  console.error('AppKit initialization failed: NEXT_PUBLIC_PROJECT_ID is missing', {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV,
+    available_env_vars: Object.keys(process.env).filter(k => k.includes('PROJECT')).sort()
+  })
+  throw new Error('NEXT_PUBLIC_PROJECT_ID environment variable is required for AppKit initialization')
+}
+
 // Create the modal - this is where createAppKit should be called
 export const modal = createAppKit({
   adapters: [wagmiAdapter],
-  projectId: projectId!,
+  projectId,
   networks,
   metadata,
   

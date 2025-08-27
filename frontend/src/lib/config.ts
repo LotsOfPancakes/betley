@@ -26,7 +26,7 @@ function getBooleanEnv(key: string, fallback: boolean): boolean {
 
 // Environment-based network configuration
 // Production = Base Mainnet, Development = Base Sepolia
-const isProduction = process.env.NEXT_PUBLIC_NODE_ENV === 'production'
+const isProduction = process.env.NODE_ENV === 'production'
 
 // Helper function to create AppKit network with custom RPC URLs
 const createAppKitNetworkConfig = (baseNetwork: AppKitNetwork, customRpcUrls: string[]): AppKitNetwork => {
@@ -140,8 +140,8 @@ export const config = {
   },
   
   dev: {
-    enableDevtools: getBooleanEnv('NEXT_PUBLIC_ENABLE_DEVTOOLS', process.env.NEXT_PUBLIC_NODE_ENV === 'development'),
-    enableConsoleLogging: getBooleanEnv('NEXT_PUBLIC_ENABLE_CONSOLE_LOGGING', process.env.NEXT_PUBLIC_NODE_ENV === 'development'),
+    enableDevtools: getBooleanEnv('NEXT_PUBLIC_ENABLE_DEVTOOLS', process.env.NODE_ENV === 'development'),
+    enableConsoleLogging: getBooleanEnv('NEXT_PUBLIC_ENABLE_CONSOLE_LOGGING', process.env.NODE_ENV === 'development'),
   },
 }
 
@@ -157,12 +157,6 @@ export const devConfig = config.dev
 export function validateConfig(): void {
   // Validate WalletConnect Project ID
   if (!config.walletConnect.projectId) {
-    console.error('Environment check:', {
-      NODE_ENV: process.env.NODE_ENV,
-      NEXT_PUBLIC_NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV,
-      NEXT_PUBLIC_PROJECT_ID: process.env.NEXT_PUBLIC_PROJECT_ID || 'MISSING',
-      keys: Object.keys(process.env).filter(k => k.includes('PROJECT'))
-    })
     throw new Error('NEXT_PUBLIC_PROJECT_ID environment variable is required')
   }
   
@@ -197,7 +191,7 @@ export function validateConfig(): void {
 }
 
 // Environment detection helpers
-export const isDevelopment = process.env.NEXT_PUBLIC_NODE_ENV === 'development'
+export const isDevelopment = process.env.NODE_ENV === 'development'
 export const isTestnet = config.network.isTestnet
 // Note: isProduction is already defined above
 
