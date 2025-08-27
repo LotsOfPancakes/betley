@@ -114,7 +114,7 @@ export function useBetFeeData(
     if (!totalAmounts || !Array.isArray(totalAmounts)) {
       return BigInt(0)
     }
-    return calculateLosingPool(totalAmounts, winningOption || -1)
+    return calculateLosingPool(totalAmounts, winningOption ?? -1)
   }, [totalAmounts, winningOption])
 
   // 🔍 DEBUG: Log losing pool calculation
