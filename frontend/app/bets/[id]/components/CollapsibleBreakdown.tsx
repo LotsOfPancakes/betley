@@ -99,7 +99,7 @@ function WinningsBreakdownDetails({
       )}
       {breakdown.platformFee > BigInt(0) && (
         <div className="flex justify-between text-red-300">
-          <span>Platform Fee (0.5%):</span>
+          <span>Platform Fee (0.2%):</span>
           <span>-{formatTokenAmount(breakdown.platformFee, decimals, isNativeBet)}</span>
         </div>
       )}
