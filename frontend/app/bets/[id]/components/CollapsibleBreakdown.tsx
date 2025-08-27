@@ -92,13 +92,13 @@ function WinningsBreakdownDetails({
       
       {/* Show fee deductions in red if they exist */}
       {breakdown.creatorFee > BigInt(0) && (
-        <div className="flex justify-between text-red-300">
+        <div className="flex justify-between text-yellow-300">
           <span>Creator Fee (1%):</span>
           <span>-{formatTokenAmount(breakdown.creatorFee, decimals, isNativeBet)}</span>
         </div>
       )}
       {breakdown.platformFee > BigInt(0) && (
-        <div className="flex justify-between text-red-300">
+        <div className="flex justify-between text-yellow-300">
           <span>Platform Fee (0.2%):</span>
           <span>-{formatTokenAmount(breakdown.platformFee, decimals, isNativeBet)}</span>
         </div>
