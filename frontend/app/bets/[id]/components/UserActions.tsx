@@ -60,20 +60,21 @@ type ClaimStatus =
 
 /**
  * Check if creator can claim fees
+ * NOTE: Updated to use fee data from useBetFeeData instead of winningsBreakdown
+ * This allows creator fees to work regardless of whether creator won/lost personal bets
  */
 const canClaimCreatorFees = (
   resolved: boolean,
   winningOption: number | undefined,
   isCreator: boolean,
   hasClaimedCreatorFees: boolean,
-  breakdown: WinningsBreakdown | null
+  creatorFeeAmount: bigint
 ): boolean => {
   return Boolean(resolved && 
          winningOption !== undefined && 
          isCreator && 
          !hasClaimedCreatorFees && 
-         breakdown && 
-         breakdown.creatorFee > BigInt(0))
+         creatorFeeAmount > BigInt(0))
 }
 
 /**
@@ -605,25 +606,27 @@ export function UserActions({
   const isEmptyExpiredBet = resolutionDeadlinePassed && !resolved && totalAmounts && isBetEmpty(totalAmounts)
   
   // Check if creator can claim fees (independent of regular winnings)
-  const showCreatorFees = canClaimCreatorFees(resolved, winningOption, isCreator, hasClaimedCreatorFees || false, winningsBreakdown)
+  // Use fee data from useBetFeeData hook instead of winningsBreakdown for creator fees
+  const showCreatorFees = canClaimCreatorFees(resolved, winningOption, isCreator, hasClaimedCreatorFees || false, creatorFeeAmount)
   
   // Check if creator has already claimed fees
-  const showCreatorFeesClaimed = resolved && winningOption !== undefined && isCreator && (hasClaimedCreatorFees || false) && winningsBreakdown && winningsBreakdown.creatorFee > BigInt(0)
+  // Use fee data from useBetFeeData hook instead of winningsBreakdown
+  const showCreatorFeesClaimed = resolved && winningOption !== undefined && isCreator && (hasClaimedCreatorFees || false) && creatorFeeAmount > BigInt(0)
   
   // 🔍 DEBUG: Log creator fees display logic
-  console.log('🔍 UserActions - Creator fees display logic:', {
+  console.log('🔍 UserActions - Creator fees display logic (FIXED - now independent):', {
     resolved,
     winningOption,
     isCreator,
     hasClaimedCreatorFees,
+    // NOTE: Creator fees now use independent fee data, not winningsBreakdown
+    creatorFeeAmount: creatorFeeAmount.toString(),
+    platformFeeAmount: platformFeeAmount.toString(),
     winningsBreakdown: winningsBreakdown ? {
       creatorFee: winningsBreakdown.creatorFee.toString(),
-      platformFee: winningsBreakdown.platformFee.toString(),
       totalWinnings: winningsBreakdown.totalWinnings.toString(),
-      originalBet: winningsBreakdown.originalBet.toString(),
-      rawWinningsFromLosers: winningsBreakdown.rawWinningsFromLosers.toString(),
-      showFees: winningsBreakdown.showFees
-    } : null,
+      originalBet: winningsBreakdown.originalBet.toString()
+    } : 'null (expected for losing creators)',
     showCreatorFees,
     showCreatorFeesClaimed
   })
@@ -640,9 +643,10 @@ export function UserActions({
       )}
       
       {/* Creator Fees Section - Independent of main claim status */}
-      {showCreatorFees && winningsBreakdown && (
+      {/* NOTE: Now uses fee data from useBetFeeData instead of winningsBreakdown */}
+      {showCreatorFees && (
         <CreatorFeesClaimable
-          claimStatus={{ type: 'can-claim-creator-fees', amount: winningsBreakdown.creatorFee }}
+          claimStatus={{ type: 'can-claim-creator-fees', amount: creatorFeeAmount }}
           handleClaimCreatorFees={handleClaimCreatorFees}
           isPending={isPending}
           decimals={decimals}
@@ -651,9 +655,10 @@ export function UserActions({
       )}
       
       {/* Creator Fees Already Claimed Section */}
-      {showCreatorFeesClaimed && winningsBreakdown && (
+      {/* NOTE: Now uses fee data from useBetFeeData instead of winningsBreakdown */}
+      {showCreatorFeesClaimed && (
         <CreatorFeesClaimedStatus
-          amount={winningsBreakdown.creatorFee}
+          amount={creatorFeeAmount}
           decimals={decimals}
           isNativeBet={isNativeBet}
         />
