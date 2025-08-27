@@ -69,7 +69,7 @@ export function BetOptionsGrid({
             let buttonStyle = ''
             if (isWinningOption) {
               // Winner: Always green and prominent
-              buttonStyle = 'border-green-500/60 bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-green-300 shadow-lg shadow-green-500/20'
+              buttonStyle = 'border-green-500/60 bg-gradient-to-br from-green-900/40 to-emerald-900/40 text-green-300'
             } else if (isUserLosingBet) {
               // User's losing bet: put as gray, same as not-clickable - the blue pill indicating their bet is enough
               buttonStyle = 'border-gray-700/30 bg-gray-800/20 text-gray-500 cursor-not-allowed opacity-50'
@@ -135,7 +135,7 @@ export function BetOptionsGrid({
                     <div className="text-sm font-medium text-gray-300">
                       {formatDynamicDecimals(formatUnits(totalForOption, decimals))} {tokenSymbol}
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-gray-300">
                       {percentage.toFixed(0)}%
                     </div>
                   </div>
