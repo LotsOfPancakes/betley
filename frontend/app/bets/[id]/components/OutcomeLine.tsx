@@ -48,8 +48,9 @@ export function OutcomeLine({
 
   const styles = colorStyles[outcome.color]
 
+  {/* Container - removed border ${styles.border} for now */}
   return (
-    <div className={`bg-gradient-to-r ${styles.bg} border ${styles.border} rounded-xl p-4`}>
+    <div className={`bg-gradient-to-r ${styles.bg} rounded-xl p-4`}> 
       <div className="flex items-center justify-between">
         {/* Left side: Icon and details */}
         <div className="flex items-center gap-3">

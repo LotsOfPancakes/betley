@@ -274,7 +274,7 @@ export function BetAmountInput({
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/80 backdrop-blur-sm border border-green-600/20 rounded-3xl p-5 space-y-4">
+    <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/80 backdrop-blur-sm border-green-600/20 rounded-3xl p-5 space-y-4">
       {/* Amount Input */}
       <div>
         {/* Input Row */}
