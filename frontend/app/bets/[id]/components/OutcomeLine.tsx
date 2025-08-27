@@ -68,7 +68,7 @@ export function OutcomeLine({
             <button 
               onClick={onClaim}
               disabled={isPending}
-              className={`${styles.button} px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
+              className={`${styles.button} px-8 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-102 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
             >
               {isPending ? 'Claiming...' : 'Claim'}
             </button>
