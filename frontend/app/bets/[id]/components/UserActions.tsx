@@ -527,6 +527,12 @@ export function UserActions({
     error: feeDataError
   } = useBetFeeData(betId, address, totalAmounts, winningOption, resolved)
 
+  // 🔍 DEBUG: Log fee data hook results
+  console.log('🔍 UserActions - Fee data hook results:', {
+    contractWinnings: contractWinnings?.toString(),
+    feeParams: feeParams ? Array.from(feeParams).map((x, i) => i < 4 ? (typeof x === 'bigint' ? x.toString() : x) : x) : undefined,
+    feeDataError: feeDataError?.message
+  })
 
   
 
@@ -603,6 +609,21 @@ export function UserActions({
   
   // Check if creator has already claimed fees
   const showCreatorFeesClaimed = resolved && winningOption !== undefined && isCreator && (hasClaimedCreatorFees || false) && winningsBreakdown && winningsBreakdown.creatorFee > BigInt(0)
+  
+  // 🔍 DEBUG: Log creator fees display logic
+  console.log('🔍 UserActions - Creator fees display logic:', {
+    resolved,
+    winningOption,
+    isCreator,
+    hasClaimedCreatorFees,
+    winningsBreakdown: winningsBreakdown ? {
+      creatorFee: winningsBreakdown.creatorFee.toString(),
+      totalWinnings: winningsBreakdown.totalWinnings.toString(),
+      netWinnings: winningsBreakdown.netWinnings.toString()
+    } : null,
+    showCreatorFees,
+    showCreatorFeesClaimed
+  })
   
   return (
     <div className="space-y-4">
