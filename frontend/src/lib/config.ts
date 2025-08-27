@@ -157,6 +157,12 @@ export const devConfig = config.dev
 export function validateConfig(): void {
   // Validate WalletConnect Project ID
   if (!config.walletConnect.projectId) {
+    console.error('Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV,
+      NEXT_PUBLIC_PROJECT_ID: process.env.NEXT_PUBLIC_PROJECT_ID || 'MISSING',
+      keys: Object.keys(process.env).filter(k => k.includes('PROJECT'))
+    })
     throw new Error('NEXT_PUBLIC_PROJECT_ID environment variable is required')
   }
   
