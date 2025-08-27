@@ -524,7 +524,6 @@ export function UserActions({
   const {
     contractWinnings,
     creatorFeeAmount,
-    platformFeeAmount,
     feeParams,
     error: feeDataError
   } = useBetFeeData(betId, address, totalAmounts, winningOption, resolved)
