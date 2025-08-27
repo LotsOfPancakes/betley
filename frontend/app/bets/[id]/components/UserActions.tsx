@@ -529,13 +529,6 @@ export function UserActions({
     error: feeDataError
   } = useBetFeeData(betId, address, totalAmounts, winningOption, resolved)
 
-  // 🔍 DEBUG: Log fee data hook results
-  console.log('🔍 UserActions - Fee data hook results:', {
-    contractWinnings: contractWinnings?.toString(),
-    feeParams: feeParams ? Array.from(feeParams).map((x, i) => i < 4 ? (typeof x === 'bigint' ? x.toString() : x) : x) : undefined,
-    feeDataError: feeDataError?.message
-  })
-
   
 
 
@@ -613,24 +606,6 @@ export function UserActions({
   // Check if creator has already claimed fees
   // Use fee data from useBetFeeData hook instead of winningsBreakdown
   const showCreatorFeesClaimed = resolved && winningOption !== undefined && isCreator && (hasClaimedCreatorFees || false) && creatorFeeAmount > BigInt(0)
-  
-  // 🔍 DEBUG: Log creator fees display logic
-  console.log('🔍 UserActions - Creator fees display logic (FIXED - now independent):', {
-    resolved,
-    winningOption,
-    isCreator,
-    hasClaimedCreatorFees,
-    // NOTE: Creator fees now use independent fee data, not winningsBreakdown
-    creatorFeeAmount: creatorFeeAmount.toString(),
-    platformFeeAmount: platformFeeAmount.toString(),
-    winningsBreakdown: winningsBreakdown ? {
-      creatorFee: winningsBreakdown.creatorFee.toString(),
-      totalWinnings: winningsBreakdown.totalWinnings.toString(),
-      originalBet: winningsBreakdown.originalBet.toString()
-    } : 'null (expected for losing creators)',
-    showCreatorFees,
-    showCreatorFeesClaimed
-  })
   
   return (
     <div className="space-y-4">
