@@ -5,8 +5,8 @@
 import { useState } from 'react'
 import { formatTokenAmount } from '@/lib/utils/tokenFormatting'
 import { type WinningsBreakdown } from '@/lib/utils'
-import { type FeeBreakdown } from '../../hooks/useBetFeeData'
-import { type BetOutcome } from './calculateOutcomes'
+import { type FeeBreakdown } from '../hooks/useBetFeeData'
+import { type BetOutcome } from '../utils/calculateOutcomes'
 
 interface CollapsibleBreakdownProps {
   outcome: BetOutcome

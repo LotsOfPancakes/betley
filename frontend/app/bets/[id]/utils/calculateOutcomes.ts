@@ -7,7 +7,7 @@ import {
   type WinningsBreakdown,
 } from '@/lib/utils'
 import { hasRefundableBets, isBetEmpty } from '@/lib/utils/bettingUtils'
-import { type FeeBreakdown } from '../../hooks/useBetFeeData'
+import { type FeeBreakdown } from '../hooks/useBetFeeData'
 
 export interface BetOutcome {
   type: 'winnings' | 'lost' | 'creator-fees' | 'refund'
@@ -15,7 +15,6 @@ export interface BetOutcome {
   canClaim: boolean
   alreadyClaimed: boolean
   label: string
-  icon: string
   color: 'green' | 'red' | 'yellow' | 'blue'
   breakdown?: WinningsBreakdown | FeeBreakdown
   showBreakdown: boolean
@@ -91,7 +90,6 @@ export function calculateOutcomes(params: CalculateOutcomesParams): BetOutcome[]
         canClaim: !hasClaimed,
         alreadyClaimed: hasClaimed,
         label: 'Winnings',
-        icon: '💰',
         color: 'green',
         breakdown: winningsBreakdown,
         showBreakdown: true
@@ -107,7 +105,6 @@ export function calculateOutcomes(params: CalculateOutcomesParams): BetOutcome[]
       canClaim: false,
       alreadyClaimed: false,
       label: 'Lost',
-      icon: '💸',
       color: 'red',
       showBreakdown: false
     })
@@ -129,7 +126,6 @@ export function calculateOutcomes(params: CalculateOutcomesParams): BetOutcome[]
       canClaim: !hasClaimedCreatorFees,
       alreadyClaimed: hasClaimedCreatorFees,
       label: 'Creator Fees',
-      icon: '🏆',
       color: 'yellow',
       breakdown: feeBreakdown,
       showBreakdown: true
@@ -146,7 +142,6 @@ export function calculateOutcomes(params: CalculateOutcomesParams): BetOutcome[]
         canClaim: !hasClaimed,
         alreadyClaimed: hasClaimed,
         label: 'Refund',
-        icon: '↩️',
         color: 'blue',
         showBreakdown: false
       })

@@ -3,10 +3,10 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useBetFeeData } from '../../hooks/useBetFeeData'
+import { useBetFeeData } from '../hooks/useBetFeeData'
 import { isBetEmpty } from '@/lib/utils/bettingUtils'
 import { OutcomeLine } from './OutcomeLine'
-import { calculateOutcomes, type CalculateOutcomesParams } from './calculateOutcomes'
+import { calculateOutcomes, type CalculateOutcomesParams } from '../utils/calculateOutcomes'
 
 export interface BetOutcomesProps {
   // Core bet data
@@ -132,7 +132,7 @@ export function BetOutcomes({
   
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-white">Your Outcomes</h3>
+      <h3 className="text-lg font-semibold text-white">Bet Result</h3>
       
       <div className="space-y-3">
         {outcomes.map(outcome => (

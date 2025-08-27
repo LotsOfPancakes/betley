@@ -1,10 +1,11 @@
-// OutcomeLine.tsx - Individual outcome display component
+// OutcomeLine.tsx - Individual outcome display component. It's what's inside each BetOutcomes
 
 'use client'
 
 import { formatTokenAmount } from '@/lib/utils/tokenFormatting'
 import { CollapsibleBreakdown } from './CollapsibleBreakdown'
-import { type BetOutcome } from './calculateOutcomes'
+import { BetOutcomeIcon } from './BetOutcomeIcon'
+import { type BetOutcome } from '../utils/calculateOutcomes'
 
 interface OutcomeLineProps {
   outcome: BetOutcome
@@ -52,7 +53,7 @@ export function OutcomeLine({
       <div className="flex items-center justify-between">
         {/* Left side: Icon and details */}
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{outcome.icon}</span>
+          <BetOutcomeIcon type={outcome.type} size="lg" />
           <div>
             <div className="text-white font-medium">{outcome.label}</div>
             <div className="text-gray-300 text-sm">
