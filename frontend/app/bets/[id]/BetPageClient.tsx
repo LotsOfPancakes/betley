@@ -127,8 +127,9 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     handleResolveBet
   } = useBetActionsNew(numericBetId?.toString() || '0', typedBetDetails?.[7]) // betId as numeric string, token address
 
-  // Feature flag checks
-  const shouldUseBetOutcomes = useFeatureFlag('betOutcomes', databaseBet)
+  // Feature flag checks - Default to BetOutcomes, use UserActions only if explicitly disabled
+  const shouldUseUserActions = useFeatureFlag('useUserActions', databaseBet)
+  const shouldUseBetOutcomes = !shouldUseUserActions
 
   // Loading state
   if (isBetLoading) {
