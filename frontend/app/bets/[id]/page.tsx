@@ -58,7 +58,7 @@ export async function generateMetadata({
         siteName: 'Betley',
         images: [
           {
-            url: '/og-bet-image.png', // You can create a specific image for bets
+            url: '/og-bet-image.png?v=2', // Cache busting for updated image
             width: 1200,
             height: 630,
             alt: `Bet: ${betTitle}`,
@@ -70,7 +70,7 @@ export async function generateMetadata({
         card: 'summary_large_image',
         title: betTitle,
         description: `Join this Bet. Will you bet Yes or No?`,
-        images: ['/og-bet-image.png'],
+        images: ['/og-bet-image.png?v=2'],
         creator: '@betleyxyz',
         site: '@betleyxyz',
       },
