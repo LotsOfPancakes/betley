@@ -178,7 +178,7 @@ export function UnifiedBettingInterface({
         </div>
 
         {/* Right Column - Amount Input (40% on desktop) */}
-        <div className="lg:w-[40%] lg:min-w-[320px]">
+        <div className="lg:w-[40%]">
           <BetAmountInput
             betAmount={betAmount}
             setBetAmount={setBetAmount}
