@@ -73,9 +73,9 @@ export function BetStatusHeader({
     <div className="space-y-3 mb-6">
        {/* Title Row with Creator Dropdown */}
        <div className="flex items-center gap-4">
-        {/* Title - truncated if too long */}
+        {/* Title - wraps if too long */}
         <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight flex-1 min-w-0">
-          <span className="truncate block">
+          <span className="block break-words">
             {name}
           </span>
         </h1>
@@ -94,12 +94,12 @@ export function BetStatusHeader({
       </div>
       
       {/* Pool TVL and Share Button Row */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Left side - Pool Size + Status + Visibility */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
            {/* Combined pool, status and visibility as light grey subtitle text */}
            <div className="relative">
-             <span className="text-gray-300/80 text-base flex items-center">
+             <span className="text-gray-300/80 text-base flex items-center flex-wrap">
                 {hasPool && (
                   <>
                     <CurrencyDollarIcon className="w-4 h-4 mr-1.5 text-gray-300/80" />
@@ -139,7 +139,7 @@ export function BetStatusHeader({
         {/* Right side - Share Button */}
         <button
           onClick={copyLink}
-          className="text-sm bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-1.5 rounded-2xl transition-all duration-300 hover:scale-102 shadow-sm flex items-center gap-1.5 whitespace-nowrap"
+          className="text-sm bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-1.5 rounded-2xl transition-all duration-300 hover:scale-102 shadow-sm flex items-center gap-1.5"
         >
           {linkCopied ? (
             <>
