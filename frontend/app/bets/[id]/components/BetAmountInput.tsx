@@ -316,7 +316,7 @@ export function BetAmountInput({
         )}
 
         {/* Potential Winnings Preview - only show if connected + bet is active */}
-        {isConnected && shouldShowPotentialWinnings && !isActive && (
+        {isConnected && shouldShowPotentialWinnings && isActive && (
           <div className="flex items-center justify-between text-xs">
             <span className="text-green-400">Potential win:</span>
             <span className="text-green-400 font-medium text-sm">

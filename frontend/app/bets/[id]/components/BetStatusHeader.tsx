@@ -127,7 +127,7 @@ export function BetStatusHeader({
              {!isPublic && showTooltip && (
                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 p-3 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-sm text-gray-200 z-50">
                  <div className="text-center">
-                   Private bets are not visible on the Public Bets list. If you want someone to participate, send them the link. But note that anyone with the link can participate unless a whitelist is in place.
+                   Private Bets are not visible on the Public Bets list. If you want someone to participate, send them the link.
                  </div>
                  {/* Arrow pointing down */}
                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
@@ -139,7 +139,7 @@ export function BetStatusHeader({
         {/* Right side - Share Button */}
         <button
           onClick={copyLink}
-          className="text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-4 py-1.5 rounded-2xl transition-all duration-300 hover:scale-102 shadow-sm shadow-blue-500/25 flex items-center gap-1.5"
+          className="text-sm bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-1.5 rounded-2xl transition-all duration-300 hover:scale-102 shadow-sm flex items-center gap-1.5 whitespace-nowrap"
         >
           {linkCopied ? (
             <>
