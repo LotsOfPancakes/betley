@@ -139,7 +139,7 @@ export function BetStatusHeader({
         {/* Right side - Share Button */}
         <button
           onClick={copyLink}
-          className="text-sm bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-1.5 rounded-2xl transition-all duration-300 hover:scale-102 shadow-sm flex items-center gap-1.5"
+          className="text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-4 py-1.5 rounded-2xl transition-all duration-300 hover:scale-102 shadow-sm shadow-blue-500/25 flex items-center gap-1.5"
         >
           {linkCopied ? (
             <>
