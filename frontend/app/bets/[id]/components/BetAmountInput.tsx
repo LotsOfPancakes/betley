@@ -164,6 +164,7 @@ export function BetAmountInput({
 
   // Check if we should show the potential winnings preview
   const shouldShowPotentialWinnings = Boolean(
+    isActive && 
     isValidAmount &&
     selectedOption !== null &&
     formattedPotentialWinnings &&
