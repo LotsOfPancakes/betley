@@ -9,6 +9,7 @@ import { Navigation } from '@/components/Navigation'
 import { CriticalErrorBoundary } from '@/components/ErrorBoundary'
 import { Footer } from '@/components/Footer'
 import { config, appConfig } from '@/lib/config'
+import { Analytics } from '@vercel/analytics/next'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -189,6 +190,7 @@ export default async function RootLayout({
             <NotificationToast />
           </ContextProvider>
         </CriticalErrorBoundary>
+        <Analytics />
       </body>
     </html>
   );
