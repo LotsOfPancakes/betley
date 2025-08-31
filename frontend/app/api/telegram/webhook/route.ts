@@ -48,7 +48,7 @@ interface ValidationResult {
 // ============================================================================
 
 const BOT_TOKEN = process.env.BOT_TOKEN
-const BETLEY_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://betley.app'
+const BETLEY_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://betley.xyz'
 
 if (!BOT_TOKEN) {
   console.error('BOT_TOKEN environment variable is required')
@@ -256,8 +256,6 @@ Use: <code>/create "Bet title" "Option1, Option2" "24h"</code>
 ⏰ <b>Duration:</b> ${formatDuration(parsedCommand.duration)}
 
 <a href="${setupUrl}">🔗 Click here to create your bet!</a>
-
-👆 Connect your wallet and finalize the bet on Betley.
   `.trim()
   
   await sendTelegramMessage(chatId, responseMessage)
@@ -293,11 +291,10 @@ async function handleHelpCommand(update: TelegramUpdate): Promise<void> {
 • Weeks: <code>1w</code>, <code>2w</code>
 
 <b>Examples:</b>
-• <code>/create "Will Bitcoin hit $100k this year?" "Yes, No" "30d"</code>
+• <code>/create "Will Bitcoin hit $200k this year?" "Yes, No" "30d"</code>
 • <code>/create "Who will win the game?" "Team A, Team B, Draw" "2h"</code>
-• <code>/create "Will it be sunny tomorrow?" "Yes, No" "24h"</code>
 
-Made with ❤️ by <a href="https://betley.app">Betley</a>
+Made with ❤️ by <a href="https://betley.xyz">Betley</a>
   `.trim()
   
   await sendTelegramMessage(chatId, helpMessage)
