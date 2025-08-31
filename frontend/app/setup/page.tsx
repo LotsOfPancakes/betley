@@ -127,12 +127,12 @@ function SetupPageContent() {
 
   // Pre-fill all fields from URL parameters
   useEffect(() => {
-    let hasUpdates = false
+    // let hasUpdates = false
 
     // Pre-fill bet name
     if (titleFromUrl && !formData.name) {
       updateName(safeDecodeParam(titleFromUrl))
-      hasUpdates = true
+      // hasUpdates = true
     }
 
     // Pre-fill options (only if current options are default ['Yes', 'No'])
@@ -143,7 +143,7 @@ function SetupPageContent() {
     
     if (parsedOptions.length >= 2 && isDefaultOptions) {
       updateOptions(parsedOptions)
-      hasUpdates = true
+      // hasUpdates = true
     }
 
     // Pre-fill duration (only if current duration is default 1h)
@@ -152,25 +152,25 @@ function SetupPageContent() {
     
     if (parsedDuration && isDefaultDuration) {
       updateDuration(parsedDuration)
-      hasUpdates = true
+      // hasUpdates = true
     }
 
     // Pre-fill visibility (only if current is default private/false)
     const parsedVisibility = parseVisibilityFromUrl(visibilityFromUrl)
     if (parsedVisibility !== null && !formData.isPublic) {
       updateIsPublic(parsedVisibility)
-      hasUpdates = true
+      // hasUpdates = true
     }
 
-    // Log for debugging (remove in production)
-    if (hasUpdates) {
-      console.log('Pre-filled form from URL parameters:', {
-        title: titleFromUrl ? safeDecodeParam(titleFromUrl) : 'unchanged',
-        options: parsedOptions.length > 0 ? parsedOptions : 'unchanged',
-        duration: parsedDuration || 'unchanged',
-        visibility: parsedVisibility !== null ? parsedVisibility : 'unchanged'
-      })
-    }
+    // // Log for debugging (remove in production)
+    // if (hasUpdates) {
+    //   console.log('Pre-filled form from URL parameters:', {
+    //     title: titleFromUrl ? safeDecodeParam(titleFromUrl) : 'unchanged',
+    //     options: parsedOptions.length > 0 ? parsedOptions : 'unchanged',
+    //     duration: parsedDuration || 'unchanged',
+    //     visibility: parsedVisibility !== null ? parsedVisibility : 'unchanged'
+    //   })
+    // }
   }, [titleFromUrl, optionsFromUrl, durationFromUrl, visibilityFromUrl, formData.name, formData.options, formData.duration, formData.isPublic, updateName, updateOptions, updateDuration, updateIsPublic])
 
   // Create Telegram metadata object
