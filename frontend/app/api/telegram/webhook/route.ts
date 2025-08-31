@@ -184,7 +184,7 @@ async function sendTelegramMessage(chatId: number, text: string, options: Telegr
         chat_id: chatId,
         text: text,
         parse_mode: 'HTML',
-        disable_web_page_preview: false,
+        disable_web_page_preview: true,
         ...options
       })
     })
@@ -247,15 +247,12 @@ Use: <code>/create "Bet title" "Option1, Option2" "24h"</code>
   const setupUrl = generateBetSetupUrl(parsedCommand, userId, chatId.toString())
   
   // Send success response
-  const responseMessage = `
-🎲 <b>Bet setup ready!</b>
-
+    const responseMessage = `
 📋 <b>${parsedCommand.title}</b>
 ⚖️ <b>Options:</b> ${parsedCommand.options.join(', ')}
 ⏰ <b>Duration:</b> ${formatDuration(parsedCommand.duration)}
-
-<a href="${setupUrl}">🔗 Click here to create your bet!</a>
-  `.trim()
+🔗 <b>Create bet:</b> <a href="${setupUrl}">Click here</a>
+    `.trim()
   
   await sendTelegramMessage(chatId, responseMessage)
   
