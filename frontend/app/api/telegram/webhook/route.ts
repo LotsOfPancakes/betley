@@ -59,8 +59,8 @@ if (!BOT_TOKEN) {
 // ============================================================================
 
 function parseCommand(text: string): BetCommandData | null {
-  // Parse: /betley "title" "option1,option2" "duration"
-  const regex = /^\/betley\s+"([^"]+)"\s+"([^"]+)"\s+"([^"]+)"$/i
+  // Parse: /create "title" "option1,option2" "duration"
+  const regex = /^\/create\s+"([^"]+)"\s+"([^"]+)"\s+"([^"]+)"$/i
   const match = text.trim().match(regex)
   
   if (!match) return null
@@ -141,7 +141,7 @@ function generateBetSetupUrl(data: BetCommandData, userId: string, chatId: strin
     title: sanitizeInput(data.title),
     options: data.options.map(opt => sanitizeInput(opt)).join(','),
     duration: data.duration,
-    visibility: 'public',
+    visibility: 'private',
     source: 'telegram',
     tg_user: userId,
     tg_group: chatId
@@ -208,13 +208,13 @@ async function sendTelegramMessage(chatId: number, text: string, options: Telegr
 // COMMAND HANDLERS
 // ============================================================================
 
-async function handleBetleyCommand(update: TelegramUpdate): Promise<void> {
+async function handleCreateCommand(update: TelegramUpdate): Promise<void> {
   const message = update.message!
   const userId = message.from.id.toString()
   const chatId = message.chat.id
   const messageText = message.text
   
-  console.log('Processing /betley command:', {
+  console.log('Processing /create command:', {
     userId,
     chatId,
     messageText: messageText.substring(0, 100) + '...'
@@ -226,12 +226,12 @@ async function handleBetleyCommand(update: TelegramUpdate): Promise<void> {
     await sendTelegramMessage(chatId, `
 ❌ <b>Invalid format!</b>
 
-Use: <code>/betley "Bet title" "Option1, Option2" "24h"</code>
+Use: <code>/create "Bet title" "Option1, Option2" "24h"</code>
 
 <b>Examples:</b>
-• <code>/betley "Will it rain tomorrow?" "Yes, No" "24h"</code>
-• <code>/betley "Next US President" "Trump, Biden, Other" "30d"</code>
-• <code>/betley "Team wins tonight?" "Yes, No" "3h"</code>
+• <code>/create "Will it rain tomorrow?" "Yes, No" "24h"</code>
+• <code>/create "Next US President" "Trump, Biden, Other" "30d"</code>
+• <code>/create "Team wins tonight?" "Yes, No" "3h"</code>
     `.trim())
     return
   }
@@ -262,7 +262,7 @@ Use: <code>/betley "Bet title" "Option1, Option2" "24h"</code>
   
   await sendTelegramMessage(chatId, responseMessage)
   
-  console.log('Successfully processed /betley command:', {
+  console.log('Successfully processed /create command:', {
     userId,
     chatId,
     title: parsedCommand.title,
@@ -280,11 +280,11 @@ async function handleHelpCommand(update: TelegramUpdate): Promise<void> {
 <b>Create bets directly from Telegram!</b>
 
 <b>Commands:</b>
-• <code>/betley "title" "options" "duration"</code> - Create a new bet
+• <code>/create "title" "options" "duration"</code> - Create a new bet
 • <code>/help</code> - Show this help message
 
 <b>Format:</b>
-<code>/betley "Bet title" "Option1, Option2" "duration"</code>
+<code>/create "Bet title" "Option1, Option2" "duration"</code>
 
 <b>Duration formats:</b>
 • Minutes: <code>30m</code>, <code>45m</code>
@@ -293,9 +293,9 @@ async function handleHelpCommand(update: TelegramUpdate): Promise<void> {
 • Weeks: <code>1w</code>, <code>2w</code>
 
 <b>Examples:</b>
-• <code>/betley "Will Bitcoin hit $100k this year?" "Yes, No" "30d"</code>
-• <code>/betley "Who will win the game?" "Team A, Team B, Draw" "2h"</code>
-• <code>/betley "Will it be sunny tomorrow?" "Yes, No" "24h"</code>
+• <code>/create "Will Bitcoin hit $100k this year?" "Yes, No" "30d"</code>
+• <code>/create "Who will win the game?" "Team A, Team B, Draw" "2h"</code>
+• <code>/create "Will it be sunny tomorrow?" "Yes, No" "24h"</code>
 
 Made with ❤️ by <a href="https://betley.app">Betley</a>
   `.trim()
@@ -340,8 +340,8 @@ export async function POST(request: NextRequest) {
     // Handle commands
     const text = message.text.trim()
     
-    if (text.startsWith('/betley')) {
-      await handleBetleyCommand(update)
+    if (text.startsWith('/create')) {
+      await handleCreateCommand(update)
     } else if (text === '/help' || text === '/help@BetleyBot') {
       await handleHelpCommand(update)
     } else if (text === '/start') {
