@@ -73,6 +73,8 @@ export function useBetCreationNew() {
   useEffect(() => {
     if (isSuccess && receipt && betCounterWhenStarted !== null && pendingBetDetails) {
       const createDatabaseMapping = async () => {
+        let randomId: string | undefined = undefined
+        
         try {
           setState(prev => ({ ...prev, isLoading: true }))
           
@@ -112,7 +114,7 @@ export function useBetCreationNew() {
             throw new Error('API did not return randomId')
           }
           
-          const { randomId } = responseData
+          randomId = responseData.randomId
           
           // Invalidate React Query cache
           queryClient.invalidateQueries({ queryKey: ['betCounter'] })
@@ -196,7 +198,7 @@ export function useBetCreationNew() {
         creatorAddress: address,
         isPublic: isPublic,
         source: source,
-        sourceMetadata: sourceMetadata
+        sourceMetadata: sourceMetadata || undefined
       })
       
       setBetCounterWhenStarted(Number(betCounter))
