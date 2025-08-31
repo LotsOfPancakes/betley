@@ -251,7 +251,7 @@ Use: <code>/create "Bet title" "Option1, Option2" "24h"</code>
 📋 <b>${parsedCommand.title}</b>
 ⚖️ <b>Options:</b> ${parsedCommand.options.join(', ')}
 ⏰ <b>Duration:</b> ${formatDuration(parsedCommand.duration)}
-🔗 <b>Create bet:</b> <a href="${setupUrl}">Click here</a>
+🔗 <b><a href="${setupUrl}">Click here to Create Bet</a></b> 
     `.trim()
   
   await sendTelegramMessage(chatId, responseMessage)
