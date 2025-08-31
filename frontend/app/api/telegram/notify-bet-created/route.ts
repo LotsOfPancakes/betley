@@ -117,12 +117,10 @@ export async function POST(request: NextRequest) {
     
     // ✅ NOTIFICATION: Create success message
     const message = `
-✅ <b>Bet Created Successfully!</b>
+✅ Betting is now open - good luck! 🚀
 
 🎲 <b>${bet_title}</b>
-🔗 <a href="${bet_url}">Click here to place your bets!</a>
-
-💰 Betting is now open - good luck everyone! 🚀
+🔗 <a href="${bet_url}">Place your Bets!</a>
     `.trim()
     
     // ✅ SEND: Send notification to Telegram group
