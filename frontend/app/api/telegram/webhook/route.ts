@@ -309,11 +309,13 @@ Made with ❤️ by <a href="https://betley.app">Betley</a>
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify webhook (basic security)
+    // Log for debugging
     const userAgent = request.headers.get('user-agent') || ''
-    if (!userAgent.includes('Telegram')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    console.log('Webhook request received:', {
+      userAgent,
+      contentType: request.headers.get('content-type'),
+      hasBody: !!request.body
+    })
     
     // Parse update
     const update: TelegramUpdate = await request.json()
