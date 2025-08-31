@@ -15,6 +15,7 @@ interface NotificationRequest {
   bet_title: string
   telegram_group_id: string
   telegram_user_id?: string
+  setup_message_id?: string // NEW: Message ID for auto-deletion
 }
 
 // ============================================================================
@@ -69,6 +70,44 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<boolea
   }
 }
 
+async function deleteTelegramMessage(chatId: number, messageId: string): Promise<boolean> {
+  if (!BOT_TOKEN) {
+    console.error('Cannot delete Telegram message - BOT_TOKEN not configured')
+    return false
+  }
+  
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: parseInt(messageId)
+      })
+    })
+    
+    const result = await response.json()
+    
+    if (!response.ok) {
+      console.warn('Failed to delete Telegram message:', {
+        chatId,
+        messageId,
+        error: result.description || 'Unknown error'
+      })
+      return false
+    }
+    
+    console.log('Successfully deleted Telegram setup message:', { chatId, messageId })
+    return true
+    
+  } catch (error) {
+    console.warn('Failed to delete Telegram message:', error)
+    return false
+  }
+}
+
 // ============================================================================
 // MAIN NOTIFICATION HANDLER
 // ============================================================================
@@ -92,7 +131,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
     }
     
-    const { bet_url, bet_title, telegram_group_id } = body
+    const { bet_url, bet_title, telegram_group_id, setup_message_id } = body
     
     // ✅ VALIDATION: Check required fields
     if (!bet_url || !bet_title || !telegram_group_id) {
@@ -113,7 +152,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid telegram_group_id format' }, { status: 400 })
     }
     
-    console.log('Sending notification for bet:', { bet_title, telegram_group_id })
+    console.log('Sending notification for bet:', { bet_title, telegram_group_id, setup_message_id })
+    
+    // ✅ AUTO-DELETE: Delete setup message if message ID provided
+    let deletionSuccess = true
+    if (setup_message_id) {
+      console.log('Attempting to delete setup message:', setup_message_id)
+      deletionSuccess = await deleteTelegramMessage(groupId, setup_message_id)
+      
+      if (!deletionSuccess) {
+        console.warn('Setup message deletion failed - continuing with notification')
+        // Continue anyway - the notification is more important than cleanup
+      }
+    }
     
     // ✅ NOTIFICATION: Create success message
     const message = `
@@ -130,7 +181,8 @@ export async function POST(request: NextRequest) {
       console.log('Successfully sent bet notification')
       return NextResponse.json({ 
         success: true,
-        message: 'Notification sent successfully'
+        message: 'Notification sent successfully',
+        setup_message_deleted: setup_message_id ? deletionSuccess : null
       })
     } else {
       console.error('Failed to send Telegram notification')

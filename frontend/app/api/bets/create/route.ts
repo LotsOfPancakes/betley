@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
       isPublic = false,
       whitelistedAddresses = [],
       source = 'web',           // NEW: Source of bet creation
-      sourceMetadata = null     // NEW: Metadata for source context
+      sourceMetadata = null,    // NEW: Metadata for source context
+      tempBetId = null          // NEW: Temporary bet ID for Telegram auto-deletion
     } = body
 
 
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
     // Check if mapping already exists for this numeric ID
     const { data: existing, error: lookupError } = await supabase
       .from('bet_mappings')
-      .select('random_id')
+      .select('random_id, telegram_setup_message_id')
       .eq('numeric_id', numericId)
       .single()
 
@@ -164,39 +165,64 @@ export async function POST(request: NextRequest) {
     }
 
     if (existing) {
-
       return Response.json({ randomId: existing.random_id })
     }
 
-    // Generate unique random ID with collision detection
+    // Handle temporary bet ID for Telegram auto-deletion
+    let telegramSetupMessageId = null
     let randomId: string
-    let attempts = 0
-    const maxAttempts = 10
 
-    do {
-      randomId = generateRandomId()
-      attempts++
-      
-      if (attempts > maxAttempts) {
-        console.error('Unable to generate unique ID after', maxAttempts, 'attempts')
-        return Response.json({ error: 'Unable to generate unique ID' }, { status: 500 })
-      }
-
-      const { data: duplicate, error: duplicateError } = await supabase
+    if (tempBetId && source === 'telegram') {
+      // Find existing temporary bet mapping
+      const { data: tempBet, error: tempError } = await supabase
         .from('bet_mappings')
-        .select('id')
-        .eq('random_id', randomId)
+        .select('telegram_setup_message_id')
+        .eq('random_id', tempBetId)
+        .eq('numeric_id', -1)
         .single()
 
-      if (duplicateError && duplicateError.code !== 'PGRST116') {
-        console.error('Duplicate check error:', duplicateError)
-        return Response.json({ error: 'Database error during ID generation' }, { status: 500 })
+      if (!tempError && tempBet) {
+        telegramSetupMessageId = tempBet.telegram_setup_message_id
+        randomId = tempBetId // Use the existing temporary ID
+        
+        // Delete the temporary mapping as we'll create the real one below
+        await supabase
+          .from('bet_mappings')
+          .delete()
+          .eq('random_id', tempBetId)
+          .eq('numeric_id', -1)
+      } else {
+        // Generate new random ID if temp bet not found
+        randomId = generateRandomId()
       }
+    } else {
+      // Generate unique random ID with collision detection for non-Telegram bets
+      let attempts = 0
+      const maxAttempts = 10
 
-      if (!duplicate) break
-    } while (attempts < maxAttempts)
+      do {
+        randomId = generateRandomId()
+        attempts++
+        
+        if (attempts > maxAttempts) {
+          console.error('Unable to generate unique ID after', maxAttempts, 'attempts')
+          return Response.json({ error: 'Unable to generate unique ID' }, { status: 500 })
+        }
 
+        const { data: duplicate, error: duplicateError } = await supabase
+          .from('bet_mappings')
+          .select('id')
+          .eq('random_id', randomId)
+          .single()
 
+        if (duplicateError && duplicateError.code !== 'PGRST116') {
+          console.error('Duplicate check error:', duplicateError)
+          return Response.json({ error: 'Database error during ID generation' }, { status: 500 })
+        }
+
+        if (!duplicate) break
+      } while (attempts < maxAttempts)
+    }
 
     // ✅ NEW ARCHITECTURE: Store ALL sensitive bet details in database
     const endTime = Math.floor(Date.now() / 1000) + durationInSeconds
@@ -222,6 +248,9 @@ export async function POST(request: NextRequest) {
       // Source tracking (NEW)
       source: source,
       source_metadata: sourceMetadata,
+      
+      // Telegram auto-delete support
+      telegram_setup_message_id: telegramSetupMessageId,
       
       // Whitelist (for convenience - contract is source of truth)
       has_whitelist: whitelistedAddresses.length > 0,
@@ -290,7 +319,8 @@ export async function POST(request: NextRequest) {
             bet_url: betUrl,
             bet_title: betName.trim(),
             telegram_group_id: sourceMetadata.telegram_group_id,
-            telegram_user_id: sourceMetadata.telegram_user_id
+            telegram_user_id: sourceMetadata.telegram_user_id,
+            setup_message_id: telegramSetupMessageId // NEW: Pass message ID for auto-deletion
           })
         })
       } catch (error) {

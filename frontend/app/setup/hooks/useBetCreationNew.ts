@@ -36,6 +36,7 @@ export function useBetCreationNew() {
       telegram_group_id?: string
       telegram_user_id?: string
     }
+    tempBetId?: string
   } | null>(null)
   
   const [betCounterWhenStarted, setBetCounterWhenStarted] = useState<number | null>(null)
@@ -96,7 +97,8 @@ export function useBetCreationNew() {
               durationInSeconds: pendingBetDetails.duration,
               isPublic: pendingBetDetails.isPublic,
               source: pendingBetDetails.source || 'web',
-              sourceMetadata: pendingBetDetails.sourceMetadata
+              sourceMetadata: pendingBetDetails.sourceMetadata,
+              tempBetId: pendingBetDetails.tempBetId
             }),
           })
           
@@ -163,7 +165,8 @@ export function useBetCreationNew() {
     tokenAddress: string = ZERO_ADDRESS,
     isPublic: boolean = false,
     source: 'web' | 'telegram' = 'web',
-    sourceMetadata: { telegram_group_id?: string; telegram_user_id?: string } | null = null
+    sourceMetadata: { telegram_group_id?: string; telegram_user_id?: string } | null = null,
+    tempBetId?: string
   ) => {
     // Validate chain first - properly await the async validation
     const isValidChain = validateForTransaction()
@@ -198,7 +201,8 @@ export function useBetCreationNew() {
         creatorAddress: address,
         isPublic: isPublic,
         source: source,
-        sourceMetadata: sourceMetadata || undefined
+        sourceMetadata: sourceMetadata || undefined,
+        tempBetId: tempBetId
       })
       
       setBetCounterWhenStarted(Number(betCounter))

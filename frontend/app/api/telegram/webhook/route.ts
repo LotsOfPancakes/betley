@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerSupabaseClient, generateRandomId } from '@/lib/supabase'
 
 // ============================================================================
 // TYPES
@@ -136,14 +137,15 @@ function sanitizeInput(input: string): string {
     .trim()
 }
 
-function generateBetSetupUrl(data: BetCommandData, userId: string, chatId: string): string {
+function generateBetSetupUrl(data: BetCommandData, userId: string, chatId: string, tempBetId: string): string {
   const params = new URLSearchParams({
     title: sanitizeInput(data.title),
     options: data.options.map(opt => sanitizeInput(opt)).join(','),
     duration: data.duration,
     source: 'telegram',
     tg_user: userId,
-    tg_group: chatId
+    tg_group: chatId,
+    temp_bet_id: tempBetId
   })
   
   return `${BETLEY_BASE_URL}/setup?${params.toString()}`
@@ -171,8 +173,14 @@ interface TelegramMessageOptions {
   reply_markup?: object
 }
 
-async function sendTelegramMessage(chatId: number, text: string, options: TelegramMessageOptions = {}): Promise<boolean> {
-  if (!BOT_TOKEN) return false
+interface TelegramMessageResult {
+  success: boolean
+  messageId?: number
+  error?: string
+}
+
+async function sendTelegramMessage(chatId: number, text: string, options: TelegramMessageOptions = {}): Promise<TelegramMessageResult> {
+  if (!BOT_TOKEN) return { success: false, error: 'Bot token not configured' }
   
   try {
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -193,13 +201,16 @@ async function sendTelegramMessage(chatId: number, text: string, options: Telegr
     
     if (!response.ok) {
       console.error('Telegram API error:', result)
-      return false
+      return { success: false, error: result.description || 'Unknown API error' }
     }
     
-    return true
+    return { 
+      success: true, 
+      messageId: result.result?.message_id 
+    }
   } catch (error) {
     console.error('Failed to send Telegram message:', error)
-    return false
+    return { success: false, error: 'Network error' }
   }
 }
 
@@ -243,25 +254,63 @@ Use: <code>/create "Bet title" "Option1, Option2" "24h"</code>
     return
   }
   
+  // Generate temporary bet ID for tracking
+  const tempBetId = generateRandomId()
+  
   // Generate setup URL
-  const setupUrl = generateBetSetupUrl(parsedCommand, userId, chatId.toString())
+  const setupUrl = generateBetSetupUrl(parsedCommand, userId, chatId.toString(), tempBetId)
   
   // Send success response
-    const responseMessage = `
+  const responseMessage = `
 📋 <b>${parsedCommand.title}</b>
 ⚖️ <b>Options:</b> ${parsedCommand.options.join(', ')}
 ⏰ <b>Duration:</b> ${formatDuration(parsedCommand.duration)}
 🔗 <b><a href="${setupUrl}">Click here to Create Bet</a></b> 
     `.trim()
   
-  await sendTelegramMessage(chatId, responseMessage)
+  const messageResult = await sendTelegramMessage(chatId, responseMessage)
+  
+  if (messageResult.success && messageResult.messageId) {
+    // Store the temporary bet mapping with message ID for auto-deletion
+    const serverSupabase = createServerSupabaseClient()
+    
+    try {
+      await serverSupabase
+        .from('bet_mappings')
+        .insert({
+          random_id: tempBetId,
+          numeric_id: -1, // Temporary placeholder - will be updated when bet is actually created
+          creator_address: '0x0000000000000000000000000000000000000000', // Placeholder
+          bet_name: parsedCommand.title,
+          source: 'telegram',
+          source_metadata: {
+            telegram_group_id: chatId.toString(),
+            telegram_user_id: userId
+          },
+          telegram_setup_message_id: messageResult.messageId.toString(),
+          is_public: true // Default for Telegram bets
+        })
+      
+      console.log('Successfully stored temp bet mapping:', {
+        tempBetId,
+        messageId: messageResult.messageId,
+        userId,
+        chatId
+      })
+    } catch (error) {
+      console.error('Failed to store temp bet mapping:', error)
+      // Continue anyway - the auto-delete feature will just not work for this bet
+    }
+  }
   
   console.log('Successfully processed /create command:', {
     userId,
     chatId,
     title: parsedCommand.title,
     optionsCount: parsedCommand.options.length,
-    duration: parsedCommand.duration
+    duration: parsedCommand.duration,
+    tempBetId,
+    messageId: messageResult.messageId
   })
 }
 

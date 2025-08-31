@@ -101,6 +101,7 @@ function SetupPageContent() {
   const sourceFromUrl = searchParams?.get('source') || ''
   const tgUserFromUrl = searchParams?.get('tg_user') || ''
   const tgGroupFromUrl = searchParams?.get('tg_group') || ''
+  const tempBetIdFromUrl = searchParams?.get('temp_bet_id') || ''
 
   // Use our custom hooks
   const {
@@ -200,10 +201,11 @@ function SetupPageContent() {
       formData.name,           // betName
       filledOptions,           // options array
       durationInSeconds,       // duration
-      ZERO_ADDRESS, // native ETH
+      ZERO_ADDRESS,            // native ETH
       formData.isPublic,       // isPublic flag
       telegramMetadata.source, // source (web/telegram)
-      telegramMetadata.sourceMetadata // Telegram metadata
+      telegramMetadata.sourceMetadata, // Telegram metadata
+      tempBetIdFromUrl || undefined    // tempBetId for auto-deletion
     )
   }
 
