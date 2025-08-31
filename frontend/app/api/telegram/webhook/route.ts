@@ -79,7 +79,7 @@ function validateCommand(data: BetCommandData): ValidationResult {
     errors.push('Title must be 5-200 characters')
   }
   
-  if (!/^[a-zA-Z0-9\s\?\!\.\,\-\(\)]+$/.test(data.title)) {
+  if (!/^[a-zA-Z0-9\s\?\!\.\,\-\(\)\>\<\$]+$/.test(data.title)) {
     errors.push('Title contains invalid characters')
   }
   
@@ -93,7 +93,7 @@ function validateCommand(data: BetCommandData): ValidationResult {
       errors.push('Each option must be 1-100 characters')
     }
     
-    if (!/^[a-zA-Z0-9\s\-\(\)]+$/.test(option)) {
+    if (!/^[a-zA-Z0-9\s\-\(\)\>\<\$]+$/.test(option)) {
       errors.push(`Option "${option}" contains invalid characters`)
     }
   }
@@ -131,7 +131,7 @@ function validateCommand(data: BetCommandData): ValidationResult {
 
 function sanitizeInput(input: string): string {
   return input
-    .replace(/[<>\"'&{}[\]\\]/g, '') // Remove dangerous chars
+    .replace(/[\"'&{}[\]\\]/g, '') // Remove dangerous chars (keep <>$ for price comparisons)
     .replace(/\s+/g, ' ') // Normalize whitespace
     .trim()
 }

@@ -29,7 +29,7 @@ function safeDecodeParam(param: string): string {
     return decodeURIComponent(param)
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
       .replace(/javascript:/gi, '') // Remove javascript: protocols
-      .replace(/[<>\"'&]/g, '') // Remove potential XSS chars
+      .replace(/[\"'&]/g, '') // Remove potential XSS chars (keep <>$ for price comparisons)
       .trim()
   } catch {
     return '' // Return empty string if decoding fails
