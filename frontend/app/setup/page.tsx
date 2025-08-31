@@ -1,7 +1,7 @@
 // frontend/app/setup/page.tsx - Updated with public/private toggle
 'use client'
 
-import { useEffect, Suspense } from 'react'
+import { useEffect, Suspense, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -96,6 +96,11 @@ function SetupPageContent() {
   const optionsFromUrl = searchParams?.get('options') || ''
   const durationFromUrl = searchParams?.get('duration') || ''
   const visibilityFromUrl = searchParams?.get('visibility') || ''
+  
+  // Get Telegram-specific parameters
+  const sourceFromUrl = searchParams?.get('source') || ''
+  const tgUserFromUrl = searchParams?.get('tg_user') || ''
+  const tgGroupFromUrl = searchParams?.get('tg_group') || ''
 
   // Use our custom hooks
   const {
@@ -167,6 +172,20 @@ function SetupPageContent() {
     }
   }, [titleFromUrl, optionsFromUrl, durationFromUrl, visibilityFromUrl, formData.name, formData.options, formData.duration, formData.isPublic, updateName, updateOptions, updateDuration, updateIsPublic])
 
+  // Create Telegram metadata object
+  const telegramMetadata = useMemo(() => {
+    if (sourceFromUrl === 'telegram') {
+      return {
+        source: 'telegram' as const,
+        sourceMetadata: {
+          telegram_group_id: tgGroupFromUrl || undefined,
+          telegram_user_id: tgUserFromUrl || undefined
+        }
+      }
+    }
+    return { source: 'web' as const, sourceMetadata: null }
+  }, [sourceFromUrl, tgGroupFromUrl, tgUserFromUrl])
+
   const handleSubmit = () => {
     if (!isValid) {
       showWarning('Please fix the form errors before submitting', 'Form Validation')
@@ -182,7 +201,9 @@ function SetupPageContent() {
       filledOptions,           // options array
       durationInSeconds,       // duration
       ZERO_ADDRESS, // native ETH
-      formData.isPublic        // isPublic flag
+      formData.isPublic,       // isPublic flag
+      telegramMetadata.source, // source (web/telegram)
+      telegramMetadata.sourceMetadata // Telegram metadata
     )
   }
 

@@ -61,7 +61,9 @@ export async function POST(request: NextRequest) {
       tokenAddress,
       durationInSeconds = 0,
       isPublic = false,
-      whitelistedAddresses = []
+      whitelistedAddresses = [],
+      source = 'web',           // NEW: Source of bet creation
+      sourceMetadata = null     // NEW: Metadata for source context
     } = body
 
 
@@ -121,6 +123,26 @@ export async function POST(request: NextRequest) {
     for (const addr of whitelistedAddresses) {
       if (!addr || typeof addr !== 'string' || !addr.match(/^0x[a-fA-F0-9]{40}$/)) {
         return Response.json({ error: 'Invalid whitelist address format' }, { status: 400 })
+      }
+    }
+
+    // ✅ VALIDATION: Validate source parameter
+    if (source && !['web', 'telegram'].includes(source)) {
+      return Response.json({ error: 'Invalid source. Must be "web" or "telegram"' }, { status: 400 })
+    }
+
+    // ✅ VALIDATION: Validate source metadata
+    if (source === 'telegram' && sourceMetadata) {
+      if (typeof sourceMetadata !== 'object' || sourceMetadata === null) {
+        return Response.json({ error: 'Invalid source metadata format' }, { status: 400 })
+      }
+      
+      if (sourceMetadata.telegram_group_id && typeof sourceMetadata.telegram_group_id !== 'string') {
+        return Response.json({ error: 'Invalid telegram_group_id format' }, { status: 400 })
+      }
+      
+      if (sourceMetadata.telegram_user_id && typeof sourceMetadata.telegram_user_id !== 'string') {
+        return Response.json({ error: 'Invalid telegram_user_id format' }, { status: 400 })
       }
     }
 
@@ -197,6 +219,10 @@ export async function POST(request: NextRequest) {
       // Visibility
       is_public: isPublic,
       
+      // Source tracking (NEW)
+      source: source,
+      source_metadata: sourceMetadata,
+      
       // Whitelist (for convenience - contract is source of truth)
       has_whitelist: whitelistedAddresses.length > 0,
       
@@ -248,6 +274,30 @@ export async function POST(request: NextRequest) {
 
     // ✅ REAL-TIME ANALYTICS: Track bet creation activity
     await trackBetCreation(creatorAddress, numericId)
+
+    // ✅ TELEGRAM NOTIFICATION: Notify Telegram group if this was a Telegram bet
+    if (source === 'telegram' && sourceMetadata?.telegram_group_id) {
+      try {
+        const betUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://betley.xyz'}/bets/${randomId}`
+        
+        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://betley.xyz'}/api/telegram/notify-bet-created`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.TELEGRAM_BOT_API_KEY || 'dev-key'}`
+          },
+          body: JSON.stringify({
+            bet_url: betUrl,
+            bet_title: betName.trim(),
+            telegram_group_id: sourceMetadata.telegram_group_id,
+            telegram_user_id: sourceMetadata.telegram_user_id
+          })
+        })
+      } catch (error) {
+        console.warn('Failed to notify Telegram group:', error)
+        // Don't fail the whole request for notification errors
+      }
+    }
 
     // ✅ SECURITY: Return minimal response
     return Response.json({ randomId }, {

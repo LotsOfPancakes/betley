@@ -31,6 +31,11 @@ export function useBetCreationNew() {
     tokenAddress: string
     creatorAddress: string
     isPublic: boolean
+    source?: 'web' | 'telegram'
+    sourceMetadata?: {
+      telegram_group_id?: string
+      telegram_user_id?: string
+    }
   } | null>(null)
   
   const [betCounterWhenStarted, setBetCounterWhenStarted] = useState<number | null>(null)
@@ -88,15 +93,26 @@ export function useBetCreationNew() {
               tokenAddress: pendingBetDetails.tokenAddress,
               durationInSeconds: pendingBetDetails.duration,
               isPublic: pendingBetDetails.isPublic,
+              source: pendingBetDetails.source || 'web',
+              sourceMetadata: pendingBetDetails.sourceMetadata
             }),
           })
           
           if (!response.ok) {
             const errorData = await response.json()
+            console.error('API error response:', errorData)
             throw new Error(errorData.error || 'Failed to create bet mapping')
           }
           
-          const { randomId } = await response.json()
+          const responseData = await response.json()
+          console.log('API response:', responseData)
+          
+          if (!responseData.randomId) {
+            console.error('API did not return randomId:', responseData)
+            throw new Error('API did not return randomId')
+          }
+          
+          const { randomId } = responseData
           
           // Invalidate React Query cache
           queryClient.invalidateQueries({ queryKey: ['betCounter'] })
@@ -110,9 +126,20 @@ export function useBetCreationNew() {
           setBetCounterWhenStarted(null)
 
           // Redirect to the new bet page
+          console.log('About to redirect - randomId:', randomId)
+          console.log('Full redirect URL:', `/bets/${randomId}`)
           router.push(`/bets/${randomId}`)
+          console.log('Redirect called successfully')
           
-        } catch {
+        } catch (error) {
+          console.error('Database mapping error:', error)
+          console.error('Error context:', {
+            randomId,
+            betCounterWhenStarted,
+            pendingBetDetails,
+            isSuccess,
+            receipt
+          })
           setState(prev => ({ 
             ...prev, 
             isLoading: false, 
@@ -132,7 +159,9 @@ export function useBetCreationNew() {
     options: string[],
     durationInSeconds: number,
     tokenAddress: string = ZERO_ADDRESS,
-    isPublic: boolean = false
+    isPublic: boolean = false,
+    source: 'web' | 'telegram' = 'web',
+    sourceMetadata: { telegram_group_id?: string; telegram_user_id?: string } | null = null
   ) => {
     // Validate chain first - properly await the async validation
     const isValidChain = validateForTransaction()
@@ -165,7 +194,9 @@ export function useBetCreationNew() {
         duration: durationInSeconds,
         tokenAddress: tokenAddress,
         creatorAddress: address,
-        isPublic: isPublic
+        isPublic: isPublic,
+        source: source,
+        sourceMetadata: sourceMetadata
       })
       
       setBetCounterWhenStarted(Number(betCounter))

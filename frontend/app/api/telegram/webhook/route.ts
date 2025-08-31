@@ -141,7 +141,6 @@ function generateBetSetupUrl(data: BetCommandData, userId: string, chatId: strin
     title: sanitizeInput(data.title),
     options: data.options.map(opt => sanitizeInput(opt)).join(','),
     duration: data.duration,
-    visibility: 'private',
     source: 'telegram',
     tg_user: userId,
     tg_group: chatId
