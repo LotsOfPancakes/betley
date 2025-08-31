@@ -22,13 +22,80 @@ import { useBetForm } from './hooks/useBetForm'
 import { useBetValidation } from './hooks/useBetValidation'
 import { useBetCreationNew } from './hooks/useBetCreationNew'
 
+// Helper functions for URL parameter parsing
+function safeDecodeParam(param: string): string {
+  if (!param) return ''
+  try {
+    return decodeURIComponent(param)
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
+      .replace(/javascript:/gi, '') // Remove javascript: protocols
+      .replace(/[<>\"'&]/g, '') // Remove potential XSS chars
+      .trim()
+  } catch {
+    return '' // Return empty string if decoding fails
+  }
+}
+
+function parseOptionsFromUrl(optionsParam: string): string[] {
+  if (!optionsParam) return []
+  
+  const decoded = safeDecodeParam(optionsParam)
+  if (!decoded) return []
+  
+  return decoded
+    .split(',')
+    .map(opt => opt.trim())
+    .filter(opt => opt.length > 0 && opt.length <= 100) // Validate option length
+    .slice(0, 4) // Max 4 options
+}
+
+function parseDurationFromUrl(durationParam: string): { hours: number; minutes: number } | null {
+  if (!durationParam) return null
+  
+  const decoded = safeDecodeParam(durationParam)
+  const match = decoded.match(/^(\d+)(m|h|d|w)$/i)
+  
+  if (!match) return null
+  
+  const [, value, unit] = match
+  const numValue = parseInt(value, 10)
+  
+  if (numValue <= 0) return null
+  
+  switch (unit.toLowerCase()) {
+    case 'm':
+      if (numValue < 30) return null // Minimum 30 minutes
+      return { hours: 0, minutes: numValue }
+    case 'h':
+      return { hours: numValue, minutes: 0 }
+    case 'd':
+      return { hours: numValue * 24, minutes: 0 }
+    case 'w':
+      return { hours: numValue * 24 * 7, minutes: 0 }
+    default:
+      return null
+  }
+}
+
+function parseVisibilityFromUrl(visibilityParam: string): boolean | null {
+  if (!visibilityParam) return null
+  
+  const decoded = safeDecodeParam(visibilityParam).toLowerCase()
+  if (decoded === 'public') return true
+  if (decoded === 'private') return false
+  return null
+}
+
 function SetupPageContent() {
   const { address } = useAccount()
   const { showWarning } = useNotification()
   const searchParams = useSearchParams()
 
-  // Get title from URL parameters
+  // Get all parameters from URL
   const titleFromUrl = searchParams?.get('title') || ''
+  const optionsFromUrl = searchParams?.get('options') || ''
+  const durationFromUrl = searchParams?.get('duration') || ''
+  const visibilityFromUrl = searchParams?.get('visibility') || ''
 
   // Use our custom hooks
   const {
@@ -52,12 +119,53 @@ function SetupPageContent() {
     clearError,
   } = useBetCreationNew()
 
-  // Pre-fill bet name if coming from landing page
+  // Pre-fill all fields from URL parameters
   useEffect(() => {
+    let hasUpdates = false
+
+    // Pre-fill bet name
     if (titleFromUrl && !formData.name) {
-      updateName(titleFromUrl)
+      updateName(safeDecodeParam(titleFromUrl))
+      hasUpdates = true
     }
-  }, [titleFromUrl, formData.name, updateName])
+
+    // Pre-fill options (only if current options are default ['Yes', 'No'])
+    const parsedOptions = parseOptionsFromUrl(optionsFromUrl)
+    const isDefaultOptions = formData.options.length === 2 && 
+                            formData.options[0] === 'Yes' && 
+                            formData.options[1] === 'No'
+    
+    if (parsedOptions.length >= 2 && isDefaultOptions) {
+      updateOptions(parsedOptions)
+      hasUpdates = true
+    }
+
+    // Pre-fill duration (only if current duration is default 1h)
+    const parsedDuration = parseDurationFromUrl(durationFromUrl)
+    const isDefaultDuration = formData.duration.hours === 1 && formData.duration.minutes === 0
+    
+    if (parsedDuration && isDefaultDuration) {
+      updateDuration(parsedDuration)
+      hasUpdates = true
+    }
+
+    // Pre-fill visibility (only if current is default private/false)
+    const parsedVisibility = parseVisibilityFromUrl(visibilityFromUrl)
+    if (parsedVisibility !== null && !formData.isPublic) {
+      updateIsPublic(parsedVisibility)
+      hasUpdates = true
+    }
+
+    // Log for debugging (remove in production)
+    if (hasUpdates) {
+      console.log('Pre-filled form from URL parameters:', {
+        title: titleFromUrl ? safeDecodeParam(titleFromUrl) : 'unchanged',
+        options: parsedOptions.length > 0 ? parsedOptions : 'unchanged',
+        duration: parsedDuration || 'unchanged',
+        visibility: parsedVisibility !== null ? parsedVisibility : 'unchanged'
+      })
+    }
+  }, [titleFromUrl, optionsFromUrl, durationFromUrl, visibilityFromUrl, formData.name, formData.options, formData.duration, formData.isPublic, updateName, updateOptions, updateDuration, updateIsPublic])
 
   const handleSubmit = () => {
     if (!isValid) {

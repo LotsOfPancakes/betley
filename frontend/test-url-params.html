@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL Parameter Test Links</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-link { display: block; margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; text-decoration: none; color: #333; }
+        .test-link:hover { background: #e0e0e0; }
+        h2 { color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Betley Setup Page - URL Parameter Tests</h1>
+    
+    <h2>Basic Tests</h2>
+    <a href="http://localhost:3000/setup?title=Test%20Bet" class="test-link" target="_blank">
+        Test 1: Title only → /setup?title=Test Bet
+    </a>
+    
+    <a href="http://localhost:3000/setup?title=Will%20it%20rain%20tomorrow?&options=Yes,No&duration=24h&visibility=public" class="test-link" target="_blank">
+        Test 2: All parameters → /setup?title=Will it rain tomorrow?&options=Yes,No&duration=24h&visibility=public
+    </a>
+    
+    <a href="http://localhost:3000/setup?title=Next%20US%20President&options=Trump,Biden,Other&duration=30d&visibility=private" class="test-link" target="_blank">
+        Test 3: Multiple options → /setup?title=Next US President&options=Trump,Biden,Other&duration=30d&visibility=private
+    </a>
+    
+    <h2>Duration Format Tests</h2>
+    <a href="http://localhost:3000/setup?title=30%20minute%20test&duration=30m" class="test-link" target="_blank">
+        Test 4: Minutes → /setup?title=30 minute test&duration=30m
+    </a>
+    
+    <a href="http://localhost:3000/setup?title=6%20hour%20test&duration=6h" class="test-link" target="_blank">
+        Test 5: Hours → /setup?title=6 hour test&duration=6h
+    </a>
+    
+    <a href="http://localhost:3000/setup?title=7%20day%20test&duration=7d" class="test-link" target="_blank">
+        Test 6: Days → /setup?title=7 day test&duration=7d
+    </a>
+    
+    <a href="http://localhost:3000/setup?title=2%20week%20test&duration=2w" class="test-link" target="_blank">
+        Test 7: Weeks → /setup?title=2 week test&duration=2w
+    </a>
+    
+    <h2>Edge Cases</h2>
+    <a href="http://localhost:3000/setup?title=Invalid%20duration&duration=invalid" class="test-link" target="_blank">
+        Test 8: Invalid duration → Should use default 1h
+    </a>
+    
+    <a href="http://localhost:3000/setup?title=Too%20short%20duration&duration=15m" class="test-link" target="_blank">
+        Test 9: Too short duration (15m) → Should use default 1h
+    </a>
+    
+    <a href="http://localhost:3000/setup?title=Single%20option&options=OnlyOne" class="test-link" target="_blank">
+        Test 10: Single option → Should use default Yes,No
+    </a>
+    
+    <h2>Security Tests</h2>
+    <a href="http://localhost:3000/setup?title=%3Cscript%3Ealert('xss')%3C/script%3E&options=Yes,No" class="test-link" target="_blank">
+        Test 11: XSS attempt → Should be sanitized
+    </a>
+    
+    <a href="http://localhost:3000/setup?title=Test&options=Option1,Option2,Option3,Option4,Option5,Option6" class="test-link" target="_blank">
+        Test 12: Too many options → Should limit to 4
+    </a>
+    
+    <h2>Telegram Bot Example</h2>
+    <a href="http://localhost:3000/setup?title=Will%20Bitcoin%20hit%20%24100k%20by%20year%20end?&options=Yes,%20No&duration=7d&visibility=public&source=telegram&tg_group=-67890&tg_user=12345" class="test-link" target="_blank">
+        Telegram Bot Example → Full Telegram integration test
+    </a>
+    
+    <hr>
+    <p><strong>Expected Behavior:</strong></p>
+    <ul>
+        <li>Fields should be pre-filled with URL parameters</li>
+        <li>Invalid parameters should fall back to defaults</li>
+        <li>XSS attempts should be sanitized</li>
+        <li>Duration formats (m/h/d/w) should be converted properly</li>
+        <li>Console should show debug logs for pre-filled values</li>
+    </ul>
+</body>
+</html>
