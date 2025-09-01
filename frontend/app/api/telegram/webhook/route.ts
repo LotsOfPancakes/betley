@@ -167,6 +167,32 @@ function formatDuration(duration: string): string {
   }
 }
 
+function parseDurationToSeconds(duration: string): number {
+  const match = duration.match(/^(\d+)(m|h|d|w)$/i)
+  if (!match) {
+    console.warn('Invalid duration format, defaulting to 1 hour:', duration)
+    return 3600 // Default to 1 hour
+  }
+  
+  const [, value, unit] = match
+  const numValue = parseInt(value, 10)
+  
+  if (numValue <= 0) {
+    console.warn('Invalid duration value, defaulting to 1 hour:', duration)
+    return 3600
+  }
+  
+  switch (unit.toLowerCase()) {
+    case 'm': return numValue * 60
+    case 'h': return numValue * 60 * 60  
+    case 'd': return numValue * 24 * 60 * 60
+    case 'w': return numValue * 7 * 24 * 60 * 60
+    default: 
+      console.warn('Invalid duration unit, defaulting to 1 hour:', duration)
+      return 3600
+  }
+}
+
 interface TelegramMessageOptions {
   parse_mode?: string
   disable_web_page_preview?: boolean
@@ -275,27 +301,63 @@ Use: <code>/create "Bet title" "Option1, Option2" "24h"</code>
     const serverSupabase = createServerSupabaseClient()
     
     try {
-      await serverSupabase
+      // Calculate end time from duration
+      const durationInSeconds = parseDurationToSeconds(parsedCommand.duration)
+      const endTime = Math.floor(Date.now() / 1000) + durationInSeconds
+      
+      const { data, error } = await serverSupabase
         .from('bet_mappings')
         .insert({
+          // Core identifiers
           random_id: tempBetId,
           numeric_id: -1, // Temporary placeholder - will be updated when bet is actually created
-          creator_address: '0x0000000000000000000000000000000000000000', // Placeholder
+          
+          // Bet details
           bet_name: parsedCommand.title,
+          bet_options: parsedCommand.options, // Full option text
+          option_count: parsedCommand.options.length,
+          
+          // Creator and configuration
+          creator_address: '0x0000000000000000000000000000000000000000', // Placeholder
+          token_address: '0x0000000000000000000000000000000000000000', // Native ETH
+          
+          // Timing
+          end_time: endTime,
+          resolution_deadline: endTime + (24 * 60 * 60), // 24 hours after end time
+          
+          // Visibility and features
+          is_public: true, // Default for Telegram bets
+          has_whitelist: false, // No whitelist for Telegram bets
+          
+          // Initial state
+          resolved: false,
+          winning_option: null,
+          total_amounts: new Array(parsedCommand.options.length).fill(0), // Initialize with zeros
+          
+          // Source tracking
           source: 'telegram',
           source_metadata: {
             telegram_group_id: chatId.toString(),
             telegram_user_id: userId
           },
-          telegram_setup_message_id: messageResult.messageId.toString(),
-          is_public: true // Default for Telegram bets
+          
+          // Auto-delete support
+          telegram_setup_message_id: messageResult.messageId.toString()
         })
+      
+      if (error) {
+        console.error('Database insert failed:', error)
+        throw error
+      }
       
       console.log('Successfully stored temp bet mapping:', {
         tempBetId,
         messageId: messageResult.messageId,
         userId,
-        chatId
+        chatId,
+        endTime,
+        optionCount: parsedCommand.options.length,
+        insertedData: data
       })
     } catch (error) {
       console.error('Failed to store temp bet mapping:', error)
