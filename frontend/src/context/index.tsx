@@ -30,7 +30,7 @@ const queryClient = new QueryClient({
 // Set up metadata
 const metadata = {
   name: 'Betley',
-  description: 'Easiest way to set up an on-chain bet on anything',
+  description: 'Create your own bets on anything on Base.',
   url: config.app.url,
   icons: [`${config.app.url}/images/betley-logo-128.png`]
 }
@@ -67,10 +67,10 @@ export const modal = createAppKit({
   themeMode: 'dark',               // Match app's dark theme
   themeVariables: {
     '--w3m-accent': '#10b981',     // Green accent to match brand
-    '--w3m-border-radius-master': '12px',
+    '--w3m-border-radius-master': '14px',
     // Font customization to match site's Geist Sans
     '--w3m-font-family': 'var(--font-geist-sans), system-ui, sans-serif',
-    '--w3m-font-size-master': '14px'
+    '--w3m-font-size-master': '10px'
   }
 })
 
