@@ -67,7 +67,10 @@ export const modal = createAppKit({
   themeMode: 'dark',               // Match app's dark theme
   themeVariables: {
     '--w3m-accent': '#10b981',     // Green accent to match brand
-    '--w3m-border-radius-master': '12px'
+    '--w3m-border-radius-master': '12px',
+    // Font customization to match site's Geist Sans
+    '--w3m-font-family': 'var(--font-geist-sans), system-ui, sans-serif',
+    '--w3m-font-size-master': '14px'
   }
 })
 
