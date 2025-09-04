@@ -24,13 +24,13 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(appConfig.url),
-  title: "Betley - Bet Anything",
-  description: "Easiest way to set up an on-chain bet on anything",
+  title: "Betley - Bet on Anything",
+  description: "Bet on Anything with friends",
   
   // ✅ ENHANCED: Open Graph for rich previews in chat apps
   openGraph: {
-    title: "Betley - Bet Anything",
-    description: "Easiest way to set up an on-chain bet on anything", 
+    title: "Betley - Bet on Anything",
+    description: "Bet on Anything with friends", 
     type: "website",
     url: appConfig.url, 
     siteName: "Betley",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Betley - Decentralized Betting Platform",
+        alt: "Betley - Bet on Anything with friends",
       },
       {
         url: "/betley-logo-512.png", // Square logo for some platforms
@@ -54,8 +54,8 @@ export const metadata: Metadata = {
   // ✅ ENHANCED: Twitter/X specific metadata
   twitter: {
     card: "summary_large_image",
-    title: "Betley - Bet Anything",
-    description: "Easiest way to set up an on-chain bet on anything",
+    title: "Betley - Bet on Anything",
+    description: "Bet on Anything with friends",
     images: ["/og-image.png"], // Same image as OG
     creator: "@betleyxyz", // creator Twitter handle
     site: "@betleyxyz", // app's Twitter handle
@@ -147,7 +147,7 @@ export default async function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebApplication",
               "name": "Betley",
-              "description": "Easiest way to set up an on-chain bet on anything",
+              "description": "Bet on Anything with friends",
               "url": appConfig.url,
               "applicationCategory": "GameApplication",
               "operatingSystem": "Web Browser",
