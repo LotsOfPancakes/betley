@@ -17,8 +17,8 @@ import { COLORS, DIMENSIONS, ANIMATIONS } from '@/lib/constants/ui'
 
 
 // Import hooks
-import { useBetDataNew } from './hooks/useBetDataNew'
-import { useBetActionsNew } from './hooks/useBetActionsNew'
+import { useBetData } from './hooks/useBetData'
+import { useBetActions } from './hooks/useBetActions'
 import { useFeatureFlag } from '@/lib/hooks/useFeatureFlag'
 
 // Type definition for bet details array 
@@ -98,7 +98,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     isValidBetId,
     numericBetId,
     databaseBet
-  } = useBetDataNew(randomBetId as string, { useReactQuery: true })
+  } = useBetData(randomBetId as string, { useReactQuery: true })
 
   // Extract bet data with proper typing - FIXED TypeScript issues
   const typedBetDetails = betDetails as BetDetailsArray | undefined
@@ -125,7 +125,7 @@ export default function BetPageClient({ id }: BetPageClientProps) {
     handleClaimRefund,
     handleClaimCreatorFees,
     handleResolveBet
-  } = useBetActionsNew(numericBetId?.toString() || '0', typedBetDetails?.[7]) // betId as numeric string, token address
+  } = useBetActions(numericBetId?.toString() || '0', typedBetDetails?.[7]) // betId as numeric string, token address
 
   // Feature flag checks - Default to BetOutcomes, use UserActions only if explicitly disabled
   const shouldUseUserActions = useFeatureFlag('useUserActions', databaseBet)

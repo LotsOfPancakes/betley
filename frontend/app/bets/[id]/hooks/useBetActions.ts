@@ -1,4 +1,4 @@
-// frontend/app/bets/[id]/hooks/useBetActionsNew.ts - New Privacy-Focused Actions
+// frontend/app/bets/[id]/hooks/useBetActions.ts
 import { useState, useEffect, useCallback } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
@@ -12,7 +12,7 @@ import { isNativeETH } from '@/lib/tokenUtils'
 
 type TransactionType = 'approve' | 'placeBet' | 'claimWinnings' | 'claimRefund' | 'claimCreatorFees' | 'resolveBet'
 
-export function useBetActionsNew(betId: string, tokenAddress?: string) {
+export function useBetActions(betId: string, tokenAddress?: string) {
   const [justPlacedBet, setJustPlacedBet] = useState(false)
   const [betAmount, setBetAmount] = useState('')
   const [selectedOption, setSelectedOption] = useState<number | null>(null)

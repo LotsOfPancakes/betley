@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react'
 import { useQuery } from '@tanstack/react-query'
 import { useAccount, useReadContract, useBalance } from 'wagmi'
-import { useBetDataNew } from '../../../app/bets/[id]/hooks/useBetDataNew'
+import { useBetData } from '../../../app/bets/[id]/hooks/useBetData'
 
 // Mock the external dependencies
 jest.mock('@tanstack/react-query')
@@ -26,7 +26,7 @@ const mockUseAccount = useAccount as jest.MockedFunction<typeof useAccount>
 const mockUseReadContract = useReadContract as jest.MockedFunction<typeof useReadContract>
 const mockUseBalance = useBalance as jest.MockedFunction<typeof useBalance>
 
-describe('useBetDataNew', () => {
+describe('useBetData', () => {
   const mockAddress = '0x1234567890123456789012345678901234567890' as const
 
   beforeEach(() => {
@@ -83,7 +83,7 @@ describe('useBetDataNew', () => {
       isSuccess: true,
     })
 
-    const { result } = renderHook(() => useBetDataNew('testbet1'))
+    const { result } = renderHook(() => useBetData('testbet1'))
 
     expect(mockUseQuery).toHaveBeenCalledWith({
       queryKey: ['bet-details-new', 'testbet1'],
@@ -106,7 +106,7 @@ describe('useBetDataNew', () => {
       isSuccess: false,
     })
 
-    renderHook(() => useBetDataNew('invalid'))
+    renderHook(() => useBetData('invalid'))
 
     expect(mockUseQuery).toHaveBeenCalledWith({
       queryKey: ['bet-details-new', 'invalid'],
@@ -126,7 +126,7 @@ describe('useBetDataNew', () => {
       isSuccess: false,
     })
 
-    const { result } = renderHook(() => useBetDataNew('testbet1'))
+    const { result } = renderHook(() => useBetData('testbet1'))
 
     // Hook should handle loading state appropriately
     expect(result.current).toBeDefined()
@@ -143,7 +143,7 @@ describe('useBetDataNew', () => {
       isSuccess: false,
     })
 
-    const { result } = renderHook(() => useBetDataNew('testbet1'))
+    const { result } = renderHook(() => useBetData('testbet1'))
 
     expect(result.current).toBeDefined()
   })
@@ -176,7 +176,7 @@ describe('useBetDataNew', () => {
       isSuccess: true,
     })
 
-    const { result } = renderHook(() => useBetDataNew('testbet1'))
+    const { result } = renderHook(() => useBetData('testbet1'))
 
     expect(result.current).toBeDefined()
   })
@@ -209,14 +209,14 @@ describe('useBetDataNew', () => {
       isSuccess: true,
     })
 
-    const { result } = renderHook(() => useBetDataNew('testbet1'))
+    const { result } = renderHook(() => useBetData('testbet1'))
 
     expect(result.current).toBeDefined()
   })
 
   it('should work with useReactQuery disabled', () => {
     const { result } = renderHook(() => 
-      useBetDataNew('testbet1', { useReactQuery: false })
+      useBetData('testbet1', { useReactQuery: false })
     )
 
     expect(result.current).toBeDefined()
@@ -250,7 +250,7 @@ describe('useBetDataNew', () => {
       isSuccess: true,
     })
 
-    const { result } = renderHook(() => useBetDataNew('testbet1'))
+    const { result } = renderHook(() => useBetData('testbet1'))
 
     expect(result.current).toBeDefined()
   })

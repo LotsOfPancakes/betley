@@ -1,5 +1,4 @@
-// frontend/app/setup/hooks/useBetCreationNew.ts
-// New Privacy-Focused Bet Creation Hook
+// frontend/app/setup/hooks/useBetCreation.ts
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -17,7 +16,7 @@ interface BetCreationState {
   error: string | null
 }
 
-export function useBetCreationNew() {
+export function useBetCreation() {
   const [state, setState] = useState<BetCreationState>({
     isLoading: false,
     error: null

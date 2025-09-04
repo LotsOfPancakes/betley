@@ -20,7 +20,7 @@ import SubmitSection from './components/SubmitSection'
 
 import { useBetForm } from './hooks/useBetForm'
 import { useBetValidation } from './hooks/useBetValidation'
-import { useBetCreationNew } from './hooks/useBetCreationNew'
+import { useBetCreation } from './hooks/useBetCreation'
 
 // Helper functions for URL parameter parsing
 function safeDecodeParam(param: string): string {
@@ -123,7 +123,7 @@ function SetupPageContent() {
     error,
     createBet,
     clearError,
-  } = useBetCreationNew()
+  } = useBetCreation()
 
   // Pre-fill all fields from URL parameters
   useEffect(() => {

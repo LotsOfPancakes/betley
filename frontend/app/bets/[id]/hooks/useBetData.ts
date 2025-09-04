@@ -1,5 +1,4 @@
-// frontend/app/bets/[id]/hooks/useBetDataNew.ts
-// New Privacy-Focused Bet Data Hook
+// frontend/app/bets/[id]/hooks/useBetData.ts
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -10,7 +9,7 @@ import { contractsConfig } from '@/lib/config'
 import { ERC20_ABI } from '@/lib/erc20ABI'
 import { isNativeETH } from '@/lib/tokenUtils'
 
-interface UseBetDataNewOptions {
+interface UseBetDataOptions {
   useReactQuery?: boolean
 }
 
@@ -45,7 +44,7 @@ type BlockchainBasics = readonly [
   `0x${string}`       // token
 ]
 
-export function useBetDataNew(randomId: string, options: UseBetDataNewOptions = {}) {
+export function useBetData(randomId: string, options: UseBetDataOptions = {}) {
   const { useReactQuery = true } = options
   const { address } = useAccount()
   const [timeLeft, setTimeLeft] = useState(0)
