@@ -36,7 +36,7 @@ export default function SubmitSection({
   const getButtonText = () => {
     if (state.isCreating) return 'Confirming...'
     if (state.isConfirming) return `Creating ${isPublic ? 'Public' : 'Private'} Bet...`
-    if (state.isSuccess) return `Betley is drawing your ${isPublic ? 'Public' : 'Private'} Bet, hang on...` //✅ Bet Created Successfully! Redirecting...
+    if (state.isSuccess) return `Betley is writing down your ${isPublic ? 'Public' : 'Private'} Bet, hang on...` //✅ Bet Created Successfully! Redirecting...
     if (!isConnected) return 'Connect Wallet & Create Bet'
     return `Create ${isPublic ? 'Public' : 'Private'} Bet`
   }

@@ -123,7 +123,7 @@ export function useBetCreationNew() {
           queryClient.invalidateQueries({ queryKey: ['bet'] })
           
           setState(prev => ({ ...prev, isLoading: false }))
-          showSuccess('Bringing you to your bet! Redirecting...')
+          showSuccess('Bet is ready! Bringing you there...')
 
           // Clear pending details
           setPendingBetDetails(null)
