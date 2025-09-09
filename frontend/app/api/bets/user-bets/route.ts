@@ -31,9 +31,19 @@ async function getLiveBetAmounts(betId: number): Promise<number[]> {
       args: [BigInt(betId)]
     }) as readonly bigint[]
 
-    return betAmounts.map(amount => Number(amount))
+    const amounts = betAmounts.map(amount => Number(amount))
+    console.log(`✅ Live data fetched for bet ${betId}:`, amounts)
+    return amounts
   } catch (error) {
-    console.error(`Error fetching live amounts for bet ${betId}:`, error)
+    // More specific error logging for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes('timeout')) {
+      console.error(`⏱️ RPC timeout for bet ${betId}`)
+    } else if (errorMessage.includes('rate limit')) {
+      console.error(`🚫 Rate limited for bet ${betId}`)
+    } else {
+      console.error(`❌ RPC error for bet ${betId}:`, errorMessage)
+    }
     return []
   }
 }
@@ -194,10 +204,12 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // ✅ STEP 5: Transform data for frontend consumption with live data fallback
-    const transformedBets = []
+    // ✅ STEP 5: Transform data for frontend consumption with batch RPC processing
     
-    // Process bets sequentially to avoid rate limits
+    // Step 1: Pre-process all bets and identify which need live blockchain data
+    const processedBets = []
+    const betsNeedingLiveData = []
+    
     for (const bet of betDetails || []) {
       // Determine user role
       const isCreator = bet.creator_address.toLowerCase() === address.toLowerCase()
@@ -211,35 +223,83 @@ export async function POST(request: NextRequest) {
       else userRole = 'bettor'
 
       // Check if database total_amounts are missing or all zeros
-      let totalAmounts = bet.total_amounts || []
-      const hasValidAmounts = totalAmounts.length > 0 && totalAmounts.some((amount: string) => amount > '0')
+      const hasValidAmounts = bet.total_amounts?.length > 0 && 
+        bet.total_amounts.some((amount: string) => amount > '0')
       
       if (!hasValidAmounts) {
-        totalAmounts = await getLiveBetAmounts(bet.numeric_id)
+        betsNeedingLiveData.push(bet.numeric_id)
+      }
+      
+      processedBets.push({
+        bet,
+        userRole,
+        needsLiveData: !hasValidAmounts
+      })
+    }
+
+    // Step 2: Batch fetch live data with timeout protection and error handling
+    const liveDataMap = new Map()
+    
+    if (betsNeedingLiveData.length > 0) {
+      console.log(`Fetching live data for ${betsNeedingLiveData.length} bets`)
+      
+      const liveDataPromises = betsNeedingLiveData.map(async (betId, index) => {
+        // Stagger requests to avoid overwhelming RPC provider
+        await new Promise(resolve => setTimeout(resolve, index * 150)) // 150ms stagger
         
-        // Add small delay to avoid rate limiting
-        if (transformedBets.length > 0) {
-          await new Promise(resolve => setTimeout(resolve, 200)) // 200ms delay
+        try {
+          // Add timeout wrapper to prevent hanging requests
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('RPC timeout')), 8000) // 8s timeout
+          )
+          
+          const dataPromise = getLiveBetAmounts(betId)
+          const amounts = await Promise.race([dataPromise, timeoutPromise])
+          
+          return { betId, amounts, success: true }
+        } catch (error) {
+          console.error(`RPC failed for bet ${betId}:`, error)
+          return { betId, amounts: [], success: false }
         }
+      })
+
+      // Execute all RPC calls in parallel with error isolation
+      const liveDataResults = await Promise.allSettled(liveDataPromises)
+      
+      // Create lookup map for successful results
+      liveDataResults.forEach(result => {
+        if (result.status === 'fulfilled' && result.value.success) {
+          liveDataMap.set(result.value.betId, result.value.amounts)
+        }
+      })
+      
+      console.log(`Successfully fetched live data for ${liveDataMap.size}/${betsNeedingLiveData.length} bets`)
+    }
+
+    // Step 3: Final transformation with live data merged in
+    const transformedBets = processedBets.map(({ bet, userRole, needsLiveData }) => {
+      let totalAmounts = bet.total_amounts || []
+      
+      if (needsLiveData) {
+        // Use live data if available, fallback to empty array if RPC failed
+        totalAmounts = liveDataMap.get(bet.numeric_id) || []
       }
 
-      const transformedBet = {
+      return {
         id: bet.numeric_id,
         randomId: bet.random_id,
         name: bet.bet_name,
         options: bet.bet_options || [],
         creator: bet.creator_address,
-        endTime: bet.end_time || 0, // Keep as number for JSON serialization
+        endTime: bet.end_time || 0,
         resolved: bet.resolved || false,
         winningOption: bet.winning_option || 0,
-        totalAmounts, // Use live data if database was stale
+        totalAmounts,
         userRole,
         userTotalBet: 0, // TODO: Calculate from user_activities
         isPublic: false // Default to false since column might not exist
       }
-      
-      transformedBets.push(transformedBet)
-    }
+    })
 
     return Response.json({
       bets: transformedBets,
