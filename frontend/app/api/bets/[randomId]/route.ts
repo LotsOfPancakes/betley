@@ -6,17 +6,7 @@
 
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient, checkRateLimit, validateRandomId } from '@/lib/supabase'
-
-// Get IP Helper function
-function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const vercelIP = request.headers.get('x-vercel-forwarded-for')
-  
-  if (forwarded) return forwarded.split(',')[0].trim()
-  if (vercelIP) return vercelIP.split(',')[0].trim()
-  
-  return '127.0.0.1'
-}
+import { getClientIP } from '@/lib/utils/request'
 
 interface RouteParams {
   params: Promise<{ randomId: string }>

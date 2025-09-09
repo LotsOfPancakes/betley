@@ -5,9 +5,9 @@ import { formatUnits } from 'viem'
 // AppKit buttons are web components - no import needed
 import { 
   formatDynamicDecimals, 
-  calculateOptionPercentage, 
   getUserExistingOptionIndex
 } from '@/lib/utils/bettingUtils'
+import { calculateOptionPercentage } from '@/lib/utils/betCalculations'
 import { getTokenSymbol } from '@/lib/utils/tokenFormatting'
 
 interface BetOptionsGridProps {

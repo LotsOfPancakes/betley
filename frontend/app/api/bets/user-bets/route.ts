@@ -6,20 +6,10 @@
 
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'
+import { publicClient } from '@/lib/chain'
+import { BETLEY_ADDRESS, BETLEY_ABI } from '@/lib/contractABI'
 import { parseAuthHeader, verifyWalletSignature } from '@/lib/auth/verifySignature'
-import { publicClient, BETLEY_ADDRESS } from '@/lib/chain'
-import { BETLEY_ABI } from '@/lib/contractABI'
-
-// Helper function to get client IP
-function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const vercelIP = request.headers.get('x-vercel-forwarded-for')
-  
-  if (forwarded) return forwarded.split(',')[0].trim()
-  if (vercelIP) return vercelIP.split(',')[0].trim()
-  
-  return '127.0.0.1'
-}
+import { getClientIP } from '@/lib/utils/request'
 
 // Helper function to fetch live bet amounts when database data is stale/missing
 async function getLiveBetAmounts(betId: number): Promise<number[]> {

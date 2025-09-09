@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { createServerSupabaseClient, checkRateLimit } from '@/lib/supabase'
 import { parseAuthHeader, verifyWalletSignature } from '@/lib/auth/verifySignature'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { getClientIP } from '@/lib/utils/request'
 
 // Type definitions for user activities
 interface UserActivity {
@@ -10,17 +11,6 @@ interface UserActivity {
   activity_type: 'create' | 'bet'
   amount?: string
   created_at: string
-}
-
-// Helper function to get client IP
-function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const vercelIP = request.headers.get('x-vercel-forwarded-for')
-  
-  if (forwarded) return forwarded.split(',')[0].trim()
-  if (vercelIP) return vercelIP.split(',')[0].trim()
-  
-  return '127.0.0.1'
 }
 
 // Real-time stats calculation from user_activities

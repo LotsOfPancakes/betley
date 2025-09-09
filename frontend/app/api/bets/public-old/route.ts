@@ -3,17 +3,7 @@ import { NextRequest } from 'next/server'
 import { supabase, checkRateLimit } from '@/lib/supabase'
 import { publicClient, BETLEY_ADDRESS } from '@/lib/chain'
 import { BETLEY_ABI } from '@/lib/contractABI'
-
-// Helper function to get client IP
-function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const vercelIP = request.headers.get('x-vercel-forwarded-for')
-  
-  if (forwarded) return forwarded.split(',')[0].trim()
-  if (vercelIP) return vercelIP.split(',')[0].trim()
-  
-  return '127.0.0.1'
-}
+import { getClientIP } from '@/lib/utils/request'
 
 export async function GET(request: NextRequest) {
   try {

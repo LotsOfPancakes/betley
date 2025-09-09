@@ -5,19 +5,9 @@
 // ============================================================================
 
 import { NextRequest } from 'next/server'
-import { createServerSupabaseClient, generateRandomId, checkRateLimit } from '@/lib/supabase'
+import { createServerSupabaseClient, checkRateLimit, generateRandomId } from '@/lib/supabase'
 import { trackBetCreation } from '@/lib/analytics/activityTracker'
-
-// Helper function to get client IP
-function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const vercelIP = request.headers.get('x-vercel-forwarded-for')
-  
-  if (forwarded) return forwarded.split(',')[0].trim()
-  if (vercelIP) return vercelIP.split(',')[0].trim()
-  
-  return '127.0.0.1'
-}
+import { getClientIP } from '@/lib/utils/request'
 
 export async function POST(request: NextRequest) {
   try {

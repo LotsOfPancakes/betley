@@ -114,16 +114,7 @@ export function formatDynamicDecimals(value: string | number): string {
   return num.toFixed(8).replace(/\.?0+$/, '')
 }
 
-/**
- * Calculate percentage of total pool for an option
- * @param optionAmount - Amount bet on specific option
- * @param totalPool - Total pool amount
- * @returns Percentage as number (0-100)
- */
-export function calculateOptionPercentage(optionAmount: bigint, totalPool: bigint): number {
-  if (totalPool === BigInt(0)) return 0
-  return Number((optionAmount * BigInt(10000)) / totalPool) / 100
-}
+
 
 /**
  * Get the index of the option the user has bet on
