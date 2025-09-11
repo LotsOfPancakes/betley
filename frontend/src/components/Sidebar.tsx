@@ -7,6 +7,7 @@ import { useState } from 'react'
 
 export function Sidebar() {
   const pathname = usePathname()
+  const [showTelegramTooltip, setShowTelegramTooltip] = useState(false)
 
   return (
     <div className="fixed left-0 top-0 h-full w-54 bg-transparent backdrop-blur-sm border-r border-green-500/20 z-40 hidden md:flex flex-col">
@@ -77,6 +78,39 @@ export function Sidebar() {
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-green-400 to-emerald-400 rounded-r" />
             )}
           </Link>
+
+          {/* Separator */}
+          <div className="h-px bg-gray-700/50 my-4 mx-3"></div>
+
+          {/* Telegram Bot Link */}
+          <div className="relative">
+            <a 
+              href="https://t.me/BetleyBot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center px-3 py-3 text-gray-300 hover:text-green-400 hover:bg-green-400/5 rounded-lg transition-colors group"
+              onMouseEnter={() => setShowTelegramTooltip(true)}
+              onMouseLeave={() => setShowTelegramTooltip(false)}
+            >
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+              </svg>
+              <span className="font-medium">Add Betley TG Bot</span>
+              <span className="ml-2 inline-block w-3 h-3 rounded-full bg-gray-500/30 text-xs cursor-help hover:bg-gray-400/40 transition-colors text-center leading-3">
+                i
+              </span>
+            </a>
+            
+            {/* Tooltip */}
+            {showTelegramTooltip && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-sm text-gray-200 z-50">
+                <div className="text-center">
+                  Betley Bot on TG allows you to quickly and easily create bets in your groups
+                </div>
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -101,6 +135,7 @@ export function Sidebar() {
 export function MobileSidebar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const [showTelegramTooltip, setShowTelegramTooltip] = useState(false)
 
   return (
     <>
@@ -215,6 +250,40 @@ export function MobileSidebar() {
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-green-400 to-emerald-400 rounded-r" />
               )}
             </Link>
+
+            {/* Separator */}
+            <div className="h-px bg-gray-700/50 my-4 mx-3"></div>
+
+            {/* Telegram Bot Link */}
+            <div className="relative">
+              <a 
+                href="https://t.me/BetleyBot"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center px-3 py-3 text-gray-300 hover:text-green-400 hover:bg-green-400/5 rounded-lg transition-colors group"
+                onMouseEnter={() => setShowTelegramTooltip(true)}
+                onMouseLeave={() => setShowTelegramTooltip(false)}
+                onClick={() => setIsOpen(false)}
+              >
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+                <span className="font-medium">Add Betley TG Bot</span>
+                <span className="ml-2 inline-block w-3 h-3 rounded-full bg-gray-500/30 text-xs cursor-help hover:bg-gray-400/40 transition-colors text-center leading-3">
+                  i
+                </span>
+              </a>
+              
+              {/* Tooltip */}
+              {showTelegramTooltip && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-sm text-gray-200 z-50">
+                  <div className="text-center">
+                    Betley Bot on TG allows you to quickly and easily create bets in your groups
+                  </div>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
+              )}
+            </div>
           </div>
         </nav>
 
