@@ -18,7 +18,7 @@ export default function HeroSection({
 }: HeroSectionProps) {
   return (
     <div className="relative overflow-hidden">
-      <div className={`${DIMENSIONS.maxWidth.content} mx-auto px-4 sm:px-6 lg:px-8 ${DIMENSIONS.spacing.hero}`}>
+      <div className={`${DIMENSIONS.maxWidth.content} mx-auto px-4 sm:px-6 lg:px-8 py-12`}>
         <div className="text-center">
           <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight">
             <span className={COLORS.gradients.brandText}>

@@ -34,7 +34,7 @@ export default function HomePage() {
     <div className={`min-h-screen ${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-hidden`}>
       <BackgroundElements />
       
-      <div className="relative z-20">
+      <div className="relative z-20 min-h-screen flex items-center justify-center">
         <HeroSection
           betTitle={betTitle}
           setBetTitle={setBetTitle}
@@ -42,16 +42,6 @@ export default function HomePage() {
           isConnected={!!address}
           isNavigating={isNavigating}
         />
-        
-        {/* <HowItWorksSection /> */}
-                
-        {/* <CTASection
-          betTitle={betTitle}
-          setBetTitle={setBetTitle}
-          handleCreateBet={handleCreateBet}
-          isConnected={!!address}
-          isNavigating={isNavigating}
-        /> */}
       </div>
     </div>
   )
