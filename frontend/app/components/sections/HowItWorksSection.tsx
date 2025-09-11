@@ -5,17 +5,17 @@ const steps = [
   {
     number: '1',
     title: 'Create a Bet',
-    description: 'Define your terms & duration.\n\n Anyone can create a bet on any topic.' 
+    description: 'Define terms & duration.\n\n Anyone can create a bet on any topic.' 
   },
   {
     number: '2', 
     title: 'Place Bets',
-    description: 'Bet with ETH on your preferred outcome.\n\nBetley\'s contracts ensure all funds are held securely until resolution.'
+    description: 'Bet with ETH on your preferred outcome.\n\nBetley\'s contracts holds funds securely until resolution.'
   },
   {
     number: '3',
     title: 'Resolve, Win & Claim', 
-    description: 'Creators resolve a Bet and Winners share the losing pool proportionally to their stake.'
+    description: 'Creators resolve a Bet. Winners share the losing pool proportionally to their stake.'
   }
 ]
 

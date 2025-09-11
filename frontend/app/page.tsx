@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import BackgroundElements from './components/BackgroundElements'
 import HeroSection from './components/sections/HeroSection'
-import HowItWorksSection from './components/sections/HowItWorksSection'
+// import HowItWorksSection from './components/sections/HowItWorksSection'
 // import KeyFeaturesSection from './components/sections/KeyFeaturesSection' //stop using keyFeatures section for now
-import CTASection from './components/sections/CTASection'
+// import CTASection from './components/sections/CTASection' // stop using CTA bottom section for now
 import { COLORS } from '@/lib/constants/ui'
 
 export default function HomePage() {
@@ -43,15 +43,15 @@ export default function HomePage() {
           isNavigating={isNavigating}
         />
         
-        <HowItWorksSection />
+        {/* <HowItWorksSection /> */}
                 
-        <CTASection
+        {/* <CTASection
           betTitle={betTitle}
           setBetTitle={setBetTitle}
           handleCreateBet={handleCreateBet}
           isConnected={!!address}
           isNavigating={isNavigating}
-        />
+        /> */}
       </div>
     </div>
   )
