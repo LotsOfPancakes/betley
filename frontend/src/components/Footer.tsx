@@ -2,7 +2,7 @@
 
 export function Footer() {
     return (
-        <footer className="bg-gray-950/80 py-8">
+        <footer className="bg-gray-950/80 py-4">
             {/* <div className="max-w-7xl mx-auto px-4 text-center">
                 <a 
                 href="https://app.base.org"

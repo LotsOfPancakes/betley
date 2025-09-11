@@ -178,7 +178,7 @@ export default async function RootLayout({
                 
                 {/* Page Content */}
                 <main className="flex-1 overflow-auto">
-                  <div className="min-h-screen">
+                  <div className="min-h-[calc(100vh-120px)]">
                     {children}
                   </div>
                   

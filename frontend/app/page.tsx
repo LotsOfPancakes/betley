@@ -31,10 +31,10 @@ export default function HomePage() {
   }
 
   return (
-    <div className={`min-h-screen ${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-hidden`}>
+    <div className={`${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-hidden`}>
       <BackgroundElements />
       
-      <div className="relative z-20 min-h-screen flex items-center justify-center">
+      <div className="relative z-20 flex flex-col justify-center min-h-[calc(100vh-200px)] py-8">
         <HeroSection
           betTitle={betTitle}
           setBetTitle={setBetTitle}
