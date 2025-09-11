@@ -17,7 +17,7 @@ export default function HeroSection({
   isNavigating
 }: HeroSectionProps) {
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-hidden w-full">
       <div className={`${DIMENSIONS.maxWidth.content} mx-auto px-4 sm:px-6 lg:px-8 py-12`}>
         <div className="text-center">
           <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight">
