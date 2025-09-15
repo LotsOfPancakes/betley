@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { InformationCircleIcon } from '@heroicons/react/24/outline'
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -91,13 +92,11 @@ export function Sidebar() {
               className="flex items-center px-3 py-3 text-gray-300 hover:text-green-400 hover:bg-green-400/5 rounded-lg transition-colors group"
             >
               <span className="font-medium">Add Betley TG Bot</span>
-              <span 
-                className="ml-2 inline-block w-3 h-3 rounded-full bg-gray-500/30 text-xs cursor-help hover:bg-gray-400/40 transition-colors text-center leading-3"
+              <InformationCircleIcon 
+                className="ml-2 w-4 h-4 text-gray-400 cursor-help hover:text-gray-300 transition-colors"
                 onMouseEnter={() => setShowTelegramTooltip(true)}
                 onMouseLeave={() => setShowTelegramTooltip(false)}
-              >
-                i
-              </span>
+              />
             </a>
             
             {/* Tooltip */}
@@ -115,22 +114,17 @@ export function Sidebar() {
 
       {/* Twitter Link */}
       <div className="p-6">
-              <a 
-                href="https://t.me/BetleyBot"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center px-3 py-3 text-gray-300 hover:text-green-400 hover:bg-green-400/5 rounded-lg transition-colors group"
-
-              >
-                <span className="font-medium">Add Betley TG Bot</span>
-                <span 
-                  className="ml-2 inline-block w-3 h-3 rounded-full bg-gray-500/30 text-xs cursor-help hover:bg-gray-400/40 transition-colors text-center leading-3"
-                  onMouseEnter={() => setShowTelegramTooltip(true)}
-                  onMouseLeave={() => setShowTelegramTooltip(false)}
-                >
-                  i
-                </span>
-              </a>
+        <a 
+          href="https://x.com/betleyxyz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/60 text-gray-300 hover:text-green-400 hover:bg-green-400/5 transition-all duration-300 group border border-gray-700/50 hover:border-green-400/30"
+          aria-label="Follow Betley on Twitter"
+        >
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </a>
       </div>
     </div>
   )
@@ -268,13 +262,11 @@ export function MobileSidebar() {
               onClick={() => setIsOpen(false)}
             >
               <span className="font-medium">Add Betley TG Bot</span>
-              <span 
-                className="ml-2 inline-block w-3 h-3 rounded-full bg-gray-500/30 text-xs cursor-help hover:bg-gray-400/40 transition-colors text-center leading-3"
+              <InformationCircleIcon 
+                className="ml-2 w-4 h-4 text-gray-400 cursor-help hover:text-gray-300 transition-colors"
                 onMouseEnter={() => setShowTelegramTooltip(true)}
                 onMouseLeave={() => setShowTelegramTooltip(false)}
-              >
-                i
-              </span>
+              />
             </a>
               
               {/* Tooltip */}
