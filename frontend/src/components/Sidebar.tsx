@@ -91,7 +91,7 @@ export function Sidebar() {
               rel="noopener noreferrer"
               className="flex items-center px-3 py-3 text-gray-300 hover:text-green-400 hover:bg-green-400/5 rounded-lg transition-colors group"
             >
-              <span className="font-medium">Add Betley TG Bot</span>
+              <span className="font-medium">Add Betley to TG</span>
               <InformationCircleIcon 
                 className="ml-2 w-4 h-4 text-gray-400 cursor-help hover:text-gray-300 transition-colors"
                 onMouseEnter={() => setShowTelegramTooltip(true)}
@@ -103,7 +103,7 @@ export function Sidebar() {
             {showTelegramTooltip && (
               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-sm text-gray-200 z-50">
                 <div className="text-center">
-                  Betley Bot on TG allows you to quickly and easily create bets in your groups
+                  Betley on TG allows you to quickly and easily create bets from your groups for easier betting!
                 </div>
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
               </div>
@@ -261,7 +261,7 @@ export function MobileSidebar() {
               className="flex items-center px-3 py-3 text-gray-300 hover:text-green-400 hover:bg-green-400/5 rounded-lg transition-colors group"
               onClick={() => setIsOpen(false)}
             >
-              <span className="font-medium">Add Betley TG Bot</span>
+              <span className="font-medium">Add Betley to TG</span>
               <InformationCircleIcon 
                 className="ml-2 w-4 h-4 text-gray-400 cursor-help hover:text-gray-300 transition-colors"
                 onMouseEnter={() => setShowTelegramTooltip(true)}
@@ -273,7 +273,7 @@ export function MobileSidebar() {
               {showTelegramTooltip && (
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-sm text-gray-200 z-50">
                   <div className="text-center">
-                    Betley Bot on TG allows you to quickly and easily create bets in your groups
+                    Betley on TG allows you to quickly and easily create bets from your groups for easier betting!
                   </div>
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
                 </div>
