@@ -31,7 +31,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className={`${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-hidden`}>
+    <div className={`${COLORS.backgrounds.primary} ${COLORS.text.primary} relative overflow-x-hidden`}>
       <BackgroundElements />
       
       <div className="relative z-20 flex flex-col justify-center min-h-[calc(100vh-200px)] py-8">
